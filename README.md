@@ -1,33 +1,58 @@
-### Warehousesuite
+# WarehouseSuite
 
-WMSuitePro is a mobile-first warehouse management solution for ERPNext.
+A comprehensive warehouse management solution for ERPNext with advanced validation and control features.
 
-### Installation
+## Features
 
-You can install this app using the [bench](https://github.com/frappe/bench) CLI:
+- **Warehouse Validation**: Restrict same warehouse transfers
+- **Value Difference Control**: Prevent or limit stock entries with value differences
+- **Submission Control**: Role-based document submission restrictions
+- **Auto Transit Management**: Automatic transit warehouse handling for material transfers
+- **Mobile Interface**: Touch-friendly warehouse operations dashboard
+- **Barcode Scanning**: Built-in barcode scanning for quick item operations
 
-```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app $URL_OF_THIS_REPO --branch develop
-bench install-app warehousesuite
-```
-
-### Contributing
-
-This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
+## Installation
 
 ```bash
-cd apps/warehousesuite
-pre-commit install
+bench --site your-site.com install-app warehousesuite
 ```
 
-Pre-commit is configured to use the following tools for checking and formatting your code:
+## Configuration
 
-- ruff
-- eslint
-- prettier
-- pyupgrade
+### WMSuite Settings
 
-### License
+Access WMSuite Settings to configure:
 
-mit
+#### Warehouse Operations
+- **Restrict Same Warehouse Transfers**: Prevent stock entries between same warehouse
+- **Auto Set Transit for Material Transfer**: Automatically set transit warehouse for material transfers
+
+#### Stock Validation
+- **Disallow Value Difference in Stock Entry**: Restrict stock entries with value differences
+- **Maximum Allowed Value Difference**: Set tolerance limit for value differences
+- **Override Roles**: Roles that can bypass value difference restrictions
+
+#### Submission Control
+- **Restrict Document Submission**: Control who can submit warehouse documents
+- **Submission Override Roles**: Roles with submission permissions
+
+#### Mobile Interface
+- **Enable Mobile Interface**: Enable mobile-optimized warehouse dashboard
+- **Default Warehouse**: Set default warehouse for mobile operations
+- **Enable Barcode Scanning**: Enable barcode scanning functionality
+- **Auto Refresh Interval**: Dashboard auto-refresh interval in seconds
+
+## Roles
+
+- **Warehouse Manager**: Full access to all warehouse operations and settings
+- **System Manager**: Override permissions for all restrictions
+
+## Usage
+
+1. **Configure Settings**: Set up WMSuite Settings according to your warehouse requirements
+2. **Assign Roles**: Create users and assign appropriate warehouse roles
+3. **Start Operations**: Begin warehouse operations with validation and control features
+
+## Support
+
+For detailed configuration guide, please refer to the WMSuite Settings Guide.

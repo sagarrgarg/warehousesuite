@@ -1,0 +1,514 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Warehouse Dashboard") }}{% endblock %}
+
+{% block page_content %}
+<div class="warehouse-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">
+                <i class="fas fa-warehouse"></i>
+                {{ _("Warehouse Dashboard") }}
+            </h1>
+            <div class="user-info">
+                <span class="user-name">{{ frappe.get_user().full_name }}</span>
+                <span class="user-role">{{ user_roles[0] if user_roles else "" }}</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-sm btn-secondary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="toggleFullscreen()">
+                <i class="fas fa-expand"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-boxes"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="total-items">-</div>
+                <div class="stat-label">{{ _("Total Items") }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="pending-tasks">-</div>
+                <div class="stat-label">{{ _("Pending Tasks") }}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-truck"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number" id="today-deliveries">-</div>
+                <div class="stat-label">{{ _("Today's Deliveries") }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="feature-grid">
+        {% for feature_key, feature in features.items() %}
+        <div class="feature-card" data-feature="{{ feature_key }}">
+            <div class="feature-icon bg-{{ feature.color }}">
+                <i class="fas fa-{{ feature.icon }}"></i>
+            </div>
+            <div class="feature-content">
+                <h3 class="feature-title">{{ feature.title }}</h3>
+                <p class="feature-description">{{ feature.description }}</p>
+            </div>
+            <div class="feature-action">
+                <button class="btn btn-primary btn-sm" onclick="navigateToFeature('{{ feature.route }}')">
+                    {{ _("Open") }}
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h3 class="section-title">
+            <i class="fas fa-history"></i>
+            {{ _("Recent Activity") }}
+        </h3>
+        <div class="activity-list" id="activity-list">
+            <!-- Activity items will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Scanner Modal -->
+<div class="modal fade" id="barcodeModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _("Scan Barcode") }}</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="barcode-input">
+                    <input type="text" class="form-control" id="barcodeInput" 
+                           placeholder="{{ _('Scan or enter barcode...') }}" autofocus>
+                </div>
+                <div class="barcode-result" id="barcodeResult"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile-first responsive design */
+.warehouse-dashboard {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.user-role {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: #2d3748;
+}
+
+.feature-description {
+    font-size: 0.875rem;
+    color: #718096;
+    margin: 0 0 1rem 0;
+    line-height: 1.4;
+}
+
+.feature-action {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.recent-activity {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Color classes for feature icons */
+.bg-blue { background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); }
+.bg-green { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
+.bg-orange { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
+.bg-red { background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); }
+.bg-purple { background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); }
+.bg-indigo { background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%); }
+.bg-yellow { background: linear-gradient(135deg, #ecc94b 0%, #d69e2e 100%); }
+.bg-pink { background: linear-gradient(135deg, #ed64a6 0%, #d53f8c 100%); }
+.bg-gray { background: linear-gradient(135deg, #a0aec0 0%, #718096 100%); }
+.bg-teal { background: linear-gradient(135deg, #38b2ac 0%, #319795 100%); }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .warehouse-dashboard {
+        padding: 0.5rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .user-info {
+        align-items: center;
+    }
+    
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .feature-card {
+        padding: 1rem;
+    }
+}
+
+/* Touch-friendly buttons */
+.btn {
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+// Dashboard functionality
+let refreshInterval;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    setupAutoRefresh();
+    setupBarcodeScanner();
+});
+
+function loadDashboardData() {
+    // Load quick stats
+    loadQuickStats();
+    
+    // Load recent activity
+    loadRecentActivity();
+}
+
+function loadQuickStats() {
+    // Simulate loading stats - replace with actual API calls
+    setTimeout(() => {
+        document.getElementById('total-items').textContent = '1,234';
+        document.getElementById('pending-tasks').textContent = '15';
+        document.getElementById('today-deliveries').textContent = '8';
+    }, 500);
+}
+
+function loadRecentActivity() {
+    // Simulate loading activity - replace with actual API calls
+    const activityList = document.getElementById('activity-list');
+    activityList.innerHTML = `
+        <div class="activity-item">
+            <div class="activity-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">Stock Entry Created</div>
+                <div class="activity-time">2 minutes ago</div>
+            </div>
+        </div>
+        <div class="activity-item">
+            <div class="activity-icon">
+                <i class="fas fa-truck"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">Delivery Note Submitted</div>
+                <div class="activity-time">15 minutes ago</div>
+            </div>
+        </div>
+        <div class="activity-item">
+            <div class="activity-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="activity-content">
+                <div class="activity-title">Quality Check Completed</div>
+                <div class="activity-time">1 hour ago</div>
+            </div>
+        </div>
+    `;
+}
+
+function setupAutoRefresh() {
+    const settings = JSON.parse('{{ settings | tojson }}');
+    if (settings.auto_refresh_interval && settings.auto_refresh_interval > 0) {
+        refreshInterval = setInterval(loadDashboardData, settings.auto_refresh_interval * 1000);
+    }
+}
+
+function refreshDashboard() {
+    const dashboard = document.querySelector('.warehouse-dashboard');
+    dashboard.classList.add('loading');
+    
+    loadDashboardData();
+    
+    setTimeout(() => {
+        dashboard.classList.remove('loading');
+    }, 1000);
+}
+
+function navigateToFeature(route) {
+    window.location.href = route;
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function setupBarcodeScanner() {
+    const settings = JSON.parse('{{ settings | tojson }}');
+    if (!settings.enable_barcode_scanning) return;
+    
+    // Add barcode scanner button to header
+    const headerActions = document.querySelector('.header-actions');
+    const scannerBtn = document.createElement('button');
+    scannerBtn.className = 'btn btn-sm btn-secondary';
+    scannerBtn.innerHTML = '<i class="fas fa-barcode"></i>';
+    scannerBtn.onclick = openBarcodeScanner;
+    headerActions.appendChild(scannerBtn);
+}
+
+function openBarcodeScanner() {
+    $('#barcodeModal').modal('show');
+    document.getElementById('barcodeInput').focus();
+}
+
+// Barcode input handling
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.getElementById('barcodeInput')) {
+        const barcode = document.getElementById('barcodeInput').value;
+        if (barcode) {
+            processBarcode(barcode);
+        }
+    }
+});
+
+function processBarcode(barcode) {
+    // Process barcode - replace with actual logic
+    const result = document.getElementById('barcodeResult');
+    result.innerHTML = `<div class="alert alert-info">Processing barcode: ${barcode}</div>`;
+    
+    // Clear input
+    document.getElementById('barcodeInput').value = '';
+    
+    // Close modal after processing
+    setTimeout(() => {
+        $('#barcodeModal').modal('hide');
+        result.innerHTML = '';
+    }, 2000);
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %} 

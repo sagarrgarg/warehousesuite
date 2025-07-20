@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-01-27 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "warehouse_operations_section",
+  "restrict_same_warehouse",
+  "auto_set_transit",
+  "stock_validation_section",
+  "disallow_value_difference",
+  "max_value_difference",
+  "override_roles",
+  "submission_control_section",
+  "restrict_document_submission",
+  "submission_override_roles",
+  "mobile_interface_section",
+  "enable_mobile_interface",
+  "default_warehouse",
+  "enable_barcode_scanning",
+  "auto_refresh_interval"
+ ],
+ "fields": [
+  {
+   "fieldname": "warehouse_operations_section",
+   "fieldtype": "Section Break",
+   "label": "Warehouse Operations"
+  },
+  {
+   "fieldname": "restrict_same_warehouse",
+   "fieldtype": "Check",
+   "label": "Restrict Same Warehouse Transfers",
+   "default": 1,
+   "description": "Prevent stock entries between same warehouse"
+  },
+  {
+   "fieldname": "auto_set_transit",
+   "fieldtype": "Check",
+   "label": "Auto Set Transit for Material Transfer",
+   "default": 1,
+   "description": "Automatically set transit warehouse for material transfers"
+  },
+
+  {
+   "fieldname": "stock_validation_section",
+   "fieldtype": "Section Break",
+   "label": "Stock Validation"
+  },
+  {
+   "fieldname": "disallow_value_difference",
+   "fieldtype": "Check",
+   "label": "Disallow Value Difference in Stock Entry",
+   "default": 1,
+   "description": "Restrict stock entries with value differences"
+  },
+  {
+   "fieldname": "max_value_difference",
+   "fieldtype": "Currency",
+   "label": "Maximum Allowed Value Difference",
+   "default": 0,
+   "depends_on": "eval:doc.disallow_value_difference"
+  },
+  {
+   "fieldname": "override_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Override Roles",
+   "options": "Has Role",
+   "depends_on": "eval:doc.disallow_value_difference",
+   "description": "Roles that can bypass value difference restrictions"
+  },
+  {
+   "fieldname": "submission_control_section",
+   "fieldtype": "Section Break",
+   "label": "Submission Control"
+  },
+  {
+   "fieldname": "restrict_document_submission",
+   "fieldtype": "Check",
+   "label": "Restrict Document Submission",
+   "default": 1,
+   "description": "Control who can submit warehouse documents"
+  },
+  {
+   "fieldname": "submission_override_roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Submission Override Roles",
+   "options": "Has Role",
+   "depends_on": "eval:doc.restrict_document_submission",
+   "description": "Roles with submission permissions"
+  },
+  {
+   "fieldname": "mobile_interface_section",
+   "fieldtype": "Section Break",
+   "label": "Mobile Interface"
+  },
+  {
+   "fieldname": "enable_mobile_interface",
+   "fieldtype": "Check",
+   "label": "Enable Mobile Interface",
+   "default": 1,
+   "description": "Enable mobile-optimized warehouse dashboard"
+  },
+  {
+   "fieldname": "default_warehouse",
+   "fieldtype": "Link",
+   "label": "Default Warehouse",
+   "options": "Warehouse",
+   "depends_on": "eval:doc.enable_mobile_interface"
+  },
+  {
+   "fieldname": "enable_barcode_scanning",
+   "fieldtype": "Check",
+   "label": "Enable Barcode Scanning",
+   "default": 1,
+   "depends_on": "eval:doc.enable_mobile_interface",
+   "description": "Enable barcode scanning functionality"
+  },
+  {
+   "fieldname": "auto_refresh_interval",
+   "fieldtype": "Int",
+   "label": "Auto Refresh Interval (seconds)",
+   "default": 30,
+   "depends_on": "eval:doc.enable_mobile_interface",
+   "description": "Dashboard auto-refresh interval"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-01-27 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WarehouseSuite",
+ "name": "WMSuite Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Warehouse Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_views": 1
+} 

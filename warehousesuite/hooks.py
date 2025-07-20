@@ -82,14 +82,12 @@ app_license = "mit"
 # Installation
 # ------------
 
-# before_install = "warehousesuite.install.before_install"
-# after_install = "warehousesuite.install.after_install"
+after_install = "warehousesuite.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "warehousesuite.uninstall.before_uninstall"
-# after_uninstall = "warehousesuite.uninstall.after_uninstall"
+before_uninstall = "warehousesuite.install.before_uninstall"
 
 # Integration Setup
 # ------------------
@@ -137,13 +135,48 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+    "Stock Entry": {
+        "validate": [
+            "warehousesuite.warehousesuite.overrides.warehouse_validation.validate_warehouse_restriction",
+            "warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer"
+        ],
+        "on_submit": [
+            "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission",
+            "warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
+        ]
+    },
+    "Delivery Note": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Purchase Receipt": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Stock Reconciliation": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Sales Invoice": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Purchase Invoice": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Journal Entry": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Payment Entry": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Sales Order": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Purchase Order": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    },
+    "Payment Request": {
+        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
+    }
+}
 
 # Scheduled Tasks
 # ---------------
@@ -242,3 +275,10 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# Fixtures
+# --------
+
+fixtures = [
+    {"doctype": "Custom Field", "filters": [["module", "=", "WarehouseSuite"]]},
+    {"doctype": "DocType", "filters": [["module", "=", "WarehouseSuite"]]}
+]
