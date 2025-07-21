@@ -1,11 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "POWSE-.YYYY.-####",
+ "autoname": "naming_series:",
  "creation": "2025-07-22 00:18:31.170920",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "pow_profile",
   "company",
   "column_break_itgh",
@@ -14,7 +15,8 @@
   "section_break_qqei",
   "opening_shift_time",
   "column_break_xzgj",
-  "closing_shift_time"
+  "closing_shift_time",
+  "amended_from"
  ],
  "fields": [
   {
@@ -62,16 +64,33 @@
    "fieldname": "closing_shift_time",
    "fieldtype": "Datetime",
    "label": "Closing Shift Time"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "POW Session",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "naming_series"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
+ "is_submittable": 1,
  "links": [],
- "modified": "2025-07-22 00:23:43.507979",
+ "modified": "2025-07-22 01:08:06.456533",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Session",
- "naming_rule": "Expression",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
