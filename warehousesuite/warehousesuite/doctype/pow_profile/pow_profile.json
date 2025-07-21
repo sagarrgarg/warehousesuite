@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:name1",
+ "creation": "2025-07-21 23:08:06.957156",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "disabled",
+  "name1",
+  "company",
+  "warehouse_settings_section",
+  "source_warehouse",
+  "in_transit_warehouse",
+  "target_warehouse",
+  "section_break_tswu",
+  "allowed_operations",
+  "applicable_users"
+ ],
+ "fields": [
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "warehouse_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Warehouse Settings"
+  },
+  {
+   "fieldname": "in_transit_warehouse",
+   "fieldtype": "Table MultiSelect",
+   "label": "In Transit Warehouse",
+   "options": "Select Warehouse"
+  },
+  {
+   "fieldname": "target_warehouse",
+   "fieldtype": "Table MultiSelect",
+   "label": "Target Warehouse",
+   "options": "Select Warehouse"
+  },
+  {
+   "fieldname": "source_warehouse",
+   "fieldtype": "Table MultiSelect",
+   "label": "Warehouses Allowed",
+   "options": "Select Warehouse"
+  },
+  {
+   "fieldname": "section_break_tswu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "allowed_operations",
+   "fieldtype": "Table MultiSelect",
+   "label": "Allowed Operations",
+   "options": "Stock Entry Purposes"
+  },
+  {
+   "fieldname": "applicable_users",
+   "fieldtype": "Table",
+   "label": "Applicable Users",
+   "options": "POW Profile User"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-22 00:10:15.115371",
+ "modified_by": "Administrator",
+ "module": "Warehousesuite",
+ "name": "POW Profile",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

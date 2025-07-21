@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2025-07-22 00:39:12.226941",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-07-22 00:39:12.226941",
+ "modified_by": "Administrator",
+ "module": "Warehousesuite",
+ "name": "pow-dashboard",
+ "owner": "Administrator",
+ "page_name": "pow-dashboard",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "POW Dashboard"
+}

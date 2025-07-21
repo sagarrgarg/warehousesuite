@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "POWSE-.YYYY.-####",
+ "creation": "2025-07-22 00:18:31.170920",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "pow_profile",
+  "company",
+  "column_break_itgh",
+  "session_status",
+  "assigned_user",
+  "section_break_qqei",
+  "opening_shift_time",
+  "column_break_xzgj",
+  "closing_shift_time"
+ ],
+ "fields": [
+  {
+   "fieldname": "pow_profile",
+   "fieldtype": "Link",
+   "label": "POW Profile",
+   "options": "POW Profile"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "assigned_user",
+   "fieldtype": "Link",
+   "label": "Assigned User",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_itgh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "session_status",
+   "fieldtype": "Select",
+   "label": "Session Status",
+   "options": "\nOpen\nClose\nCancelled"
+  },
+  {
+   "fieldname": "section_break_qqei",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "opening_shift_time",
+   "fieldtype": "Datetime",
+   "label": "Opening Shift Time"
+  },
+  {
+   "fieldname": "column_break_xzgj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "closing_shift_time",
+   "fieldtype": "Datetime",
+   "label": "Closing Shift Time"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-07-22 00:23:43.507979",
+ "modified_by": "Administrator",
+ "module": "Warehousesuite",
+ "name": "POW Session",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
