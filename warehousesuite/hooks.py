@@ -82,12 +82,12 @@ app_license = "mit"
 # Installation
 # ------------
 
-after_install = "warehousesuite.install.after_install"
+# after_install = "warehousesuite.install.after_install"
 
 # Uninstallation
 # ------------
 
-before_uninstall = "warehousesuite.install.before_uninstall"
+# before_uninstall = "warehousesuite.install.before_uninstall"
 
 # Integration Setup
 # ------------------
@@ -138,43 +138,11 @@ before_uninstall = "warehousesuite.install.before_uninstall"
 doc_events = {
     "Stock Entry": {
         "validate": [
-            "warehousesuite.warehousesuite.overrides.warehouse_validation.validate_warehouse_restriction",
             "warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer"
         ],
         "on_submit": [
-            "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission",
             "warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
         ]
-    },
-    "Delivery Note": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Purchase Receipt": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Stock Reconciliation": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Sales Invoice": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Purchase Invoice": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Journal Entry": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Payment Entry": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Sales Order": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Purchase Order": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
-    },
-    "Payment Request": {
-        "on_submit": "warehousesuite.warehousesuite.overrides.submission_restriction.validate_submission_permission"
     }
 }
 

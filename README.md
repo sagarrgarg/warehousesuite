@@ -4,9 +4,7 @@ A comprehensive warehouse management solution for ERPNext with advanced validati
 
 ## Features
 
-- **Warehouse Validation**: Restrict same warehouse transfers
 - **Value Difference Control**: Prevent or limit stock entries with value differences
-- **Submission Control**: Role-based document submission restrictions
 - **Auto Transit Management**: Automatic transit warehouse handling for material transfers
 - **Mobile Interface**: Touch-friendly warehouse operations dashboard
 - **Barcode Scanning**: Built-in barcode scanning for quick item operations
@@ -24,17 +22,12 @@ bench --site your-site.com install-app warehousesuite
 Access WMSuite Settings to configure:
 
 #### Warehouse Operations
-- **Restrict Same Warehouse Transfers**: Prevent stock entries between same warehouse
 - **Auto Set Transit for Material Transfer**: Automatically set transit warehouse for material transfers
 
 #### Stock Validation
 - **Disallow Value Difference in Stock Entry**: Restrict stock entries with value differences
 - **Maximum Allowed Value Difference**: Set tolerance limit for value differences
 - **Override Roles**: Roles that can bypass value difference restrictions
-
-#### Submission Control
-- **Restrict Document Submission**: Control who can submit warehouse documents
-- **Submission Override Roles**: Roles with submission permissions
 
 #### Mobile Interface
 - **Enable Mobile Interface**: Enable mobile-optimized warehouse dashboard

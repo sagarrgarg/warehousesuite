@@ -37,19 +37,7 @@ This document summarizes the comprehensive cleanup and refactoring performed on 
   - Improved error handling and settings access
   - Better code organization and readability
 
-- ✅ **`submission_restriction.py`**
-  - Added comprehensive module documentation
-  - Simplified document categories structure
-  - Created helper functions for settings and permissions
-  - Improved error handling and role validation
-  - Better separation of concerns
 
-- ✅ **`warehouse_validation.py`**
-  - Added module docstring and function documentation
-  - Created `_get_wmsuite_settings()` helper function
-  - Improved warehouse filtering logic
-  - Better error messages and validation
-  - Cleaner code structure
 
 - ✅ **`auto_transit_validation.py`**
   - Added module documentation
@@ -99,9 +87,7 @@ warehousesuite/
 │   │   │   └── wmsuite_settings/          # Main settings doctype
 │   │   ├── overrides/                     # Validation modules
 │   │   │   ├── auto_transit_validation.py
-│   │   │   ├── submission_restriction.py
-│   │   │   ├── value_difference_validation.py
-│   │   │   └── warehouse_validation.py
+│   │   │   └── value_difference_validation.py
 │   │   └── page/                          # UI pages
 │   ├── hooks.py                           # App hooks and events
 │   ├── install.py                         # Installation script
@@ -113,7 +99,6 @@ warehousesuite/
 ## 🎯 Key Features
 
 ### **Warehouse Operations**
-- Restrict same warehouse transfers
 - Auto set transit for material transfers
 - Enable warehouse filtering and validation
 
@@ -121,11 +106,6 @@ warehousesuite/
 - Disallow value difference in stock entries
 - Maximum allowed value difference setting
 - Role-based override permissions
-
-### **Submission Control**
-- Restrict document submission
-- Role-based submission permissions
-- System Manager override access
 
 ### **Mobile Interface**
 - Enable mobile interface

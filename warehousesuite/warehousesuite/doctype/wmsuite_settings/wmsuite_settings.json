@@ -6,18 +6,12 @@
  "engine": "InnoDB",
  "field_order": [
   "warehouse_operations_section",
-  "restrict_same_warehouse",
   "auto_set_transit",
   "stock_validation_section",
   "disallow_value_difference",
   "max_value_difference",
   "override_roles",
   "submission_control_section",
-  "restrict_document_submission",
-  "submission_override_roles",
-  "mobile_interface_section",
-  "enable_mobile_interface",
-  "default_warehouse",
   "enable_barcode_scanning",
   "auto_refresh_interval"
  ],
@@ -26,13 +20,6 @@
    "fieldname": "warehouse_operations_section",
    "fieldtype": "Section Break",
    "label": "Warehouse Operations"
-  },
-  {
-   "fieldname": "restrict_same_warehouse",
-   "fieldtype": "Check",
-   "label": "Restrict Same Warehouse Transfers",
-   "default": 1,
-   "description": "Prevent stock entries between same warehouse"
   },
   {
    "fieldname": "auto_set_transit",
@@ -75,45 +62,10 @@
    "label": "Submission Control"
   },
   {
-   "fieldname": "restrict_document_submission",
-   "fieldtype": "Check",
-   "label": "Restrict Document Submission",
-   "default": 1,
-   "description": "Control who can submit warehouse documents"
-  },
-  {
-   "fieldname": "submission_override_roles",
-   "fieldtype": "Table MultiSelect",
-   "label": "Submission Override Roles",
-   "options": "Has Role",
-   "depends_on": "eval:doc.restrict_document_submission",
-   "description": "Roles with submission permissions"
-  },
-  {
-   "fieldname": "mobile_interface_section",
-   "fieldtype": "Section Break",
-   "label": "Mobile Interface"
-  },
-  {
-   "fieldname": "enable_mobile_interface",
-   "fieldtype": "Check",
-   "label": "Enable Mobile Interface",
-   "default": 1,
-   "description": "Enable mobile-optimized warehouse dashboard"
-  },
-  {
-   "fieldname": "default_warehouse",
-   "fieldtype": "Link",
-   "label": "Default Warehouse",
-   "options": "Warehouse",
-   "depends_on": "eval:doc.enable_mobile_interface"
-  },
-  {
    "fieldname": "enable_barcode_scanning",
    "fieldtype": "Check",
    "label": "Enable Barcode Scanning",
    "default": 1,
-   "depends_on": "eval:doc.enable_mobile_interface",
    "description": "Enable barcode scanning functionality"
   },
   {
@@ -121,7 +73,6 @@
    "fieldtype": "Int",
    "label": "Auto Refresh Interval (seconds)",
    "default": 30,
-   "depends_on": "eval:doc.enable_mobile_interface",
    "description": "Dashboard auto-refresh interval"
   }
  ],

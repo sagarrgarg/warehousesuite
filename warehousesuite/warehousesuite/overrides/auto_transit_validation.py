@@ -23,13 +23,19 @@ def auto_set_transit_for_material_transfer(doc, method):
     if not settings.get('auto_set_transit'):
         return
     
-    # Only apply to Material Transfer entries that are not outgoing stock entries
-    if (doc.stock_entry_type == "Material Transfer" and 
-        doc.purpose == "Material Transfer" and 
-        not doc.outgoing_stock_entry):
+    # Only apply to Material Transfer entries
+    if doc.stock_entry_type == "Material Transfer":
+        # Set add_to_transit to 1 for the main document
+        if hasattr(doc, 'add_to_transit'):
+            doc.add_to_transit = 1
         
-        # Set add_to_transit to 1
-        doc.add_to_transit = 1
+        # Also set it for each item in the stock entry
+        for item in doc.get("items", []):
+            if hasattr(item, 'add_to_transit'):
+                item.add_to_transit = 1
+            # Also handle the case where the field might be named differently
+            elif hasattr(item, 'add_to_transit_warehouse'):
+                item.add_to_transit_warehouse = 1
 
 
 def _get_wmsuite_settings():
@@ -39,7 +45,9 @@ def _get_wmsuite_settings():
         return {
             'auto_set_transit': getattr(settings_doc, 'auto_set_transit', 1)
         }
-    except:
+    except Exception as e:
+        # Log the error but don't break the functionality
+        frappe.log_error(f"Error getting WMSuite Settings: {str(e)}", "WMSuite Auto Transit")
         return {
             'auto_set_transit': 1
         } 
