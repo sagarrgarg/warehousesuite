@@ -4,9 +4,11 @@
  "creation": "2025-01-27 10:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": [
+   "field_order": [
   "warehouse_operations_section",
   "auto_set_transit",
+  "mobile_interface_section",
+  "mobile_grid_layout",
   "stock_validation_section",
   "disallow_value_difference",
   "max_value_difference",
@@ -27,6 +29,19 @@
    "label": "Auto Set Transit for Material Transfer",
    "default": 1,
    "description": "Automatically set transit warehouse for material transfers"
+  },
+  {
+   "fieldname": "mobile_interface_section",
+   "fieldtype": "Section Break",
+   "label": "Mobile Interface"
+  },
+  {
+   "fieldname": "mobile_grid_layout",
+   "fieldtype": "Select",
+   "label": "Mobile Grid Layout",
+   "options": "Small Grid\nTable Layout",
+   "default": "Small Grid",
+   "description": "Choose the layout for transfer receive grid on mobile devices"
   },
 
   {

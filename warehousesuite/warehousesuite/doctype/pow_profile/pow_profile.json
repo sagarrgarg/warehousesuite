@@ -70,7 +70,7 @@
    "fieldname": "allowed_operations",
    "fieldtype": "Table MultiSelect",
    "label": "Allowed Operations",
-   "options": "Stock Entry Purposes"
+   "options": "POW Allowed Operations"
   },
   {
    "fieldname": "applicable_users",
@@ -82,7 +82,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-22 00:10:15.115371",
+ "modified": "2025-07-23 01:05:25.033719",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Profile",
