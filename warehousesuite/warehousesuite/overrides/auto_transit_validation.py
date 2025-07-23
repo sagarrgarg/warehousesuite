@@ -9,6 +9,22 @@ import frappe
 from frappe import _
 
 
+@frappe.cache(ttl=300)
+def get_cached_wmsuite_settings():
+    """Get WMSuite Settings with caching to reduce database calls"""
+    try:
+        if not frappe.db.exists("WMSuite Settings"):
+            return {'auto_set_transit': 1}
+        
+        settings_doc = frappe.get_single("WMSuite Settings")
+        return {
+            'auto_set_transit': getattr(settings_doc, 'auto_set_transit', 1)
+        }
+    except Exception as e:
+        frappe.log_error(f"Error getting WMSuite Settings: {str(e)}", "WMSuite Auto Transit")
+        return {'auto_set_transit': 1}
+
+
 def auto_set_transit_for_material_transfer(doc, method):
     """
     Automatically set 'Add to Transit' to 1 for Material Transfer type Stock Entries
@@ -18,8 +34,8 @@ def auto_set_transit_for_material_transfer(doc, method):
         doc: The Stock Entry document
         method: The document method being called
     """
-    # Get WMSuite Settings
-    settings = _get_wmsuite_settings()
+    # Get WMSuite Settings (cached)
+    settings = get_cached_wmsuite_settings()
     if not settings.get('auto_set_transit'):
         return
     
@@ -35,19 +51,4 @@ def auto_set_transit_for_material_transfer(doc, method):
                 item.add_to_transit = 1
             # Also handle the case where the field might be named differently
             elif hasattr(item, 'add_to_transit_warehouse'):
-                item.add_to_transit_warehouse = 1
-
-
-def _get_wmsuite_settings():
-    """Get WMSuite Settings safely"""
-    try:
-        settings_doc = frappe.get_single("WMSuite Settings")
-        return {
-            'auto_set_transit': getattr(settings_doc, 'auto_set_transit', 1)
-        }
-    except Exception as e:
-        # Log the error but don't break the functionality
-        frappe.log_error(f"Error getting WMSuite Settings: {str(e)}", "WMSuite Auto Transit")
-        return {
-            'auto_set_transit': 1
-        } 
+                item.add_to_transit_warehouse = 1 
