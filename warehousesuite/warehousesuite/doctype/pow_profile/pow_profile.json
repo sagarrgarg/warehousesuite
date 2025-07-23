@@ -14,7 +14,15 @@
   "in_transit_warehouse",
   "target_warehouse",
   "section_break_tswu",
-  "allowed_operations",
+  "material_transfer",
+  "manufacturing",
+  "column_break_pcus",
+  "purchase_receipt",
+  "repack",
+  "column_break_lnbl",
+  "delivery_note",
+  "stock_count",
+  "section_break_isnk",
   "applicable_users"
  ],
  "fields": [
@@ -64,25 +72,68 @@
   },
   {
    "fieldname": "section_break_tswu",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "allowed_operations",
-   "fieldtype": "Table MultiSelect",
-   "label": "Allowed Operations",
-   "options": "POW Allowed Operations"
+   "fieldtype": "Section Break",
+   "label": "Allowed Operations"
   },
   {
    "fieldname": "applicable_users",
    "fieldtype": "Table",
    "label": "Applicable Users",
    "options": "POW Profile User"
+  },
+  {
+   "default": "0",
+   "fieldname": "material_transfer",
+   "fieldtype": "Check",
+   "label": "Material Transfer"
+  },
+  {
+   "default": "0",
+   "fieldname": "manufacturing",
+   "fieldtype": "Check",
+   "label": "BOM based Manufacturing"
+  },
+  {
+   "fieldname": "column_break_pcus",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "purchase_receipt",
+   "fieldtype": "Check",
+   "label": "Purchase Receipt"
+  },
+  {
+   "default": "0",
+   "fieldname": "repack",
+   "fieldtype": "Check",
+   "label": "Repack"
+  },
+  {
+   "fieldname": "column_break_lnbl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "delivery_note",
+   "fieldtype": "Check",
+   "label": "Delivery Note"
+  },
+  {
+   "default": "0",
+   "fieldname": "stock_count",
+   "fieldtype": "Check",
+   "label": "Stock Count"
+  },
+  {
+   "fieldname": "section_break_isnk",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-23 01:05:25.033719",
+ "modified": "2025-07-23 16:58:39.560754",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Profile",

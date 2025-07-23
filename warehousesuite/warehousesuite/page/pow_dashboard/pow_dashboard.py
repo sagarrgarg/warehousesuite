@@ -157,6 +157,20 @@ def get_pow_profile_warehouses(pow_profile):
     }
 
 @frappe.whitelist()
+def get_pow_profile_operations(pow_profile):
+    """Get allowed operations from POW profile"""
+    profile = frappe.get_doc("POW Profile", pow_profile)
+    
+    return {
+        "material_transfer": bool(profile.material_transfer),
+        "manufacturing": bool(profile.manufacturing),
+        "purchase_receipt": bool(profile.purchase_receipt),
+        "repack": bool(profile.repack),
+        "delivery_note": bool(profile.delivery_note),
+        "stock_count": bool(profile.stock_count)
+    }
+
+@frappe.whitelist()
 def get_items_for_dropdown():
     """Get items for dropdown with item_code:item_name format"""
     items = frappe.get_all(
@@ -478,6 +492,324 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         
     except Exception as e:
         frappe.logger().error(f"Error in receive_transfer_stock_entry: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 
+
+@frappe.whitelist()
+def create_pow_stock_count(warehouse, company, session_name=None):
+    """Create a new POW Stock Count"""
+    try:
+        # Create new POW Stock Count
+        stock_count = frappe.new_doc("POW Stock Count")
+        stock_count.company = company
+        stock_count.warehouse = warehouse
+        stock_count.status = "Draft"
+        
+        # Set POW Session ID if provided
+        if session_name:
+            stock_count.pow_session_id = session_name
+        
+        stock_count.insert()
+        
+        return {
+            "status": "success",
+            "stock_count": stock_count.name,
+            "message": f"Stock count created: {stock_count.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in create_pow_stock_count: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@frappe.whitelist()
+def get_pow_stock_counts(session_name=None, status=None):
+    """Get POW Stock Counts for the current user or session"""
+    try:
+        filters = {}
+        
+        if session_name:
+            filters["pow_session_id"] = session_name
+        else:
+            # Get counts for current user
+            filters["counted_by"] = frappe.session.user
+        
+        if status:
+            filters["status"] = status
+        
+        # Get all stock counts including submitted ones
+        stock_counts = frappe.get_all(
+            "POW Stock Count",
+            filters=filters,
+            fields=["name", "warehouse", "count_date", "status", "company", "docstatus"],
+            order_by="creation desc"
+        )
+        
+        # For submitted documents, get the actual status from database
+        for count in stock_counts:
+            if count.docstatus == 1:  # Submitted document
+                # Get the current status from database
+                actual_status = frappe.db.get_value("POW Stock Count", count.name, "status")
+                if actual_status:
+                    count.status = actual_status
+        
+        return stock_counts
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in get_pow_stock_counts: {str(e)}")
+        return [] 
+
+@frappe.whitelist()
+def get_warehouse_items_for_stock_count(warehouse):
+    """Get all items with stock in the specified warehouse for stock count"""
+    try:
+        if not warehouse:
+            return []
+        
+        # Get items with stock in the warehouse
+        items = frappe.db.sql("""
+            SELECT 
+                b.item_code,
+                i.item_name,
+                i.stock_uom,
+                b.actual_qty as current_qty
+            FROM `tabBin` b
+            INNER JOIN `tabItem` i ON b.item_code = i.name
+            WHERE b.warehouse = %s AND b.actual_qty > 0
+            ORDER BY i.item_name
+        """, warehouse, as_dict=True)
+        
+        return items
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in get_warehouse_items_for_stock_count: {str(e)}")
+        return [] 
+
+@frappe.whitelist()
+def create_pow_stock_count_with_items(warehouse, company, session_name, items_data):
+    """Create a new POW Stock Count with items"""
+    try:
+        items_data = frappe.parse_json(items_data)
+        
+        # Create new POW Stock Count
+        stock_count = frappe.new_doc("POW Stock Count")
+        stock_count.company = company
+        stock_count.warehouse = warehouse
+        stock_count.status = "Draft"
+        
+        # Set POW Session ID if provided
+        if session_name:
+            stock_count.pow_session_id = session_name
+        
+        # Add items
+        for item in items_data:
+            if item.get('physical_qty') is not None:  # Only add items with physical count
+                stock_count.append("items", {
+                    "item_code": item['item_code'],
+                    "item_name": item['item_name'],
+                    "warehouse": warehouse,
+                    "current_stock": item['current_qty'],
+                    "counted_qty": float(item['physical_qty']),
+                    "uom": item['stock_uom']
+                })
+        
+        stock_count.insert()
+        
+        return {
+            "status": "success",
+            "stock_count": stock_count.name,
+            "message": f"Stock count created with {len(items_data)} items: {stock_count.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in create_pow_stock_count_with_items: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 
+
+@frappe.whitelist()
+def check_existing_draft_stock_count(warehouse, session_name):
+    """Check if there's an existing draft stock count for this warehouse and session"""
+    try:
+        existing_draft = frappe.get_all(
+            "POW Stock Count",
+            filters={
+                "warehouse": warehouse,
+                "pow_session_id": session_name,
+                "status": "Draft",
+                "docstatus": 0  # Only look for unsaved/draft documents
+            },
+            fields=["name", "warehouse", "creation"],
+            limit=1
+        )
+        
+        return {
+            "has_draft": len(existing_draft) > 0,
+            "draft_info": existing_draft[0] if existing_draft else None
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in check_existing_draft_stock_count: {str(e)}")
+        return {"has_draft": False, "draft_info": None}
+
+@frappe.whitelist()
+def save_pow_stock_count_draft(warehouse, company, session_name, items_data):
+    """Save a POW Stock Count as draft"""
+    try:
+        items_data = frappe.parse_json(items_data)
+        
+        # Check for existing draft
+        existing_check = check_existing_draft_stock_count(warehouse, session_name)
+        if existing_check["has_draft"]:
+            # Update existing draft
+            stock_count = frappe.get_doc("POW Stock Count", existing_check["draft_info"]["name"])
+            # Clear existing items
+            stock_count.items = []
+        else:
+            # Create new draft
+            stock_count = frappe.new_doc("POW Stock Count")
+            stock_count.company = company
+            stock_count.warehouse = warehouse
+            stock_count.status = "Draft"
+            
+            # Set POW Session ID if provided
+            if session_name:
+                stock_count.pow_session_id = session_name
+        
+        # Add items
+        for item in items_data:
+            stock_count.append("items", {
+                "item_code": item['item_code'],
+                "item_name": item['item_name'],
+                "warehouse": warehouse,
+                "current_stock": item['current_qty'],
+                "counted_qty": float(item['physical_qty']),
+                "uom": item['stock_uom']
+            })
+        
+        # Save as draft (don't submit) - this will have docstatus = 0
+        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during save
+        stock_count.save()
+        
+        return {
+            "status": "success",
+            "stock_count": stock_count.name,
+            "message": f"Stock count saved as draft: {stock_count.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in save_pow_stock_count_draft: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+@frappe.whitelist()
+def create_and_submit_pow_stock_count(warehouse, company, session_name, items_data):
+    """Create and submit a new POW Stock Count with items"""
+    try:
+        items_data = frappe.parse_json(items_data)
+        
+        # Check for existing draft and delete it if exists
+        existing_check = check_existing_draft_stock_count(warehouse, session_name)
+        if existing_check["has_draft"]:
+            try:
+                frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
+                frappe.db.commit()  # Ensure deletion is committed
+            except Exception as e:
+                frappe.logger().warning(f"Could not delete existing draft: {str(e)}")
+        
+        # Create new POW Stock Count
+        stock_count = frappe.new_doc("POW Stock Count")
+        stock_count.company = company
+        stock_count.warehouse = warehouse
+        stock_count.status = "Draft"  # Start as draft, will be updated on submit
+        
+        # Set POW Session ID if provided
+        if session_name:
+            stock_count.pow_session_id = session_name
+        
+        # Add items (all items for complete record)
+        for item in items_data:
+            stock_count.append("items", {
+                "item_code": item['item_code'],
+                "item_name": item['item_name'],
+                "warehouse": warehouse,
+                "current_stock": item['current_qty'],
+                "counted_qty": float(item['physical_qty']),
+                "uom": item['stock_uom']
+            })
+        
+        # Insert and submit the stock count
+        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
+        stock_count.insert()
+        stock_count.submit()  # This will trigger the on_submit method and set status to "Submitted"
+        
+        # Refresh to get updated status
+        stock_count.reload()
+        
+        # Count items with differences for the message
+        items_with_differences = [item for item in items_data if abs(item.get('difference', 0)) > 0.001]
+        
+        return {
+            "status": "success",
+            "stock_count": stock_count.name,
+            "message": f"Stock count submitted with {len(items_with_differences)} items having differences: {stock_count.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in create_and_submit_pow_stock_count: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 
+
+@frappe.whitelist()
+def create_stock_match_entry(warehouse, company, session_name, items_count):
+    """Create a POW Stock Count entry for when all quantities match (no differences)"""
+    try:
+        # Check for existing draft and delete it if exists
+        existing_check = check_existing_draft_stock_count(warehouse, session_name)
+        if existing_check["has_draft"]:
+            try:
+                frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
+                frappe.db.commit()  # Ensure deletion is committed
+            except Exception as e:
+                frappe.logger().warning(f"Could not delete existing draft: {str(e)}")
+        
+        # Create new POW Stock Count for stock match
+        stock_count = frappe.new_doc("POW Stock Count")
+        stock_count.company = company
+        stock_count.warehouse = warehouse
+        stock_count.status = "Submitted"  # Auto-submit since no differences
+        stock_count.count_date = frappe.utils.now_datetime()
+        stock_count.counted_by = frappe.session.user
+        
+        # Add a note about the stock match
+        stock_count.remarks = f"Stock count completed for {items_count} items. All physical quantities match current stock levels. No discrepancies found."
+        
+        # Set POW Session ID if provided
+        if session_name:
+            stock_count.pow_session_id = session_name
+        
+        # Insert and submit the stock count
+        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
+        stock_count.insert()
+        stock_count.submit()  # Submit immediately since submitted
+        
+        return {
+            "status": "success",
+            "stock_count": stock_count.name,
+            "message": f"Stock verification completed: All {items_count} items match. Entry created: {stock_count.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in create_stock_match_entry: {str(e)}")
         return {
             "status": "error",
             "message": str(e)

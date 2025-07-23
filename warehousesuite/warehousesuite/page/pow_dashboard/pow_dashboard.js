@@ -104,6 +104,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             .btn-transfer { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); }
             .btn-transfer-receive { background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); }
             .btn-stock-count { background: linear-gradient(135deg, #607D8B 0%, #455A64 100%); }
+            .btn-manufacturing { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+            .btn-manufacturing:hover { background: linear-gradient(135deg, #7d3c98, #8e44ad); }
+            .btn-repack { background: linear-gradient(135deg, #e67e22, #f39c12); }
+            .btn-repack:hover { background: linear-gradient(135deg, #d35400, #e67e22); }
             .btn-item-inquiry { background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); }
             .btn-bin-inquiry { background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%); }
             .btn-picklist { background: linear-gradient(135deg, #795548 0%, #5D4037 100%); }
@@ -1102,6 +1106,579 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     font-size: 1rem;
                 }
             }
+            
+            /* Stock Count Modal Styles */
+            .stock-count-section {
+                margin-bottom: 30px;
+                padding: 20px;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                background: #fafafa;
+            }
+            
+            .stock-count-section h4 {
+                margin: 0 0 15px 0;
+                color: #333;
+                font-size: 1.1rem;
+            }
+            
+            .stock-count-list {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            
+            .stock-count-item {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px;
+                margin-bottom: 10px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .count-info {
+                flex: 1;
+            }
+            
+            .count-status {
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                margin: 0 15px;
+            }
+            
+            .status-draft { background: #e3f2fd; color: #1976d2; }
+            .status-submitted { background: #e8f5e8; color: #388e3c; }
+            .status-converted { background: #f3e5f5; color: #7b1fa2; }
+            
+            .count-actions button {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 4px;
+                background: #2196F3;
+                color: white;
+                cursor: pointer;
+                font-size: 0.8rem;
+            }
+            
+            .count-actions button:hover {
+                background: #1976D2;
+            }
+            
+            /* Stock Count Table Styles */
+            .table-responsive {
+                overflow-x: auto;
+                margin: 15px 0;
+            }
+            
+            .table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.9rem;
+            }
+            
+            .table th {
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                padding: 10px;
+                text-align: left;
+                font-weight: 600;
+                color: #495057;
+            }
+            
+            .table td {
+                border: 1px solid #dee2e6;
+                padding: 8px 10px;
+                vertical-align: middle;
+            }
+            
+            .table tbody tr:hover {
+                background-color: #f8f9fa;
+            }
+            
+            .physical-qty-input {
+                width: 80px;
+                padding: 4px 8px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                font-size: 0.9rem;
+            }
+            
+            .physical-qty-input:focus {
+                outline: none;
+                border-color: #80bdff;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            }
+            
+            .text-center {
+                text-align: center;
+            }
+            
+            .text-danger {
+                color: #dc3545;
+            }
+            
+            /* Mobile responsive table */
+            @media (max-width: 768px) {
+                .table-responsive {
+                    font-size: 0.8rem;
+                }
+                
+                .table th,
+                .table td {
+                    padding: 6px 8px;
+                }
+                
+                .physical-qty-input {
+                    width: 60px;
+                    font-size: 0.8rem;
+                }
+            }
+            
+            /* Confirmation Modal Styles */
+            .table-success {
+                background-color: #d4edda !important;
+                color: #155724;
+            }
+            
+            .table-danger {
+                background-color: #f8d7da !important;
+                color: #721c24;
+            }
+            
+            .alert {
+                padding: 15px;
+                margin-bottom: 20px;
+                border: 1px solid transparent;
+                border-radius: 4px;
+            }
+            
+            .alert-info {
+                color: #31708f;
+                background-color: #d9edf7;
+                border-color: #bce8f1;
+            }
+            
+            .alert-warning {
+                color: #8a6d3b;
+                background-color: #fcf8e3;
+                border-color: #faebcc;
+            }
+            
+            .btn-save-draft {
+                background: linear-gradient(135deg, #6c757d, #5a6268);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                margin-right: 10px;
+            }
+            
+            .btn-save-draft:hover {
+                background: linear-gradient(135deg, #5a6268, #495057);
+            }
+            
+            /* Mobile-Friendly Styles for Stock Count */
+            @media (max-width: 768px) {
+                .transfer-modal {
+                    padding: 0 !important;
+                }
+                
+                .transfer-modal-content {
+                    margin: 0 !important;
+                    width: 100vw !important;
+                    max-width: 100vw !important;
+                    height: 100vh !important;
+                    max-height: 100vh !important;
+                    border-radius: 0 !important;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .transfer-modal-header {
+                    padding: 15px !important;
+                    flex-wrap: wrap;
+                }
+                
+                .transfer-modal-header h3 {
+                    font-size: 1.2rem !important;
+                    margin-bottom: 10px;
+                    word-break: break-word;
+                }
+                
+                .close-btn {
+                    min-width: 44px !important;
+                    min-height: 44px !important;
+                    font-size: 1.5rem !important;
+                }
+                
+                .stock-count-section {
+                    padding: 15px !important;
+                    flex: 1;
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+                
+                .transfer-modal-content > .stock-count-section:first-of-type {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                #warehouseItemsSection {
+                    flex: 1 !important;
+                    overflow-y: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                }
+                
+                .form-row {
+                    flex-direction: column !important;
+                    gap: 15px !important;
+                }
+                
+                .form-group {
+                    margin-bottom: 20px !important;
+                }
+                
+                .form-group label {
+                    font-size: 1rem !important;
+                    margin-bottom: 8px !important;
+                    display: block;
+                }
+                
+                .form-group select,
+                .form-group input {
+                    padding: 12px !important;
+                    font-size: 16px !important; /* Prevents zoom on iOS */
+                    border-radius: 8px !important;
+                    border: 2px solid #ddd !important;
+                    min-height: 44px !important;
+                }
+                
+                .form-group select:focus,
+                .form-group input:focus {
+                    border-color: #007bff !important;
+                    box-shadow: 0 0 0 3px rgba(0,123,255,0.25) !important;
+                }
+                
+                                 /* Mobile-friendly table */
+                 .table-responsive {
+                     border: none !important;
+                     box-shadow: none !important;
+                     overflow-x: hidden !important;
+                     width: 100% !important;
+                 }
+                
+                .mobile-table-wrapper {
+                    display: block !important;
+                }
+                
+                                 .mobile-table-wrapper table {
+                     display: block !important;
+                     overflow-x: hidden !important;
+                     white-space: normal !important;
+                     width: 100% !important;
+                 }
+                
+                .mobile-table-wrapper thead {
+                    display: none !important; /* Hide traditional headers */
+                }
+                
+                .mobile-table-wrapper tbody {
+                    display: block !important;
+                }
+                
+                .mobile-table-wrapper tr {
+                    display: block !important;
+                    border: 2px solid #f0f0f0 !important;
+                    border-radius: 8px !important;
+                    margin-bottom: 15px !important;
+                    padding: 15px !important;
+                    background: white !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+                }
+                
+                .mobile-table-wrapper td {
+                    display: flex !important;
+                    justify-content: space-between !important;
+                    align-items: center !important;
+                    padding: 8px 0 !important;
+                    border: none !important;
+                    border-bottom: 1px solid #f0f0f0 !important;
+                    text-align: left !important;
+                }
+                
+                .mobile-table-wrapper td:last-child {
+                    border-bottom: none !important;
+                }
+                
+                .mobile-table-wrapper td:before {
+                    content: attr(data-label) ": ";
+                    font-weight: 600 !important;
+                    color: #666 !important;
+                    min-width: 120px !important;
+                    flex-shrink: 0;
+                }
+                
+                .mobile-table-wrapper                  .physical-qty-input {
+                     max-width: 120px !important;
+                     margin-left: auto !important;
+                 }
+                 
+                 .physical-qty-input.touching {
+                     background-color: #e3f2fd !important;
+                     border-color: #2196f3 !important;
+                 }
+                
+                /* Mobile action buttons */
+                .transfer-actions {
+                    flex-direction: column !important;
+                    gap: 12px !important;
+                    padding: 20px 15px !important;
+                }
+                
+                .transfer-actions button {
+                    width: 100% !important;
+                    padding: 15px !important;
+                    font-size: 1rem !important;
+                    min-height: 50px !important;
+                    border-radius: 8px !important;
+                    font-weight: 600 !important;
+                }
+                
+                .btn-move-stock {
+                    order: 1 !important; /* Primary action first */
+                }
+                
+                .btn-save-draft {
+                    order: 2 !important;
+                }
+                
+                .btn-cancel {
+                    order: 3 !important;
+                }
+                
+                /* Stock count items list */
+                .stock-count-item {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                    padding: 15px !important;
+                    border-radius: 8px !important;
+                }
+                
+                .count-info {
+                    margin-bottom: 10px !important;
+                }
+                
+                .count-status {
+                    align-self: flex-start !important;
+                    margin-bottom: 10px !important;
+                    padding: 8px 12px !important;
+                    border-radius: 6px !important;
+                }
+                
+                .count-actions {
+                    width: 100% !important;
+                }
+                
+                .count-actions .btn-view {
+                    width: 100% !important;
+                    padding: 12px !important;
+                    font-size: 1rem !important;
+                    min-height: 44px !important;
+                }
+                
+                /* Confirmation modal mobile styles */
+                #stockCountConfirmationModal .transfer-modal-content,
+                #stockMatchConfirmationModal .transfer-modal-content {
+                    width: 100vw !important;
+                    max-width: 100vw !important;
+                    height: 100vh !important;
+                    max-height: 100vh !important;
+                    margin: 0 !important;
+                    border-radius: 0 !important;
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                #stockCountConfirmationModal .table-responsive {
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch !important;
+                }
+                
+                #stockCountConfirmationModal table {
+                    min-width: 600px !important; /* Ensure table doesn't get too cramped */
+                    font-size: 0.9rem !important;
+                }
+                
+                #stockCountConfirmationModal th,
+                #stockCountConfirmationModal td {
+                    padding: 8px 6px !important;
+                    white-space: nowrap !important;
+                }
+                
+                /* Alert styling for mobile */
+                .alert {
+                    padding: 15px !important;
+                    border-radius: 8px !important;
+                    font-size: 0.95rem !important;
+                }
+                
+                /* Draft notice styling */
+                .draft-notice {
+                    background: #fff3cd !important;
+                    border: 2px solid #ffeaa7 !important;
+                    border-radius: 8px !important;
+                    padding: 15px !important;
+                    margin-bottom: 20px !important;
+                    color: #856404 !important;
+                }
+                
+                .draft-notice strong {
+                    color: #533f03 !important;
+                }
+                
+                /* Loading states */
+                .loading-text {
+                    text-align: center !important;
+                    padding: 40px 20px !important;
+                    color: #666 !important;
+                    font-size: 1rem !important;
+                }
+                
+                /* Touch-friendly spacing */
+                .stock-count-section h4,
+                .stock-count-section h5 {
+                    margin-top: 25px !important;
+                    margin-bottom: 15px !important;
+                    font-size: 1.1rem !important;
+                }
+                
+                /* Improve readability */
+                p, .alert {
+                    line-height: 1.6 !important;
+                }
+                
+                /* Delete draft button */
+                .btn-delete-draft {
+                    background-color: #dc3545 !important;
+                    color: white !important;
+                    border: 2px solid #dc3545 !important;
+                    width: 100% !important;
+                    padding: 12px !important;
+                    font-size: 1rem !important;
+                    min-height: 44px !important;
+                    border-radius: 8px !important;
+                    margin-top: 10px !important;
+                }
+                
+                                 .btn-delete-draft:hover {
+                     background-color: #c82333 !important;
+                     border-color: #bd2130 !important;
+                 }
+                 
+                 /* Scroll to top button */
+                 .scroll-top-btn {
+                     position: fixed !important;
+                     bottom: 80px !important;
+                     right: 20px !important;
+                     width: 50px !important;
+                     height: 50px !important;
+                     background: #007bff !important;
+                     color: white !important;
+                     border: none !important;
+                     border-radius: 50% !important;
+                     font-size: 1.2rem !important;
+                     box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
+                     z-index: 1001 !important;
+                     cursor: pointer !important;
+                 }
+                 
+                 .scroll-top-btn:hover {
+                     background: #0056b3 !important;
+                     transform: scale(1.1) !important;
+                 }
+                 
+                 /* Stock match confirmation styles */
+                 .stock-match-details ul {
+                     padding-left: 0 !important;
+                     list-style: none !important;
+                 }
+                 
+                 .stock-match-details li {
+                     padding: 8px 0 !important;
+                     font-size: 1rem !important;
+                     display: flex !important;
+                     align-items: center !important;
+                 }
+                 
+                 .stock-match-details li i {
+                     margin-right: 10px !important;
+                     width: 20px !important;
+                     text-align: center !important;
+                 }
+                 
+                 .text-success {
+                     color: #28a745 !important;
+                 }
+             }
+            
+            /* Tablet styles (768px - 1024px) */
+            @media (min-width: 768px) and (max-width: 1024px) {
+                .transfer-modal-content {
+                    max-width: 90vw !important;
+                    margin: 30px auto !important;
+                }
+                
+                .mobile-table-wrapper table {
+                    font-size: 0.9rem !important;
+                }
+                
+                .transfer-actions {
+                    flex-direction: row !important;
+                    justify-content: space-between !important;
+                }
+                
+                .transfer-actions button {
+                    flex: 1 !important;
+                    margin: 0 5px !important;
+                    max-width: 200px !important;
+                }
+            }
+            
+            /* Accessibility improvements */
+            @media (prefers-reduced-motion: reduce) {
+                .transfer-modal,
+                .transfer-modal-content {
+                    transition: none !important;
+                }
+            }
+            
+            /* High contrast mode support */
+            @media (prefers-contrast: high) {
+                .transfer-modal-content {
+                    border: 3px solid #000 !important;
+                }
+                
+                .form-group input,
+                .form-group select {
+                    border: 2px solid #000 !important;
+                }
+                
+                .btn-move-stock,
+                .btn-save-draft,
+                .btn-cancel {
+                    border: 2px solid #000 !important;
+                }
+            }
         </style>
     `;
     
@@ -1115,8 +1692,119 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     }
 
     // Helper to render action buttons
-    function render_action_buttons(session_name, profile_name, opening_time, default_warehouse = null) {
+    async function render_action_buttons(session_name, profile_name, opening_time, default_warehouse = null) {
         const formatted_time = opening_time ? new Date(opening_time).toLocaleString() : new Date().toLocaleString();
+        
+        // Get operation permissions from POW profile
+        let operations = {};
+        try {
+            const permissions = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_operations', {
+                pow_profile: profile_name
+            });
+            operations = permissions.message || {};
+        } catch (error) {
+            console.error('Error getting operation permissions:', error);
+            // If we can't get permissions, show all buttons (fallback)
+            operations = {
+                material_transfer: true,
+                manufacturing: true,
+                purchase_receipt: true,
+                repack: true,
+                delivery_note: true,
+                stock_count: true
+            };
+        }
+        
+        // Build action buttons HTML based on permissions
+        let actionButtonsHTML = '';
+        
+        // Purchase Receipt button
+        if (operations.purchase_receipt) {
+            actionButtonsHTML += `
+                    <button class="pow-action-btn btn-receive" onclick="frappe.set_route('purchase-receipt')">
+                        <i class="fa fa-download"></i>
+                        <span class="btn-text">Receive<br>(PR)</span>
+                    </button>
+            `;
+        }
+                    
+        // Delivery Note button
+        if (operations.delivery_note) {
+            actionButtonsHTML += `
+                    <button class="pow-action-btn btn-delivery" onclick="frappe.set_route('delivery-note')">
+                        <i class="fa fa-truck"></i>
+                        <span class="btn-text">Delivery<br>(DN)</span>
+                    </button>
+            `;
+        }
+                    
+        // Material Transfer Send button
+        if (operations.material_transfer) {
+            actionButtonsHTML += `
+                    <button class="pow-action-btn btn-transfer" onclick="openTransferModal('${session_name}', '${profile_name}')">
+                        <i class="fa fa-arrow-up"></i>
+                        <span class="btn-text">Transfer<br>Send</span>
+                    </button>
+            `;
+        }
+                    
+        // Material Transfer Receive button (always show if transfer is allowed)
+        if (operations.material_transfer) {
+            actionButtonsHTML += `
+                    <button class="pow-action-btn btn-transfer-receive" onclick="openTransferReceiveModal('${session_name}', '${profile_name}')">
+                        <i class="fa fa-arrow-down"></i>
+                        <span class="btn-text">Transfer<br>Receive</span>
+                    </button>
+            `;
+        }
+                    
+        // Stock Count button
+        if (operations.stock_count) {
+            actionButtonsHTML += `
+                <button class="pow-action-btn btn-stock-count" onclick="openStockCountModal('${session_name}', '${profile_name}')">
+                        <i class="fa fa-calculator"></i>
+                        <span class="btn-text">Stock<br>Count</span>
+                    </button>
+            `;
+        }
+        
+        // Manufacturing button
+        if (operations.manufacturing) {
+            actionButtonsHTML += `
+                <button class="pow-action-btn btn-manufacturing" onclick="frappe.set_route('work-order')">
+                    <i class="fa fa-cogs"></i>
+                    <span class="btn-text">Manufacturing<br>(WO)</span>
+                </button>
+            `;
+        }
+        
+        // Repack button
+        if (operations.repack) {
+            actionButtonsHTML += `
+                <button class="pow-action-btn btn-repack" onclick="frappe.set_route('stock-entry')">
+                    <i class="fa fa-refresh"></i>
+                    <span class="btn-text">Repack<br>(SE)</span>
+                </button>
+            `;
+        }
+        
+        // Always show inquiry buttons (not controlled by permissions)
+        actionButtonsHTML += `
+                    <button class="pow-action-btn btn-item-inquiry" onclick="frappe.set_route('item')">
+                        <i class="fa fa-search"></i>
+                        <span class="btn-text">Item<br>Inquiry</span>
+                    </button>
+                    
+                    <button class="pow-action-btn btn-bin-inquiry" onclick="frappe.set_route('bin')">
+                        <i class="fa fa-cube"></i>
+                        <span class="btn-text">Bin<br>Inquiry</span>
+                    </button>
+                    
+                    <button class="pow-action-btn btn-picklist" onclick="frappe.set_route('pick-list')">
+                        <i class="fa fa-list"></i>
+                        <span class="btn-text">Pick<br>List</span>
+            </button>
+        `;
         
         render_content(`
             <div class="pow-dashboard-container">
@@ -1125,7 +1813,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         <h3><i class="fa fa-play-circle"></i> Active Session</h3>
                         <button class="close-shift-btn" onclick="closeShift('${session_name}')" title="Close Shift">
                             <i class="fa fa-sign-out"></i>
-                        </button>
+                    </button>
                     </div>
                     <p><strong>Session:</strong> ${session_name}</p>
                     <p><strong>Profile:</strong> ${profile_name}</p>
@@ -1141,45 +1829,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 </div>
                 
                 <div class="pow-actions-grid">
-                    <button class="pow-action-btn btn-receive" onclick="frappe.set_route('purchase-receipt')">
-                        <i class="fa fa-download"></i>
-                        <span class="btn-text">Receive<br>(PR)</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-delivery" onclick="frappe.set_route('delivery-note')">
-                        <i class="fa fa-truck"></i>
-                        <span class="btn-text">Delivery<br>(DN)</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-transfer" onclick="openTransferModal('${session_name}', '${profile_name}')">
-                        <i class="fa fa-arrow-up"></i>
-                        <span class="btn-text">Transfer<br>Send</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-transfer-receive" onclick="openTransferReceiveModal('${session_name}', '${profile_name}')">
-                        <i class="fa fa-arrow-down"></i>
-                        <span class="btn-text">Transfer<br>Receive</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-stock-count" onclick="frappe.set_route('stock-reconciliation')">
-                        <i class="fa fa-calculator"></i>
-                        <span class="btn-text">Stock<br>Count</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-item-inquiry" onclick="frappe.set_route('item')">
-                        <i class="fa fa-search"></i>
-                        <span class="btn-text">Item<br>Inquiry</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-bin-inquiry" onclick="frappe.set_route('bin')">
-                        <i class="fa fa-cube"></i>
-                        <span class="btn-text">Bin<br>Inquiry</span>
-                    </button>
-                    
-                    <button class="pow-action-btn btn-picklist" onclick="frappe.set_route('pick-list')">
-                        <i class="fa fa-list"></i>
-                        <span class="btn-text">Pick<br>List</span>
-                    </button>
+                    ${actionButtonsHTML}
                 </div>
             </div>
         `);
@@ -1920,13 +2570,664 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         $('.stat-item').html(`<i class="fa fa-file-text"></i> ${visibleCount} Transfers`);
     }
 
+    // Stock Count Modal Functions
+    window.openStockCountModal = async function(session_name, profile_name) {
+        try {
+            // Get warehouses from POW profile
+            const warehouses = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_warehouses', {
+                pow_profile: profile_name
+            });
+            const warehouse_data = warehouses.message;
+            
+            // Get current default warehouse
+            const defaultWarehouse = $('#defaultWarehouse').val();
+            
+            // Get existing stock counts for this session
+            const existingCounts = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_stock_counts', {
+                session_name: session_name
+            });
+            const stock_counts = existingCounts.message || [];
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div class="transfer-modal" id="stockCountModal">
+                    <div class="transfer-modal-content" style="max-width: 1200px;">
+                        <div class="transfer-modal-header">
+                            <h3><i class="fa fa-calculator"></i> Stock Count Management</h3>
+                            <button class="close-btn" onclick="closeStockCountModal()">&times;</button>
+                        </div>
+                        
+                        <div class="stock-count-section">
+                            <h4><i class="fa fa-plus"></i> Create New Stock Count</h4>
+                            <form id="stockCountForm" class="transfer-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Warehouse *</label>
+                                        <select id="stockCountWarehouse" required onchange="loadWarehouseItems()">
+                                            <option value="">Select Warehouse</option>
+                                            ${warehouse_data.source_warehouses.map(w => 
+                                                `<option value="${w.warehouse}" ${defaultWarehouse === w.warehouse ? 'selected' : ''}>${w.warehouse_name}</option>`
+                                            ).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div id="warehouseItemsSection" style="display: none;">
+                                    <h5>Items in Warehouse</h5>
+                                    <div class="table-responsive mobile-table-wrapper">
+                                        <table class="table table-bordered" id="warehouseItemsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Item Code</th>
+                                                    <th>Item Name</th>
+                                                    <th>Current Qty</th>
+                                                    <th>UOM</th>
+                                                    <th>Physical Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="warehouseItemsTableBody">
+                                                <!-- Items will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                                <div class="transfer-actions">
+                                    <button type="submit" class="btn-move-stock">
+                                        <i class="fa fa-check"></i> Confirm Stock Count
+                                    </button>
+                                    <button type="button" class="btn-save-draft" onclick="saveDraftStockCount()">
+                                        <i class="fa fa-save"></i> Save Draft
+                                    </button>
+                                    <button type="button" class="btn-cancel" onclick="closeStockCountModal()">
+                                        <i class="fa fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        ${stock_counts.length > 0 ? `
+                            <div class="stock-count-section">
+                                <h4><i class="fa fa-list"></i> Existing Stock Counts</h4>
+                                <div class="stock-count-list">
+                                    ${stock_counts.map(count => `
+                                        <div class="stock-count-item">
+                                            <div class="count-info">
+                                                <strong>${count.name}</strong><br>
+                                                <small>Warehouse: ${count.warehouse}</small><br>
+                                                <small>Date: ${count.count_date ? new Date(count.count_date).toLocaleDateString() : 'N/A'}</small>
+                                            </div>
+                                            <div class="count-status status-${count.status.toLowerCase().replace(' ', '-')}">
+                                                ${count.status}
+                                            </div>
+                                            <div class="count-actions">
+                                                <button class="btn-view" onclick="frappe.set_route('Form', 'POW Stock Count', '${count.name}')">
+                                                    <i class="fa fa-eye"></i> View
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(modalHTML);
+            setupStockCountModalEvents();
+            
+            // Load items if warehouse is pre-selected
+            if (defaultWarehouse) {
+                loadWarehouseItems();
+            }
+            
+        } catch (error) {
+            console.error('Error opening stock count modal:', error);
+            frappe.msgprint('Error opening stock count modal: ' + error.message);
+        }
+    };
+    
+    window.loadWarehouseItems = async function() {
+        const warehouse = $('#stockCountWarehouse').val();
+        const itemsSection = $('#warehouseItemsSection');
+        const tableBody = $('#warehouseItemsTableBody');
+        
+        if (!warehouse) {
+            itemsSection.hide();
+            return;
+        }
+        
+        try {
+            // Show loading with mobile-friendly indicator
+            itemsSection.show();
+            tableBody.html(`
+                <tr>
+                    <td colspan="5" class="loading-text">
+                        <i class="fa fa-spinner fa-spin"></i><br>
+                        Loading items...
+                    </td>
+                </tr>
+            `);
+            
+            // Get active session for checking existing drafts
+            const activeSession = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_active_pow_session');
+            const session = activeSession.message;
+            
+            if (!session) {
+                tableBody.html(`
+                    <tr>
+                        <td colspan="5" class="loading-text" style="color: #dc3545;">
+                            <i class="fa fa-exclamation-triangle"></i><br>
+                            No active session found
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+            
+            // Check for existing draft
+            const draftCheck = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.check_existing_draft_stock_count', {
+                warehouse: warehouse,
+                session_name: session.name
+            });
+            
+            let existingDraftData = null;
+            if (draftCheck.message && draftCheck.message.has_draft) {
+                // Get draft data
+                const draftData = await frappe.call('frappe.client.get', {
+                    doctype: 'POW Stock Count',
+                    name: draftCheck.message.draft_info.name
+                });
+                existingDraftData = draftData.message;
+                
+                // Show draft notice with mobile-friendly styling
+                $('#draftNotice').remove(); // Remove any existing notice
+                $('#warehouseItemsSection').prepend(`
+                    <div class="draft-notice" id="draftNotice">
+                        <strong>Notice:</strong> Loading existing draft: ${existingDraftData.name}<br>
+                        <small>You can modify quantities and save changes, or delete this draft to start fresh.</small>
+                        <button type="button" class="btn-delete-draft" onclick="deleteDraft('${existingDraftData.name}')">
+                            <i class="fa fa-trash"></i> Delete Draft
+                        </button>
+                    </div>
+                `);
+            }
+            
+            // Get items from warehouse
+            const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_warehouse_items_for_stock_count', {
+                warehouse: warehouse
+            });
+            
+            const items = result.message || [];
+            
+            if (items.length === 0) {
+                tableBody.html(`
+                    <tr>
+                        <td colspan="5" class="loading-text" style="color: #6c757d;">
+                            <i class="fa fa-info-circle"></i><br>
+                            No items found in this warehouse
+                        </td>
+                    </tr>
+                `);
+                return;
+            }
+            
+            // Build table rows with draft data if available
+            const tableRows = items.map(item => {
+                let physicalQty = item.current_qty; // Default to current qty
+                
+                // If we have draft data, use the counted qty from draft
+                if (existingDraftData && existingDraftData.items) {
+                    const draftItem = existingDraftData.items.find(d => d.item_code === item.item_code);
+                    if (draftItem) {
+                        physicalQty = draftItem.counted_qty;
+                    }
+                }
+                
+                return `
+                    <tr data-item-code="${item.item_code}">
+                        <td data-label="Item Code">${item.item_code}</td>
+                        <td data-label="Item Name">${item.item_name}</td>
+                        <td data-label="Current Qty">${item.current_qty}</td>
+                        <td data-label="UOM">${item.stock_uom}</td>
+                        <td data-label="Physical Qty">
+                            <input type="number" 
+                                   class="form-control physical-qty-input" 
+                                   value="${physicalQty}" 
+                                   min="0" 
+                                   step="0.001"
+                                   data-item-code="${item.item_code}"
+                                   data-current-qty="${item.current_qty}"
+                                   data-item-name="${item.item_name}"
+                                   data-stock-uom="${item.stock_uom}"
+                                   placeholder="Enter physical qty">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            tableBody.html(tableRows);
+            
+            // Add scroll-to-top button for mobile if many items
+            if (items.length > 10) {
+                addScrollToTopButton();
+            }
+            
+            // Reinitialize mobile event handlers for new inputs
+            setupPhysicalQtyInputHandlers();
+            
+        } catch (error) {
+            console.error('Error loading warehouse items:', error);
+            tableBody.html(`
+                <tr>
+                    <td colspan="5" class="loading-text" style="color: #dc3545;">
+                        <i class="fa fa-exclamation-triangle"></i><br>
+                        Error loading items: ${error.message}
+                    </td>
+                </tr>
+            `);
+        }
+    };
+    
+    function addScrollToTopButton() {
+        // Remove existing button
+        $('#stockCountScrollTop').remove();
+        
+        // Add scroll to top button for mobile
+        $('#stockCountModal .transfer-modal-content').append(`
+            <button id="stockCountScrollTop" class="scroll-top-btn" onclick="scrollToTopOfModal()" style="display: none;">
+                <i class="fa fa-arrow-up"></i>
+            </button>
+        `);
+        
+        // Show/hide scroll button based on scroll position
+        $('#stockCountModal .transfer-modal-content').off('scroll.scrollTop').on('scroll.scrollTop', function() {
+            const scrollTop = $(this).scrollTop();
+            if (scrollTop > 200) {
+                $('#stockCountScrollTop').fadeIn();
+            } else {
+                $('#stockCountScrollTop').fadeOut();
+            }
+        });
+    }
+    
+    window.scrollToTopOfModal = function() {
+        $('#stockCountModal .transfer-modal-content').animate({ scrollTop: 0 }, 300);
+    };
+    
+    function setupPhysicalQtyInputHandlers() {
+        // Auto-focus on physical quantity inputs for better mobile experience
+        $('.physical-qty-input').off('focus.mobileFocus').on('focus.mobileFocus', function() {
+            // Slight delay to ensure mobile keyboard is up
+            setTimeout(() => {
+                if ($(this).is(':focus')) {
+                    $(this)[0].select(); // Select all text for easy replacement
+                }
+            }, 100);
+        });
+        
+        // Add touch feedback for better mobile interaction
+        $('.physical-qty-input').off('touchstart.feedback touchend.feedback')
+            .on('touchstart.feedback', function() {
+                $(this).addClass('touching');
+            })
+            .on('touchend.feedback', function() {
+                setTimeout(() => $(this).removeClass('touching'), 150);
+            });
+        
+        // Mobile-friendly number input validation
+        $('.physical-qty-input').off('input.validation').on('input.validation', function() {
+            let value = $(this).val();
+            
+            // Remove any non-numeric characters except decimal point
+            value = value.replace(/[^0-9.]/g, '');
+            
+            // Ensure only one decimal point
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // Limit to 3 decimal places
+            if (parts[1] && parts[1].length > 3) {
+                value = parts[0] + '.' + parts[1].substring(0, 3);
+            }
+            
+            $(this).val(value);
+        });
+    }
+    
+    window.closeStockCountModal = function() {
+        // Clean up mobile-specific elements
+        $('#stockCountScrollTop').remove();
+        
+        // Remove modal
+        $('#stockCountModal').remove();
+        
+        // Clean up event listeners
+        $(document).off('keydown.stockCountModal');
+    };
+    
+    function setupStockCountModalEvents() {
+        // Handle form submission
+        $('#stockCountForm').on('submit', async function(e) {
+            e.preventDefault();
+            
+            const warehouse = $('#stockCountWarehouse').val();
+            
+            if (!warehouse) {
+                frappe.msgprint('Please select a warehouse');
+                return;
+            }
+            
+            // Collect items data
+            const itemsData = [];
+            const itemsWithDifferences = [];
+            
+            $('.physical-qty-input').each(function() {
+                const input = $(this);
+                const physicalQty = parseFloat(input.val());
+                const currentQty = parseFloat(input.data('current-qty'));
+                
+                if (physicalQty !== null && !isNaN(physicalQty)) {
+                    const itemData = {
+                        item_code: input.data('item-code'),
+                        item_name: input.data('item-name'),
+                        current_qty: currentQty,
+                        physical_qty: physicalQty,
+                        difference: physicalQty - currentQty,
+                        stock_uom: input.data('stock-uom')
+                    };
+                    
+                    itemsData.push(itemData);
+                    
+                    // Only include items with differences for confirmation
+                    if (Math.abs(itemData.difference) > 0.001) { // Use small threshold for floating point comparison
+                        itemsWithDifferences.push(itemData);
+                    }
+                }
+            });
+            
+            if (itemsData.length === 0) {
+                frappe.msgprint('Please enter physical quantities for at least one item');
+                return;
+            }
+            
+            if (itemsWithDifferences.length === 0) {
+                // Show confirmation for stock match
+                showStockMatchConfirmation(warehouse, itemsData.length);
+                return;
+            }
+            
+            // Show confirmation modal with items that have differences
+            showStockCountConfirmation(warehouse, itemsData, itemsWithDifferences);
+        });
+        
+        // Mobile-friendly keyboard support
+        $(document).off('keydown.stockCountModal').on('keydown.stockCountModal', function(e) {
+            if ($('#stockCountModal').length > 0) {
+                if (e.key === 'Escape') {
+                    closeStockCountModal();
+                }
+            }
+        });
+        
+        // Touch/swipe support for mobile modal closing
+        let startY = 0;
+        $('#stockCountModal').off('touchstart touchmove touchend').on('touchstart', function(e) {
+            if (e.target === this) {
+                startY = e.originalEvent.touches[0].clientY;
+            }
+        }).on('touchmove', function(e) {
+            if (e.target === this) {
+                e.preventDefault(); // Prevent scroll bounce
+            }
+        }).on('touchend', function(e) {
+            if (e.target === this) {
+                const endY = e.originalEvent.changedTouches[0].clientY;
+                const diff = startY - endY;
+                
+                // If swipe down more than 50px, close modal
+                if (diff < -50) {
+                    closeStockCountModal();
+                }
+            }
+        });
+        
+        // Click outside modal to close
+        $('#stockCountModal').off('click.modalClose').on('click.modalClose', function(e) {
+            if (e.target === this) {
+                closeStockCountModal();
+            }
+        });
+        
+        // Initialize mobile-specific handlers for inputs
+        setupPhysicalQtyInputHandlers();
+    }
+    
+    function showStockCountConfirmation(warehouse, allItems, itemsWithDifferences) {
+        // Store data globally for the confirmation function
+        window.stockCountConfirmationData = {
+            warehouse: warehouse,
+            allItems: allItems
+        };
+        
+        const confirmationHTML = `
+            <div class="transfer-modal" id="stockCountConfirmationModal">
+                <div class="transfer-modal-content" style="max-width: 1000px;">
+                    <div class="transfer-modal-header">
+                        <h3><i class="fa fa-exclamation-triangle"></i> Confirm Stock Differences</h3>
+                        <button class="close-btn" onclick="closeStockCountConfirmation()">&times;</button>
+                    </div>
+                    
+                    <div class="stock-count-section">
+                        <h4><i class="fa fa-warning"></i> Please Confirm the Following Differences</h4>
+                        <p>The following items have differences between current stock and physical count:</p>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Item Code</th>
+                                        <th>Item Name</th>
+                                        <th>Current Qty</th>
+                                        <th>Physical Qty</th>
+                                        <th>Difference</th>
+                                        <th>UOM</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsWithDifferences.map(item => `
+                                        <tr class="${item.difference > 0 ? 'table-success' : 'table-danger'}">
+                                            <td>${item.item_code}</td>
+                                            <td>${item.item_name}</td>
+                                            <td>${item.current_qty}</td>
+                                            <td>${item.physical_qty}</td>
+                                            <td>${item.difference > 0 ? '+' : ''}${item.difference.toFixed(3)}</td>
+                                            <td>${item.stock_uom}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Summary:</strong> ${itemsWithDifferences.length} items have differences out of ${allItems.length} total items counted.
+                        </div>
+                    </div>
+                    
+                    <div class="transfer-actions">
+                        <button type="button" class="btn-move-stock" onclick="confirmAndSubmitStockCount()">
+                            <i class="fa fa-check-circle"></i> Confirm & Submit Stock Count
+                        </button>
+                        <button type="button" class="btn-cancel" onclick="closeStockCountConfirmation()">
+                            <i class="fa fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(confirmationHTML);
+    }
+    
+    window.closeStockCountConfirmation = function() {
+        $('#stockCountConfirmationModal').remove();
+        // Clean up global data
+        if (window.stockCountConfirmationData) {
+            delete window.stockCountConfirmationData;
+        }
+    };
+    
+    window.confirmAndSubmitStockCount = async function() {
+        try {
+            const itemsData = window.stockCountConfirmationData.allItems;
+            
+            // Get company from active session
+            const activeSession = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_active_pow_session');
+            const session = activeSession.message;
+            
+            if (!session) {
+                frappe.msgprint('No active session found');
+                return;
+            }
+            
+            // Create and submit stock count
+            const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_and_submit_pow_stock_count', {
+                warehouse: window.stockCountConfirmationData.warehouse,
+                company: session.company,
+                session_name: session.name,
+                items_data: JSON.stringify(itemsData)
+            });
+            
+            if (result.message.status === 'success') {
+                frappe.msgprint({
+                    title: 'Stock Count Submitted',
+                    message: result.message.message,
+                    indicator: 'green'
+                });
+                
+                // Close all modals
+                closeStockCountConfirmation();
+                closeStockCountModal();
+                
+                // Optionally show the created stock count
+                setTimeout(() => {
+                    frappe.set_route('Form', 'POW Stock Count', result.message.stock_count);
+                }, 1000);
+            } else {
+                frappe.msgprint('Error creating stock count: ' + result.message.message);
+            }
+            
+        } catch (error) {
+            console.error('Error submitting stock count:', error);
+            frappe.msgprint('Error submitting stock count: ' + error.message);
+        }
+    };
+    
+    window.saveDraftStockCount = async function() {
+        const warehouse = $('#stockCountWarehouse').val();
+        
+        if (!warehouse) {
+            frappe.msgprint('Please select a warehouse');
+            return;
+        }
+        
+        // Collect items data
+        const itemsData = [];
+        $('.physical-qty-input').each(function() {
+            const input = $(this);
+            const physicalQty = parseFloat(input.val());
+            const currentQty = parseFloat(input.data('current-qty'));
+            
+            if (physicalQty !== null && !isNaN(physicalQty)) {
+                itemsData.push({
+                    item_code: input.data('item-code'),
+                    item_name: input.data('item-name'),
+                    current_qty: currentQty,
+                    physical_qty: physicalQty,
+                    stock_uom: input.data('stock-uom')
+                });
+            }
+        });
+        
+        if (itemsData.length === 0) {
+            frappe.msgprint('Please enter physical quantities for at least one item');
+            return;
+        }
+        
+        try {
+            // Get company from active session
+            const activeSession = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_active_pow_session');
+            const session = activeSession.message;
+            
+            if (!session) {
+                frappe.msgprint('No active session found');
+                return;
+            }
+            
+            // Save as draft
+            const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.save_pow_stock_count_draft', {
+                warehouse: warehouse,
+                company: session.company,
+                session_name: session.name,
+                items_data: JSON.stringify(itemsData)
+            });
+            
+            if (result.message.status === 'success') {
+                frappe.msgprint({
+                    title: 'Draft Saved',
+                    message: result.message.message,
+                    indicator: 'blue'
+                });
+                
+                // Refresh the items to show the draft notice if it wasn't there before
+                loadWarehouseItems();
+            } else {
+                frappe.msgprint('Error saving draft: ' + result.message.message);
+            }
+            
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            frappe.msgprint('Error saving draft: ' + error.message);
+        }
+    };
+    
+    window.deleteDraft = function(draftName) {
+        frappe.confirm(
+            'Are you sure you want to delete this draft stock count?',
+            function() {
+                frappe.call({
+                    method: 'frappe.client.delete',
+                    args: {
+                        doctype: 'POW Stock Count',
+                        name: draftName
+                    },
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.msgprint({
+                                title: 'Draft Deleted',
+                                message: 'Draft stock count has been deleted successfully',
+                                indicator: 'green'
+                            });
+                            
+                            // Reload warehouse items without draft data
+                            loadWarehouseItems();
+                        }
+                    }
+                });
+            }
+        );
+    };
+
     // 1. First check if user has an active session
     let active_session = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_active_pow_session');
     active_session = active_session.message;
 
     if (active_session) {
         // User has an active session, use it directly
-        render_action_buttons(
+        await render_action_buttons(
             active_session.name, 
             active_session.pow_profile, 
             active_session.opening_shift_time,
@@ -2039,7 +3340,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             // Close modal and show action buttons
             closeProfileModal();
-            render_action_buttons(session_name, selectedProfile, null, defaultWarehouse);
+            await render_action_buttons(session_name, selectedProfile, null, defaultWarehouse);
         } catch (error) {
             console.error('Error creating session:', error);
             frappe.msgprint('Error creating session: ' + error.message);
@@ -2049,5 +3350,98 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     // Close profile modal function
     window.closeProfileModal = function() {
         $('#profileSelectionModal').remove();
+    };
+
+    function showStockMatchConfirmation(warehouse, itemsCount) {
+        const confirmationHTML = `
+            <div class="transfer-modal" id="stockMatchConfirmationModal">
+                <div class="transfer-modal-content" style="max-width: 600px;">
+                    <div class="transfer-modal-header">
+                        <h3><i class="fa fa-check-circle" style="color: #28a745;"></i> Stock Verification Complete</h3>
+                        <button class="close-btn" onclick="closeStockMatchConfirmation()">&times;</button>
+                    </div>
+                    
+                    <div class="stock-count-section">
+                        <div class="alert alert-success">
+                            <h4><i class="fa fa-thumbs-up"></i> Perfect Match!</h4>
+                            <p><strong>All ${itemsCount} items</strong> have physical quantities that exactly match the current stock levels.</p>
+                        </div>
+                        
+                        <div class="stock-match-details">
+                            <h5>What happens next?</h5>
+                            <ul>
+                                <li><i class="fa fa-check text-success"></i> A stock verification entry will be created</li>
+                                <li><i class="fa fa-check text-success"></i> Status will be automatically submitted (no changes needed)</li>
+                                <li><i class="fa fa-check text-success"></i> No stock reconciliation required</li>
+                                <li><i class="fa fa-check text-success"></i> Warehouse: <strong>${warehouse}</strong></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> This confirms that your warehouse stock is accurate and up-to-date.
+                        </div>
+                    </div>
+                    
+                    <div class="transfer-actions">
+                        <button type="button" class="btn-move-stock" onclick="confirmStockMatch('${warehouse}', ${itemsCount})">
+                            <i class="fa fa-check-circle"></i> Create Verification Entry
+                        </button>
+                        <button type="button" class="btn-cancel" onclick="closeStockMatchConfirmation()">
+                            <i class="fa fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(confirmationHTML);
+    }
+    
+    window.closeStockMatchConfirmation = function() {
+        $('#stockMatchConfirmationModal').remove();
+    };
+    
+    window.confirmStockMatch = async function(warehouse, itemsCount) {
+        try {
+            // Get company from active session
+            const activeSession = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_active_pow_session');
+            const session = activeSession.message;
+            
+            if (!session) {
+                frappe.msgprint('No active session found');
+                return;
+            }
+            
+            // Create stock match entry
+            const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_stock_match_entry', {
+                warehouse: warehouse,
+                company: session.company,
+                session_name: session.name,
+                items_count: itemsCount
+            });
+            
+            if (result.message.status === 'success') {
+                frappe.msgprint({
+                    title: 'Stock Verification Complete',
+                    message: result.message.message,
+                    indicator: 'green'
+                });
+                
+                // Close all modals
+                closeStockMatchConfirmation();
+                closeStockCountModal();
+                
+                // Optionally show the created stock count
+                setTimeout(() => {
+                    frappe.set_route('Form', 'POW Stock Count', result.message.stock_count);
+                }, 1000);
+            } else {
+                frappe.msgprint('Error creating stock verification: ' + result.message.message);
+            }
+            
+        } catch (error) {
+            console.error('Error creating stock match entry:', error);
+            frappe.msgprint('Error creating stock verification: ' + error.message);
+        }
     };
 };
