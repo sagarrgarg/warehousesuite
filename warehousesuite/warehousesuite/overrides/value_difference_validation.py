@@ -10,6 +10,31 @@ from frappe import _
 from frappe.utils import flt
 
 
+@frappe.cache(ttl=300)
+def get_cached_wmsuite_settings():
+    """Get WMSuite Settings with caching to reduce database calls"""
+    try:
+        if not frappe.db.exists("WMSuite Settings"):
+            return {
+                'disallow_value_difference': 1,
+                'max_value_difference': 0,
+                'override_roles': []
+            }
+        
+        settings_doc = frappe.get_single("WMSuite Settings")
+        return {
+            'disallow_value_difference': getattr(settings_doc, 'disallow_value_difference', 1),
+            'max_value_difference': getattr(settings_doc, 'max_value_difference', 0),
+            'override_roles': getattr(settings_doc, 'override_roles', [])
+        }
+    except Exception:
+        return {
+            'disallow_value_difference': 1,
+            'max_value_difference': 0,
+            'override_roles': []
+        }
+
+
 def validate_value_difference(doc, method):
     """
     Validate if Stock Entry has value difference and restrict based on WMSuite Settings.
@@ -22,8 +47,8 @@ def validate_value_difference(doc, method):
     if doc.doctype != "Stock Entry":
         return
     
-    # Get WMSuite Settings
-    settings = _get_wmsuite_settings()
+    # Get WMSuite Settings (cached)
+    settings = get_cached_wmsuite_settings()
     if not settings.get('disallow_value_difference'):
         return
     
@@ -49,21 +74,6 @@ def validate_value_difference(doc, method):
     frappe.throw(error_message, title=_("Value Difference Restriction"))
 
 
-def _get_wmsuite_settings():
-    """Get WMSuite Settings safely"""
-    try:
-        settings_doc = frappe.get_single("WMSuite Settings")
-        return {
-            'disallow_value_difference': getattr(settings_doc, 'disallow_value_difference', 1),
-            'max_value_difference': getattr(settings_doc, 'max_value_difference', 0),
-            'override_roles': getattr(settings_doc, 'override_roles', [])
-        }
-    except:
-        return {
-            'disallow_value_difference': 1,
-            'max_value_difference': 0,
-            'override_roles': []
-        }
 
 
 def _has_override_permission(override_roles_data):
@@ -79,5 +89,4 @@ def _has_override_permission(override_roles_data):
         if hasattr(item, 'role') and item.role:
             override_roles.add(item.role)
     
-    return bool(override_roles and user_roles.intersection(override_roles)) 
-    frappe.throw(error_message, title=_("Value Difference Restriction")) 
+    return bool(override_roles and user_roles.intersection(override_roles))   

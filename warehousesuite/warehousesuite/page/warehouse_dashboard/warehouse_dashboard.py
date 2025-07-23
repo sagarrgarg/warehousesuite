@@ -13,8 +13,8 @@ def get_context(context):
     # Get user roles
     user_roles = frappe.get_roles()
     
-    # Get WarehouseSuite settings
-    settings = frappe.get_single("WarehouseSuite Settings")
+    # Get WMSuite settings
+    settings = frappe.get_single("WMSuite Settings")
     
     # Define available features based on roles
     features = get_available_features(user_roles, settings)
@@ -123,4 +123,4 @@ def get_available_features(user_roles, settings):
         if any(role in user_roles for role in feature_data["roles"]):
             available_features[feature_key] = feature_data
     
-    return available_features 
+    return available_features  
