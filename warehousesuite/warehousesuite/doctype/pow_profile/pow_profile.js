@@ -1,8 +1,9 @@
 // Copyright (c) 2025, Streamline receiving, picking, packing, stock counts, and more with a touch-friendly interface. and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("POW Profile", {
-// 	refresh(frm) {
-
-// 	},
-// });
+frappe.ui.form.on("POW Profile", {
+	refresh(frm) {
+		// Ensure proper handling of required fields
+		frm.set_df_property('in_transit_warehouse', 'reqd', 1);
+	}
+});

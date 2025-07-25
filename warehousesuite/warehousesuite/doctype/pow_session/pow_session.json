@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "naming_series:naming_series",
  "creation": "2025-07-22 00:18:31.170920",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -79,7 +79,8 @@
    "fieldname": "naming_series",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "naming_series"
+   "label": "naming_series",
+   "default": "POW-S-"
   }
  ],
  "grid_page_length": 50,

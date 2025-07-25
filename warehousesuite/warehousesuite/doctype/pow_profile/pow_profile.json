@@ -5,7 +5,7 @@
  "creation": "2025-07-21 23:08:06.957156",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": [
+   "field_order": [
   "disabled",
   "name1",
   "company",
@@ -22,6 +22,7 @@
   "column_break_lnbl",
   "delivery_note",
   "stock_count",
+  "show_only_stock_items",
   "section_break_isnk",
   "applicable_users"
  ],
@@ -54,9 +55,10 @@
   },
   {
    "fieldname": "in_transit_warehouse",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "In Transit Warehouse",
-   "options": "Select Warehouse"
+   "options": "Warehouse",
+   "reqd": 1
   },
   {
    "fieldname": "target_warehouse",
@@ -124,6 +126,12 @@
    "fieldname": "stock_count",
    "fieldtype": "Check",
    "label": "Stock Count"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_only_stock_items",
+   "fieldtype": "Check",
+   "label": "Show Only Available Stock Items"
   },
   {
    "fieldname": "section_break_isnk",

@@ -171,10 +171,1155 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             }
             
+            /* Compact Transfer Modal Styles */
+            .transfer-modal-content.compact {
+                max-width: 900px;
+                width: 90vw;
+                min-width: 600px;
+                padding: 0;
+                border-radius: 16px;
+                overflow: hidden;
+                max-height: 85vh;
+            }
+            
+            .transfer-modal-content.compact .transfer-modal-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 24px;
+                margin: 0;
+                border-bottom: none;
+            }
+            
+            .transfer-modal-content.compact .header-content {
+                flex: 1;
+            }
+            
+            .transfer-modal-content.compact .header-content h3 {
+                margin: 0 0 8px 0;
+                font-size: 1.25rem;
+                font-weight: 600;
+            }
+            
+            .transfer-route-preview {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+            
+            .route-label {
+                font-weight: 500;
+            }
+            
+            .route-arrow {
+                font-size: 1.1rem;
+                font-weight: bold;
+            }
+            
+            .route-dest {
+                font-weight: 600;
+            }
+            
+            .transfer-modal-content.compact .close-btn {
+                color: white;
+                font-size: 1.5rem;
+                background: rgba(255,255,255,0.1);
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.2s;
+            }
+            
+            .transfer-modal-content.compact .close-btn:hover {
+                background: rgba(255,255,255,0.2);
+            }
+            
+            .transfer-modal-content.compact .transfer-form {
+                padding: 24px;
+                gap: 24px;
+                max-height: calc(85vh - 120px);
+                overflow-y: auto;
+            }
+            
+            .warehouse-selection {
+                background: #f8f9fa;
+                border-radius: 12px;
+                padding: 24px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .warehouse-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+                margin-bottom: 20px;
+            }
+            
+            .warehouse-field {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .warehouse-field label {
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #495057;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .warehouse-field select {
+                padding: 14px 18px;
+                border: 2px solid #e9ecef;
+                border-radius: 8px;
+                font-size: 1rem;
+                background: white;
+                transition: all 0.2s;
+                min-height: 48px;
+            }
+            
+            .warehouse-field select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            /* Custom Dropdown Styles - Desktop */
+            .custom-dropdown {
+                position: relative;
+                width: 100%;
+            }
+            
+            .dropdown-input {
+                width: 100%;
+                padding: 14px 18px;
+                border: 2px solid #e9ecef;
+                border-radius: 8px;
+                font-size: 1rem;
+                background: white;
+                transition: all 0.2s;
+                min-height: 48px;
+                box-sizing: border-box;
+            }
+            
+            .dropdown-input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .dropdown-list {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                border: 2px solid #667eea;
+                border-top: none;
+                border-radius: 0 0 8px 8px;
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                min-width: 400px;
+            }
+            
+            .dropdown-item {
+                padding: 12px 16px;
+                cursor: pointer;
+                border-bottom: 1px solid #f8f9fa;
+                transition: background-color 0.2s;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+            
+            .dropdown-item:hover {
+                background: #f8f9fa;
+            }
+            
+            .dropdown-item.selected {
+                background: #e3f2fd;
+                border-left: 4px solid #2196f3;
+            }
+            
+            .dropdown-item .item-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+            }
+            
+            .dropdown-item .item-code {
+                font-weight: 600;
+                color: #495057;
+                font-family: monospace;
+                font-size: 0.9rem;
+                flex-shrink: 0;
+            }
+            
+            .dropdown-item .item-name {
+                color: #6c757d;
+                font-size: 0.9rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .dropdown-item .stock-info {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                min-width: 80px;
+                justify-content: flex-end;
+                flex-shrink: 0;
+            }
+            
+            .dropdown-item .stock-qty {
+                font-weight: 600;
+                color: #28a745;
+                font-size: 0.9rem;
+            }
+            
+            .dropdown-item .stock-uom {
+                font-size: 0.8rem;
+                color: #6c757d;
+            }
+            
+            /* Quantity validation styles */
+            .quantity-exceeds-stock {
+                border-color: #dc3545 !important;
+                background-color: #fff5f5 !important;
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            }
+            
+            .stock-warning {
+                color: #dc3545 !important;
+                font-weight: 600 !important;
+            }
+            
+            .item-qty:focus {
+                border-color: #80bdff !important;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+            }
+            
+            .item-qty:focus.quantity-exceeds-stock {
+                border-color: #dc3545 !important;
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            }
+            
+            /* Transfer Receive Enhanced Styles */
+            .bulk-operations-panel {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                padding: 10px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border: 1px solid #e9ecef;
+            }
+            
+            .bulk-buttons {
+                display: flex;
+                gap: 8px;
+            }
+            
+            .bulk-buttons button {
+                padding: 6px 12px;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                background: white;
+                color: #495057;
+                font-size: 12px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .bulk-buttons button:hover {
+                background: #e9ecef;
+                border-color: #adb5bd;
+            }
+            
+            .btn-set-max {
+                color: #28a745 !important;
+                border-color: #28a745 !important;
+            }
+            
+            .btn-set-max:hover {
+                background: #d4edda !important;
+            }
+            
+            .btn-clear-all {
+                color: #dc3545 !important;
+                border-color: #dc3545 !important;
+            }
+            
+            .btn-clear-all:hover {
+                background: #f8d7da !important;
+            }
+            
+            .btn-reset {
+                color: #6c757d !important;
+                border-color: #6c757d !important;
+            }
+            
+            .btn-reset:hover {
+                background: #e2e3e5 !important;
+            }
+            
+            .completion-status {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .progress-bar {
+                width: 100px;
+                height: 8px;
+                background: #e9ecef;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #28a745, #20c997);
+                transition: width 0.3s ease;
+            }
+            
+            .status-badge {
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            
+            .status-badge.pending {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            
+            .status-badge.partial {
+                background: #d1ecf1;
+                color: #0c5460;
+                border: 1px solid #bee5eb;
+            }
+            
+            .status-badge.complete {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            
+            /* Quantity validation for transfer receive */
+            .receive-qty-input.quantity-exceeds-stock {
+                border-color: #dc3545 !important;
+                background-color: #fff5f5 !important;
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            }
+            
+            .remaining-qty.stock-warning {
+                color: #dc3545 !important;
+                font-weight: 600 !important;
+            }
+            
+            /* Receive Input Group */
+            .receive-input-group {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .receive-qty-input {
+                flex: 1;
+            }
+            
+            .btn-raise-case {
+                padding: 6px 8px;
+                background: #ffc107;
+                border: 1px solid #ffc107;
+                border-radius: 4px;
+                color: #212529;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .btn-raise-case:hover {
+                background: #e0a800;
+                border-color: #d39e00;
+            }
+            
+            /* Discrepancy Indicators */
+            .discrepancy-indicator {
+                margin-top: 5px;
+            }
+            
+            .discrepancy-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 6px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            
+            .discrepancy-minor {
+                background: #d1ecf1;
+                color: #0c5460;
+                border: 1px solid #bee5eb;
+            }
+            
+            .discrepancy-moderate {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            
+            .discrepancy-major {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            
+            .discrepancy-critical {
+                background: #dc3545;
+                color: white;
+                border: 1px solid #dc3545;
+            }
+            
+            /* Concern Modal */
+            .concern-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            }
+            
+            .concern-modal-content {
+                background: white;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 600px;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            
+            .concern-modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .concern-modal-header h3 {
+                margin: 0;
+                color: #333;
+            }
+            
+            .concern-modal-body {
+                padding: 20px;
+            }
+            
+            .concern-details {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+            }
+            
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+            }
+            
+            .detail-row:last-child {
+                margin-bottom: 0;
+            }
+            
+            .detail-row label {
+                font-weight: 600;
+                color: #495057;
+            }
+            
+            .concern-modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                padding: 20px;
+                border-top: 1px solid #e9ecef;
+            }
+            
+            .btn-create-concern {
+                background: #28a745;
+                color: white;
+                border: 1px solid #28a745;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            
+            .btn-create-concern:hover {
+                background: #218838;
+                border-color: #1e7e34;
+            }
+            
+            /* Select Dropdown Text Visibility Fix */
+            select.form-control,
+            select {
+                height: auto !important;
+                min-height: 38px;
+                padding: 8px 12px;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #333;
+                background-color: #fff;
+                border: 1px solid #d1d3e2;
+                border-radius: 4px;
+                box-sizing: border-box;
+                overflow: visible;
+            }
+            
+            select.form-control option,
+            select option {
+                padding: 8px 12px;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #333;
+                background-color: #fff;
+            }
+            
+            select.form-control:focus,
+            select:focus {
+                border-color: #5a5c69;
+                outline: 0;
+                box-shadow: 0 0 0 0.2rem rgba(58, 59, 69, 0.25);
+            }
+            
+            /* Ensure text is fully visible in select dropdowns */
+            select.form-control option:checked,
+            select option:checked {
+                background-color: #e3e6f0;
+                color: #333;
+                font-weight: 500;
+            }
+            
+            /* Mobile responsive select fixes */
+            @media (max-width: 768px) {
+                select.form-control,
+                select {
+                    font-size: 16px; /* Prevent zoom on iOS */
+                    padding: 10px 12px;
+                }
+                
+                select.form-control option,
+                select option {
+                    font-size: 16px;
+                    padding: 10px 12px;
+                }
+            }
+            
+            /* Concern Modal Form Controls */
+            .concern-modal .form-control {
+                width: 100%;
+                padding: 8px 12px;
+                font-size: 14px;
+                line-height: 1.4;
+                color: #333;
+                background-color: #fff;
+                border: 1px solid #d1d3e2;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            
+            .concern-modal .form-control:focus {
+                border-color: #5a5c69;
+                outline: 0;
+                box-shadow: 0 0 0 0.2rem rgba(58, 59, 69, 0.25);
+            }
+            
+            .concern-modal textarea.form-control {
+                resize: vertical;
+                min-height: 80px;
+            }
+            
+            .concern-modal input[type="number"].form-control {
+                -moz-appearance: textfield;
+            }
+            
+            .concern-modal input[type="number"].form-control::-webkit-outer-spin-button,
+            .concern-modal input[type="number"].form-control::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            
+            /* Mobile responsive adjustments */
+            @media (max-width: 768px) {
+                .bulk-operations-panel {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                
+                .bulk-buttons {
+                    width: 100%;
+                    justify-content: space-between;
+                }
+                
+                .bulk-buttons button {
+                    flex: 1;
+                    font-size: 11px;
+                    padding: 8px 6px;
+                }
+                
+                .completion-status {
+                    width: 100%;
+                    justify-content: center;
+                }
+                
+                .progress-bar {
+                    width: 80px;
+                }
+            }
+            
+            .dropdown-item.hidden {
+                display: none;
+            }
+            
+            /* Item dropdown specific styles */
+            .item-row .custom-dropdown {
+                width: 100%;
+            }
+            
+            .item-row .dropdown-input {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+                min-height: 36px;
+            }
+            
+            .item-row .dropdown-list {
+                max-height: 150px;
+                font-size: 0.85rem;
+            }
+            
+            .item-row .dropdown-item {
+                padding: 8px 12px;
+            }
+            
+            .item-row .dropdown-item .item-name {
+                font-size: 0.85rem;
+            }
+            
+            .item-row .dropdown-item .item-code {
+                font-size: 0.75rem;
+            }
+            
+            .transit-info {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 16px;
+                background: #e3f2fd;
+                border-radius: 8px;
+                border-left: 4px solid #2196f3;
+                font-size: 0.9rem;
+                color: #1976d2;
+            }
+            
+            .transit-info i {
+                font-size: 1rem;
+            }
+            
+            .transit-info strong {
+                font-weight: 600;
+            }
+            
+
+            
+            .items-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 24px;
+                background: #f8f9fa;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .items-header h4 {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 600;
+                color: #495057;
+            }
+            
+            .add-item-btn.compact {
+                background: #28a745;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 10px 18px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                min-width: 80px;
+            }
+            
+            .add-item-btn.compact:hover {
+                background: #218838;
+                transform: translateY(-1px);
+            }
+            
+
+            
+            .table-header {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr 1fr auto;
+                gap: 16px;
+                padding: 16px 24px;
+                background: #f8f9fa;
+                border-bottom: 1px solid #e9ecef;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #6c757d;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .table-body {
+                padding: 8px 0;
+            }
+            
+            .item-row {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr 1fr auto;
+                gap: 16px;
+                padding: 16px 24px;
+                align-items: center;
+                border-bottom: 1px solid #f8f9fa;
+                transition: background-color 0.2s;
+                min-height: 60px;
+            }
+            
+            .item-row:hover {
+                background: #f8f9fa;
+            }
+            
+            .item-row:last-child {
+                border-bottom: none;
+            }
+            
+            .item-row .col-item select,
+            .item-row .col-uom select {
+                width: 100%;
+                padding: 10px 14px;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                font-size: 0.95rem;
+                background: white;
+                min-height: 40px;
+            }
+            
+            .item-row .col-item select:focus,
+            .item-row .col-uom select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            }
+            
+            .item-row .col-qty input {
+                width: 100%;
+                padding: 10px 14px;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                font-size: 0.95rem;
+                text-align: center;
+                min-height: 40px;
+            }
+            
+            .item-row .col-qty input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+            }
+            
+            .item-row .col-stock {
+                text-align: center;
+                font-size: 0.85rem;
+                color: #6c757d;
+                font-weight: 500;
+            }
+            
+            .remove-item-btn {
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                font-size: 0.8rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            
+            .remove-item-btn:hover {
+                background: #c82333;
+                transform: scale(1.1);
+            }
+            
+            .transfer-modal-content.compact .transfer-actions {
+                padding: 24px 28px;
+                background: #f8f9fa;
+                border-top: 1px solid #e9ecef;
+                margin: 0;
+                gap: 16px;
+                display: flex;
+                justify-content: flex-end;
+            }
+            
+            .transfer-modal-content.compact .btn-cancel {
+                background: #6c757d;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 24px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                min-width: 120px;
+            }
+            
+            .transfer-modal-content.compact .btn-cancel:hover {
+                background: #5a6268;
+            }
+            
+            .transfer-modal-content.compact .btn-move-stock {
+                background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 14px 28px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 160px;
+            }
+            
+            .transfer-modal-content.compact .btn-move-stock:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+            }
+            
+            /* Mobile Responsive for Compact Transfer Modal */
+            @media (max-width: 768px) {
+                .transfer-modal-content.compact {
+                    width: 95vw;
+                    max-width: 95vw;
+                    min-width: auto;
+                    max-height: 90vh;
+                    margin: 10px;
+                    border-radius: 12px;
+                }
+                
+                .transfer-modal-content.compact .transfer-modal-header {
+                    padding: 16px 20px;
+                }
+                
+                .transfer-modal-content.compact .header-content h3 {
+                    font-size: 1.1rem;
+                }
+                
+                .transfer-route-preview {
+                    font-size: 0.8rem;
+                }
+                
+                .transfer-modal-content.compact .transfer-form {
+                    padding: 16px;
+                    gap: 16px;
+                    max-height: calc(90vh - 120px);
+                    overflow-y: auto;
+                }
+                
+                .warehouse-selection {
+                    padding: 16px;
+                }
+                
+                .warehouse-row {
+                    flex-direction: column;
+                    gap: 16px;
+                }
+                
+                .warehouse-field select,
+                .warehouse-field .dropdown-input {
+                    padding: 12px 14px;
+                    font-size: 0.95rem;
+                    min-height: 44px;
+                }
+                
+                /* Mobile Custom Dropdown Styles */
+                .dropdown-list {
+                    max-height: 120px;
+                    border-radius: 0 0 6px 6px;
+                }
+                
+                .dropdown-item {
+                    padding: 10px 12px;
+                }
+                
+                .dropdown-item .item-name {
+                    font-size: 0.9rem;
+                }
+                
+                .dropdown-item .item-code {
+                    font-size: 0.75rem;
+                }
+                
+                .transit-info {
+                    padding: 10px 14px;
+                    font-size: 0.85rem;
+                }
+                
+                .items-header {
+                    padding: 12px 16px;
+                    flex-direction: column;
+                    gap: 12px;
+                    align-items: stretch;
+                }
+                
+                .items-header h4 {
+                    font-size: 0.95rem;
+                }
+                
+                .add-item-btn.compact {
+                    padding: 12px 20px;
+                    font-size: 1rem;
+                    width: 100%;
+                }
+                
+                /* Mobile-friendly items table with vertical layout */
+                .items-table {
+                    margin: 0;
+                    border: none;
+                    border-radius: 0;
+                    overflow-y: auto;
+                }
+                
+                /* Hide table header on mobile */
+                .table-header {
+                    display: none;
+                }
+                
+                /* Mobile item row as card layout */
+                .item-row {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border: 1px solid #e9ecef;
+                    position: relative;
+                }
+                
+                /* Mobile item field groups */
+                .item-row .col-item {
+                    order: 1;
+                }
+                
+                .item-row .col-qty {
+                    order: 2;
+                }
+                
+                .item-row .col-uom {
+                    order: 3;
+                }
+                
+                .item-row .col-stock {
+                    order: 4;
+                }
+                
+                .item-row .col-action {
+                    order: 5;
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
+                }
+                
+                /* Mobile field labels */
+                .item-row .col-item::before {
+                    content: "Item:";
+                    display: block;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #6c757d;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                }
+                
+                .item-row .col-qty::before {
+                    content: "Quantity:";
+                    display: block;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #6c757d;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                }
+                
+                .item-row .col-uom::before {
+                    content: "UOM:";
+                    display: block;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #6c757d;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                }
+                
+                .item-row .col-stock::before {
+                    content: "Stock:";
+                    display: block;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: #6c757d;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
+                }
+                
+                .item-row .col-item select,
+                .item-row .col-uom select,
+                .item-row .col-qty input,
+                .item-row .dropdown-input {
+                    padding: 12px 14px;
+                    font-size: 0.95rem;
+                    min-height: 44px;
+                    width: 100%;
+                    border: 1px solid #dee2e6;
+                    border-radius: 6px;
+                    background: white;
+                }
+                
+                .item-row .col-item select:focus,
+                .item-row .col-uom select:focus,
+                .item-row .col-qty input:focus,
+                .item-row .dropdown-input:focus {
+                    outline: none;
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+                }
+                
+                .item-row .dropdown-list {
+                    max-height: 120px;
+                }
+                
+                .item-row .col-stock {
+                    font-size: 0.9rem;
+                    color: #495057;
+                    font-weight: 500;
+                    padding: 8px 0;
+                }
+                
+                .remove-item-btn {
+                    width: 32px;
+                    height: 32px;
+                    font-size: 0.8rem;
+                    border-radius: 50%;
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .remove-item-btn:hover {
+                    background: #c82333;
+                    transform: scale(1.1);
+                }
+                
+                .transfer-modal-content.compact .transfer-actions {
+                    padding: 16px 20px;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+                
+                .transfer-modal-content.compact .btn-cancel,
+                .transfer-modal-content.compact .btn-move-stock {
+                    width: 100%;
+                    padding: 14px;
+                    font-size: 1rem;
+                    min-width: auto;
+                }
+            }
+            
+            /* Tablet Responsive */
+            @media (min-width: 769px) and (max-width: 1024px) {
+                .transfer-modal-content.compact {
+                    max-width: 85vw;
+                }
+                
+                .warehouse-row {
+                    gap: 12px;
+                }
+                
+                .table-header,
+                .item-row {
+                    gap: 10px;
+                }
+            }
+            
             /* Full screen modal for desktop */
             @media (min-width: 1024px) {
                 .transfer-modal {
-                    padding: 0;
+                    padding: 20px;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .transfer-modal-content.compact {
+                    max-width: 1400px;
+                    width: 98vw;
+                    min-width: 1000px;
+                    max-height: 85vh;
+                    margin: 0 auto;
                 }
                 
                 .transfer-modal-content {
@@ -268,9 +1413,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 font-size: 0.9rem;
             }
             
-            .items-section {
-                margin-top: 20px;
-            }
+
             
             .items-header {
                 display: grid;
@@ -467,11 +1610,12 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             .error-display {
                 background: #ffebee;
                 border: 1px solid #f44336;
-                border-radius: 6px;
-                padding: 15px;
-                margin-bottom: 20px;
+                border-radius: 8px;
+                padding: 16px;
+                margin: 0 24px 20px 24px;
                 color: #c62828;
                 font-size: 0.9rem;
+                position: relative;
             }
             
             .error-display.show {
@@ -483,6 +1627,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 color: #d32f2f;
                 font-size: 1rem;
                 font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
             
             .error-display ul {
@@ -495,14 +1642,21 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
             
             .error-display .close-error {
-                float: right;
+                position: absolute;
+                top: 12px;
+                right: 12px;
                 background: none;
                 border: none;
                 color: #d32f2f;
                 font-size: 1.2rem;
                 cursor: pointer;
-                padding: 0;
-                margin: -5px -5px 0 0;
+                padding: 4px;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+            
+            .error-display .close-error:hover {
+                background: rgba(211, 47, 47, 0.1);
             }
             
             /* Mobile Responsive */
@@ -686,27 +1840,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 margin-bottom: 20px;
             }
             
-            .grid-filters {
-                display: flex;
-                gap: 15px;
-                align-items: center;
-            }
-            
-            .search-input {
-                padding: 8px 12px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                font-size: 0.9rem;
-                min-width: 200px;
-            }
-            
-            .sort-select {
-                padding: 8px 12px;
-                border: 1px solid #ddd;
-                border-radius: 6px;
-                font-size: 0.9rem;
-                background: white;
-            }
+
             
             .grid-stats {
                 display: flex;
@@ -949,19 +2083,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     align-items: stretch;
                 }
                 
-                .grid-filters {
-                    flex-direction: column;
-                    gap: 10px;
-                }
-                
-                .search-input,
-                .sort-select {
-                    width: 100%;
-                    min-width: auto;
-                    font-size: 1rem;
-                    padding: 12px;
-                    touch-action: manipulation;
-                }
+
                 
                 .transfer-grid {
                     grid-template-columns: 1fr;
@@ -1847,11 +2969,21 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             });
             const warehouse_data = warehouses.message;
             
+            // Get POW Profile settings
+            const profile = await frappe.call('frappe.client.get', {
+                doctype: 'POW Profile',
+                name: profile_name
+            });
+            const profile_settings = profile.message;
+            
             // Get current default warehouse
             const defaultWarehouse = $('#defaultWarehouse').val();
             
-            // Get items for dropdown
-            const items = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown');
+            // Get items for dropdown with warehouse and filtering
+            const items = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown', {
+                warehouse: defaultWarehouse,
+                show_only_stock_items: profile_settings.show_only_stock_items || false
+            });
             const items_data = items.message;
             
             console.log('Items data received:', items_data);
@@ -1862,12 +2994,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 return;
             }
             
-            // Create modal HTML
+            // Create modal HTML with improved compact design
             const modalHTML = `
                 <div class="transfer-modal" id="transferModal">
-                    <div class="transfer-modal-content">
+                    <div class="transfer-modal-content compact">
                         <div class="transfer-modal-header">
+                            <div class="header-content">
                             <h3><i class="fa fa-exchange"></i> Transfer Send</h3>
+                                <div class="transfer-route-preview">
+                                    <span class="route-label">Route:</span>
+                                    <span class="route-arrow">→</span>
+                                    <span class="route-dest">Select warehouses</span>
+                                </div>
+                            </div>
                             <button class="close-btn" onclick="closeTransferModal()">&times;</button>
                         </div>
                         
@@ -1876,52 +3015,81 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         </div>
                         
                         <form class="transfer-form" id="transferForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Source Warehouse</label>
-                                    <select id="sourceWarehouse" required>
-                                        <option value="">Select Source Warehouse</option>
+                            <div class="warehouse-selection">
+                                <div class="warehouse-row">
+                                    <div class="warehouse-field">
+                                        <label>From</label>
+                                        <div class="custom-dropdown">
+                                            <input type="text" 
+                                                   id="sourceWarehouseInput" 
+                                                   placeholder="Search source warehouse..." 
+                                                   class="dropdown-input"
+                                                   autocomplete="off">
+                                            <div class="dropdown-list" id="sourceWarehouseList" style="display: none;">
                                         ${warehouse_data.source_warehouses.map(w => 
-                                            `<option value="${w.warehouse}" ${defaultWarehouse === w.warehouse ? 'selected' : ''}>${w.warehouse_name}</option>`
+                                                    `<div class="dropdown-item" data-value="${w.warehouse}" data-name="${w.warehouse_name}">
+                                                        <span class="item-name">${w.warehouse_name}</span>
+                                                        <span class="item-code">${w.warehouse}</span>
+                                                    </div>`
                                         ).join('')}
-                                    </select>
                                 </div>
-                                <div class="form-group">
-                                    <label>Target Warehouse</label>
-                                    <select id="targetWarehouse" required>
-                                        <option value="">Select Target Warehouse</option>
+                                            <input type="hidden" id="sourceWarehouse" value="${defaultWarehouse || ''}" required>
+                                        </div>
+                                    </div>
+                                    <div class="warehouse-field">
+                                        <label>To</label>
+                                        <div class="custom-dropdown">
+                                            <input type="text" 
+                                                   id="targetWarehouseInput" 
+                                                   placeholder="Search destination warehouse..." 
+                                                   class="dropdown-input"
+                                                   autocomplete="off">
+                                            <div class="dropdown-list" id="targetWarehouseList" style="display: none;">
                                         ${warehouse_data.target_warehouses.map(w => 
-                                            `<option value="${w.warehouse}">${w.warehouse_name}</option>`
+                                                    `<div class="dropdown-item" data-value="${w.warehouse}" data-name="${w.warehouse_name}">
+                                                        <span class="item-name">${w.warehouse_name}</span>
+                                                        <span class="item-code">${w.warehouse}</span>
+                                                    </div>`
                                         ).join('')}
-                                    </select>
+                                            </div>
+                                            <input type="hidden" id="targetWarehouse" value="" required>
+                                        </div>
                                 </div>
                             </div>
                             
-                            <div class="in-transit-info">
-                                <h4><i class="fa fa-info-circle"></i> In-Transit Warehouse</h4>
-                                <p><strong>${warehouse_data.in_transit_warehouse.warehouse_name}</strong> (${warehouse_data.in_transit_warehouse.warehouse})</p>
+                                <div class="transit-info">
+                                    <i class="fa fa-truck"></i>
+                                    <span>Via: <strong>${warehouse_data.in_transit_warehouse.warehouse_name}</strong></span>
+                                </div>
                             </div>
                             
                             <div class="items-section">
-                                <h4>Items to Transfer</h4>
                                 <div class="items-header">
-                                    <span>Item</span>
-                                    <span>Quantity</span>
-                                    <span>UOM</span>
-                                    <span>Stock Qty</span>
-                                    <span>Action</span>
+                                    <h4>Items</h4>
+                                    <button type="button" class="add-item-btn compact" onclick="addItemRow()">
+                                        <i class="fa fa-plus"></i> Add
+                                    </button>
                                 </div>
-                                <div id="itemsContainer">
+                                
+                                <div class="items-table">
+                                    <div class="table-header">
+                                        <span class="col-item">Item</span>
+                                        <span class="col-qty">Qty</span>
+                                        <span class="col-uom">UOM</span>
+                                        <span class="col-stock">Stock</span>
+                                        <span class="col-action"></span>
+                                    </div>
+                                    <div id="itemsContainer" class="table-body">
                                     <!-- Items will be added here -->
                                 </div>
-                                <button type="button" class="add-item-btn" onclick="addItemRow()">
-                                    <i class="fa fa-plus"></i> Add Item
-                                </button>
+                                </div>
                             </div>
                             
                             <div class="transfer-actions">
                                 <button type="button" class="btn-cancel" onclick="closeTransferModal()">Cancel</button>
-                                <button type="submit" class="btn-move-stock">Send Transfer</button>
+                                <button type="submit" class="btn-move-stock">
+                                    <i class="fa fa-paper-plane"></i> Send Transfer
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -1935,13 +3103,17 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             window.transferModalData = {
                 items: items_data,
                 in_transit_warehouse: warehouse_data.in_transit_warehouse,
-                session_name: session_name
+                session_name: session_name,
+                profile_settings: profile_settings
             };
             
             console.log('Transfer modal data stored:', window.transferModalData);
             
             // Add event listeners
             setupTransferModalEvents();
+            
+            // Initialize route preview
+            updateTransferRoute();
             
         } catch (error) {
             console.error('Error opening transfer modal:', error);
@@ -1953,6 +3125,158 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         $('#transferModal').remove();
         window.transferModalData = null;
     };
+    
+    window.updateTransferRoute = function() {
+        const sourceWarehouse = $('#sourceWarehouse').val();
+        const targetWarehouse = $('#targetWarehouse').val();
+        const routeDest = $('.route-dest');
+        
+        if (sourceWarehouse && targetWarehouse) {
+            const sourceName = $(`#sourceWarehouseList .dropdown-item[data-value="${sourceWarehouse}"] .item-name`).text();
+            const targetName = $(`#targetWarehouseList .dropdown-item[data-value="${targetWarehouse}"] .item-name`).text();
+            routeDest.text(`${sourceName} → ${targetName}`);
+        } else if (sourceWarehouse) {
+            const sourceName = $(`#sourceWarehouseList .dropdown-item[data-value="${sourceWarehouse}"] .item-name`).text();
+            routeDest.text(`${sourceName} → Select destination`);
+        } else if (targetWarehouse) {
+            const targetName = $(`#targetWarehouseList .dropdown-item[data-value="${targetWarehouse}"] .item-name`).text();
+            routeDest.text(`Select source → ${targetName}`);
+        } else {
+            routeDest.text('Select warehouses');
+        }
+    };
+    
+    function setupCustomDropdowns() {
+        // Source warehouse dropdown
+        setupDropdown('#sourceWarehouseInput', '#sourceWarehouseList', '#sourceWarehouse');
+        
+        // Target warehouse dropdown
+        setupDropdown('#targetWarehouseInput', '#targetWarehouseList', '#targetWarehouse');
+        
+        // Set default value for source warehouse if available
+        const defaultSource = $('#sourceWarehouse').val();
+        if (defaultSource) {
+            const sourceItem = $(`#sourceWarehouseList .dropdown-item[data-value="${defaultSource}"]`);
+            if (sourceItem.length) {
+                $('#sourceWarehouseInput').val(sourceItem.find('.item-name').text());
+                sourceItem.addClass('selected');
+            }
+        }
+    }
+    
+    function setupDropdown(inputSelector, listSelector, hiddenInputSelector) {
+        const $input = $(inputSelector);
+        const $list = $(listSelector);
+        const $hiddenInput = $(hiddenInputSelector);
+        
+        // Show dropdown on focus
+        $input.on('focus', function() {
+            $list.show();
+            filterDropdownItems($input, $list);
+        });
+        
+        // Filter items on input
+        $input.on('input', function() {
+            filterDropdownItems($input, $list);
+        });
+        
+        // Handle item selection
+        $list.on('click', '.dropdown-item', function() {
+            const value = $(this).data('value');
+            const name = $(this).data('name');
+            
+            $input.val(name);
+            $hiddenInput.val(value);
+            
+            // Update visual selection
+            $list.find('.dropdown-item').removeClass('selected');
+            $(this).addClass('selected');
+            
+            // Hide dropdown
+            $list.hide();
+            
+            // Trigger change event on hidden input
+            $hiddenInput.trigger('change');
+            
+            // Update route preview
+            updateTransferRoute();
+        });
+        
+        // Hide dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.custom-dropdown').length) {
+                $list.hide();
+            }
+        });
+        
+        // Handle keyboard navigation
+        $input.on('keydown', function(e) {
+            const $items = $list.find('.dropdown-item:not(.hidden)');
+            const $selected = $list.find('.dropdown-item.selected');
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if ($selected.length) {
+                        const nextIndex = $items.index($selected) + 1;
+                        if (nextIndex < $items.length) {
+                            $selected.removeClass('selected');
+                            $items.eq(nextIndex).addClass('selected');
+                        }
+                    } else if ($items.length) {
+                        $items.first().addClass('selected');
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if ($selected.length) {
+                        const prevIndex = $items.index($selected) - 1;
+                        if (prevIndex >= 0) {
+                            $selected.removeClass('selected');
+                            $items.eq(prevIndex).addClass('selected');
+                        }
+                    }
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if ($selected.length) {
+                        $selected.click();
+                    }
+                    break;
+                    
+                case 'Escape':
+                    $list.hide();
+                    break;
+            }
+        });
+    }
+    
+    function filterDropdownItems($input, $list) {
+        const searchTerm = $input.val().toLowerCase();
+        const $items = $list.find('.dropdown-item');
+        
+        $items.each(function() {
+            const $item = $(this);
+            const name = $item.find('.item-name').text().toLowerCase();
+            const code = $item.find('.item-code').text().toLowerCase();
+            
+            if (name.includes(searchTerm) || code.includes(searchTerm)) {
+                $item.removeClass('hidden');
+            } else {
+                $item.addClass('hidden');
+            }
+        });
+        
+        // Show/hide dropdown based on results
+        const visibleItems = $list.find('.dropdown-item:not(.hidden)').length;
+        if (visibleItems > 0) {
+            $list.show();
+        } else {
+            $list.hide();
+        }
+    }
 
     // Get WMSuite Settings
     async function getWMSuiteSettings() {
@@ -2023,14 +3347,6 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         
                         <div class="transfer-grid-container">
                             <div class="transfer-grid-header">
-                                <div class="grid-filters">
-                                    <input type="text" id="searchTransfers" placeholder="Search transfers..." class="search-input">
-                                    <select id="sortTransfers" class="sort-select">
-                                        <option value="date-desc">Date (Newest)</option>
-                                        <option value="date-asc">Date (Oldest)</option>
-                                        <option value="stock-entry">Stock Entry</option>
-                                    </select>
-                                </div>
                                 <div class="grid-stats">
                                     <span class="stat-item">
                                         <i class="fa fa-file-text"></i> ${transfers.length} Transfers
@@ -2085,6 +3401,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                     <div class="qty-cell received-qty" data-label="Received:">${item.transferred_qty} ${item.uom}</div>
                                                     <div class="qty-cell remaining-qty" data-label="Remaining:">${item.remaining_qty} ${item.uom}</div>
                                                     <div class="receive-cell" data-label="Receive:">
+                                                        <div class="receive-input-group">
                                                         <input type="number" 
                                                                class="receive-qty-input" 
                                                                value="${item.remaining_qty}" 
@@ -2093,13 +3410,49 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                                step="0.01"
                                                                data-item-code="${item.item_code}"
                                                                data-item-name="${item.item_name}"
-                                                               data-uom="${item.uom}">
+                                                                   data-uom="${item.uom}"
+                                                                   data-expected-qty="${item.remaining_qty}">
+                                                            <button type="button" 
+                                                                    class="btn-raise-case" 
+                                                                    onclick="raiseStockConcern('${transfer.stock_entry}', '${item.item_code}', '${item.item_name}', '${item.remaining_qty}', '${item.uom}', '${transfer.dest_warehouse}')"
+                                                                    title="Raise Stock Concern">
+                                                                <i class="fa fa-exclamation-triangle"></i>
+                                                            </button>
+                                                        </div>
+                                                        <div class="discrepancy-indicator" style="display: none;">
+                                                            <span class="discrepancy-badge">
+                                                                <i class="fa fa-exclamation-circle"></i>
+                                                                <span class="discrepancy-text"></span>
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             `).join('')}
                                         </div>
                                         
                                         <div class="transfer-grid-actions">
+                                            <div class="bulk-operations-panel">
+                                                <div class="bulk-buttons">
+                                                    <button class="btn-set-max" onclick="setAllToMax('${transfer.stock_entry}')" title="Set all quantities to maximum available">
+                                                        <i class="fa fa-arrow-up"></i> Set Max
+                                                    </button>
+                                                    <button class="btn-clear-all" onclick="clearAllQuantities('${transfer.stock_entry}')" title="Clear all quantities">
+                                                        <i class="fa fa-times"></i> Clear All
+                                                    </button>
+                                                    <button class="btn-reset" onclick="resetToOriginal('${transfer.stock_entry}')" title="Reset to original remaining quantities">
+                                                        <i class="fa fa-undo"></i> Reset
+                                                    </button>
+                                                </div>
+                                                <div class="completion-status">
+                                                    <div class="progress-bar">
+                                                        <div class="progress-fill" style="width: ${transfer.completion_percentage}%"></div>
+                                                    </div>
+                                                    <span class="status-badge ${transfer.status.toLowerCase()}">
+                                                        <i class="fa fa-${transfer.status === 'Complete' ? 'check-circle' : transfer.status === 'Partial' ? 'clock-o' : 'circle-o'}"></i>
+                                                        ${transfer.status} (${transfer.completed_items}/${transfer.total_items})
+                                                    </span>
+                                                </div>
+                                            </div>
                                             <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
                                                 <i class="fa fa-check"></i> Receive All
                                             </button>
@@ -2119,11 +3472,18 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             // Add modal to page
             $('body').append(modalHTML);
             
-            // Setup search and sort functionality
-            setupTransferReceiveFilters();
-            
             // Initialize transfer count
             updateTransferCount();
+            
+            // Setup quantity validation for all input fields
+            setupTransferReceiveQuantityValidation();
+            
+            // Setup click outside modal to close
+            $('#transferReceiveModal').on('click', function(e) {
+                if (e.target === this) {
+                    closeTransferReceiveModal();
+                }
+            });
             
         } catch (error) {
             console.error('Error opening transfer receive modal:', error);
@@ -2133,6 +3493,184 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 
     window.closeTransferReceiveModal = function() {
         $('#transferReceiveModal').remove();
+    };
+
+    // Bulk Operations Functions
+    window.setAllToMax = function(stockEntryName) {
+        const card = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"]`);
+        card.find('.receive-qty-input').each(function() {
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            $(this).val(maxQty.toFixed(2));
+            $(this).removeClass('quantity-exceeds-stock');
+            $(this).closest('.item-grid-row').find('.remaining-qty').removeClass('stock-warning');
+        });
+        frappe.show_alert('All quantities set to maximum available', 3);
+    };
+
+    window.clearAllQuantities = function(stockEntryName) {
+        const card = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"]`);
+        card.find('.receive-qty-input').each(function() {
+            $(this).val('0');
+            $(this).removeClass('quantity-exceeds-stock');
+            $(this).closest('.item-grid-row').find('.remaining-qty').removeClass('stock-warning');
+        });
+        frappe.show_alert('All quantities cleared', 3);
+    };
+
+    window.resetToOriginal = function(stockEntryName) {
+        const card = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"]`);
+        card.find('.receive-qty-input').each(function() {
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            $(this).val(maxQty.toFixed(2));
+            $(this).removeClass('quantity-exceeds-stock');
+            $(this).closest('.item-grid-row').find('.remaining-qty').removeClass('stock-warning');
+            // Clear discrepancy indicators
+            $(this).closest('.item-grid-row').find('.discrepancy-indicator').hide();
+        });
+        frappe.show_alert('Quantities reset to original remaining amounts', 3);
+    };
+
+    // Stock Concern Functions
+    window.raiseStockConcern = function(stockEntryName, itemCode, itemName, expectedQty, uom, warehouse) {
+        // Show concern creation modal
+        const concernModal = `
+            <div class="concern-modal" id="concernModal">
+                <div class="concern-modal-content">
+                    <div class="concern-modal-header">
+                        <h3><i class="fa fa-exclamation-triangle"></i> Raise Stock Concern</h3>
+                        <button class="close-btn" onclick="closeConcernModal()">&times;</button>
+                    </div>
+                    
+                    <div class="concern-modal-body">
+                        <div class="concern-details">
+                            <div class="detail-row">
+                                <label>Item:</label>
+                                <span>${itemCode} - ${itemName}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Warehouse:</label>
+                                <span>${warehouse}</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Expected Quantity:</label>
+                                <span>${expectedQty} ${uom}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="actualQty">Actual Quantity Received:</label>
+                            <input type="number" id="actualQty" class="form-control" step="0.01" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="concernType">Concern Type:</label>
+                            <select id="concernType" class="form-control">
+                                <option value="Quantity Mismatch">Quantity Mismatch</option>
+                                <option value="Quality Issue">Quality Issue</option>
+                                <option value="Damaged Goods">Damaged Goods</option>
+                                <option value="Missing Items">Missing Items</option>
+                                <option value="Wrong Items">Wrong Items</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="concernDescription">Description:</label>
+                            <textarea id="concernDescription" class="form-control" rows="3" placeholder="Describe the issue..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="concernPriority">Priority:</label>
+                            <select id="concernPriority" class="form-control">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="concern-modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeConcernModal()">Cancel</button>
+                        <button type="button" class="btn-create-concern" onclick="createStockConcern('${stockEntryName}', '${itemCode}', '${itemName}', '${expectedQty}', '${uom}', '${warehouse}')">
+                            <i class="fa fa-save"></i> Create Concern
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(concernModal);
+    };
+
+    window.closeConcernModal = function() {
+        $('#concernModal').remove();
+    };
+
+    window.createStockConcern = function(stockEntryName, itemCode, itemName, expectedQty, uom, warehouse) {
+        console.log('createStockConcern called with:', { stockEntryName, itemCode, itemName, expectedQty, uom, warehouse });
+        
+        const actualQty = parseFloat($('#actualQty').val()) || 0;
+        const concernType = $('#concernType').val();
+        const description = $('#concernDescription').val();
+        const priority = $('#concernPriority').val();
+        
+        console.log('Form values:', { actualQty, concernType, description, priority });
+        
+        if (!description.trim()) {
+            frappe.msgprint('Please provide a description for the concern');
+            return;
+        }
+        
+        const concernData = {
+            item_code: itemCode,
+            item_name: itemName,
+            warehouse: warehouse,
+            expected_qty: parseFloat(expectedQty),
+            actual_qty: actualQty,
+            uom: uom,
+            concern_type: concernType,
+            description: description,
+            priority: priority
+        };
+        
+        console.log('Concern data to send:', concernData);
+        console.log('Session name:', window.transferReceiveSessionName);
+        
+        frappe.call({
+            method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_concerns_from_discrepancies',
+            args: {
+                discrepancies_data: JSON.stringify([concernData]),
+                source_document_type: 'Stock Entry',
+                source_document: stockEntryName,
+                pow_session_id: window.transferReceiveSessionName
+            },
+            callback: function(r) {
+                console.log('API response:', r);
+                if (r.message.status === 'success') {
+                    frappe.msgprint({
+                        title: 'Success',
+                        message: `Stock concern created: ${r.message.concern_ids.join(', ')}`,
+                        indicator: 'green'
+                    });
+                    closeConcernModal();
+                } else {
+                    frappe.msgprint({
+                        title: 'Error',
+                        message: r.message.message,
+                        indicator: 'red'
+                    });
+                }
+            },
+            error: function(err) {
+                console.error('API call failed:', err);
+                frappe.msgprint({
+                    title: 'Error',
+                    message: 'Failed to create stock concern: ' + (err.message || 'Unknown error'),
+                    indicator: 'red'
+                });
+            }
+        });
     };
 
     window.receiveAllItems = async function(stockEntryName) {
@@ -2158,6 +3696,26 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 return;
             }
             
+            // Validate quantities before proceeding
+            const validationResult = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.validate_transfer_receive_quantities', {
+                stock_entry_name: stockEntryName,
+                items_data: JSON.stringify(items)
+            });
+            
+            if (validationResult.message.status === 'success' && !validationResult.message.valid) {
+                const errors = validationResult.message.errors;
+                let errorMessage = 'Quantity validation failed:\n';
+                errors.forEach(error => {
+                    errorMessage += `• ${error.item_code}: Requested ${error.requested_qty} ${error.uom}, but only ${error.remaining_qty} ${error.uom} remaining\n`;
+                });
+                frappe.msgprint({
+                    title: 'Validation Error',
+                    message: errorMessage,
+                    indicator: 'red'
+                });
+                return;
+            }
+            
             // Temporarily hide our modal to ensure confirmation dialog appears on top
             const modal = $('#transferReceiveModal');
             modal.hide();
@@ -2172,7 +3730,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.receive_transfer_stock_entry', {
                         stock_entry_name: stockEntryName,
                         items_data: JSON.stringify(items),
-                        company: frappe.defaults.get_default('company'),
+                        company: frappe.defaults.get_global_default('company'),
                         session_name: window.transferReceiveSessionName
                     }).then(result => {
                         if (result.message.status === 'success') {
@@ -2231,27 +3789,289 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         const itemOptions = items.map(item => {
             const itemCode = item.item_code || item.name;
             const itemName = item.item_name || itemCode;
-            return `<option value="${itemCode}">${itemCode}: ${itemName}</option>`;
+            const stockQty = item.stock_qty || 0;
+            const stockUom = item.stock_uom || '';
+            
+            return `<div class="dropdown-item" data-value="${itemCode}" data-name="${itemName}" data-stock-qty="${stockQty}" data-stock-uom="${stockUom}">
+                        <div class="item-info">
+                            <span class="item-code">${itemCode}:</span>
+                            <span class="item-name">${itemName}</span>
+                        </div>
+                        <div class="stock-info">
+                            <span class="stock-qty">${stockQty}</span>
+                            <span class="stock-uom">${stockUom}</span>
+                        </div>
+                    </div>`;
         }).join('');
         
+        const rowId = 'item-row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
         const itemRow = `
-            <div class="item-row">
-                <select class="item-code" required>
-                    <option value="">Select Item</option>
+            <div class="item-row" id="${rowId}">
+                <div class="col-item">
+                    <div class="custom-dropdown">
+                        <input type="text" 
+                               class="dropdown-input item-code-input" 
+                               placeholder="Search item..." 
+                               autocomplete="off">
+                        <div class="dropdown-list item-dropdown-list" style="display: none;">
                     ${itemOptions}
-                </select>
-                <input type="number" class="item-qty" placeholder="Quantity" min="0" step="0.01" required>
-                <select class="item-uom" required>
-                    <option value="">Select UOM</option>
-                </select>
-                <div class="stock-info">Stock: 0</div>
-                <button type="button" class="remove-item-btn" onclick="removeItemRow(this)">
-                    <i class="fa fa-trash"></i>
+                        </div>
+                        <input type="hidden" class="item-code" required>
+                    </div>
+                </div>
+                <div class="col-qty">
+                    <input type="number" class="item-qty" placeholder="0" min="0" step="0.01" max="999999" required>
+                </div>
+                <div class="col-uom">
+                    <div class="custom-dropdown">
+                        <input type="text" 
+                               class="dropdown-input item-uom-input" 
+                               placeholder="UOM" 
+                               autocomplete="off"
+                               readonly>
+                        <div class="dropdown-list uom-dropdown-list" style="display: none;">
+                            <!-- UOM options will be populated dynamically -->
+                        </div>
+                        <input type="hidden" class="item-uom" required>
+                    </div>
+                </div>
+                <div class="col-stock">
+                    <span class="stock-info">0</span>
+                </div>
+                <div class="col-action">
+                    <button type="button" class="remove-item-btn" onclick="removeItemRow(this)" title="Remove item">
+                        <i class="fa fa-times"></i>
                 </button>
+                </div>
             </div>
         `;
         $('#itemsContainer').append(itemRow);
+        
+        // Setup dropdowns for this row
+        setupItemDropdowns(rowId);
     };
+    
+    function setupItemDropdowns(rowId) {
+        const $row = $(`#${rowId}`);
+        
+        // Setup item dropdown
+        setupDropdown(
+            `#${rowId} .item-code-input`, 
+            `#${rowId} .item-dropdown-list`, 
+            `#${rowId} .item-code`
+        );
+        
+        // Setup UOM dropdown
+        setupDropdown(
+            `#${rowId} .item-uom-input`, 
+            `#${rowId} .uom-dropdown-list`, 
+            `#${rowId} .item-uom`
+        );
+        
+        // Handle item selection to populate UOM dropdown
+        $(`#${rowId} .item-dropdown-list`).on('click', '.dropdown-item', async function() {
+            const itemCode = $(this).data('value');
+            const itemName = $(this).data('name');
+            const stockQty = $(this).data('stock-qty');
+            const stockUom = $(this).data('stock-uom');
+            const sourceWarehouse = $('#sourceWarehouse').val();
+            
+            // Update item input to show "itemCode: Item Name" format
+            $(`#${rowId} .item-code-input`).val(`${itemCode}: ${itemName}`);
+            $(`#${rowId} .item-code`).val(itemCode);
+            
+            // Store original stock information for conversion calculations
+            $(`#${rowId} .item-code`).data('original-stock-uom', stockUom);
+            $(`#${rowId} .item-code`).data('original-stock-qty', stockQty);
+            
+            // Update stock info immediately from dropdown data
+            $(`#${rowId} .stock-info`).text(`${stockQty} ${stockUom}`);
+            
+            // Set max attribute for quantity input
+            $(`#${rowId} .item-qty`).attr('max', stockQty);
+            
+            if (itemCode && sourceWarehouse) {
+                // Get UOMs for the selected item
+                const uoms = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_uoms', {
+                    item_code: itemCode
+                });
+                
+                const availableUoms = uoms.message;
+                
+                // Populate UOM dropdown
+                const uomDropdown = $(`#${rowId} .uom-dropdown-list`);
+                uomDropdown.html(availableUoms.map(uom => 
+                    `<div class="dropdown-item" data-value="${uom}" data-name="${uom}">
+                        <span class="item-name">${uom}</span>
+                    </div>`
+                ).join(''));
+                
+                // Auto-select stock UOM
+                $(`#${rowId} .item-uom-input`).val(stockUom);
+                $(`#${rowId} .item-uom`).val(stockUom);
+                
+                // Enable UOM input
+                $(`#${rowId} .item-uom-input`).prop('readonly', false);
+            }
+        });
+        
+        // Handle UOM selection to update stock info and convert quantity
+        $(`#${rowId} .uom-dropdown-list`).on('click', '.dropdown-item', async function() {
+            const selectedUom = $(this).data('value');
+            const itemCode = $(`#${rowId} .item-code`).val();
+            const sourceWarehouse = $('#sourceWarehouse').val();
+            const currentQty = $(`#${rowId} .item-qty`).val();
+            const originalStockUom = $(`#${rowId} .item-code`).data('original-stock-uom');
+            
+            // Update UOM input
+            $(`#${rowId} .item-uom-input`).val(selectedUom);
+            $(`#${rowId} .item-uom`).val(selectedUom);
+            
+            if (itemCode && sourceWarehouse && selectedUom) {
+                try {
+                    // Get stock info in the new UOM
+                    const stockInfo = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_stock_info_in_uom', {
+                        item_code: itemCode,
+                        warehouse: sourceWarehouse,
+                        uom: selectedUom
+                    });
+                    
+                    const result = stockInfo.message;
+                    
+                    // Update stock info display
+                    $(`#${rowId} .stock-info`).text(`${result.converted_qty.toFixed(2)} ${result.converted_uom}`);
+                    
+                    // Update max attribute for quantity input
+                    $(`#${rowId} .item-qty`).attr('max', result.converted_qty);
+                    
+                    // Convert quantity if there's a current quantity and UOM changed
+                    if (currentQty && currentQty > 0 && originalStockUom && originalStockUom !== selectedUom) {
+                        // Get conversion factor from original stock UOM to new UOM
+                        const conversionResult = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_uom_conversion_factor', {
+                            item_code: itemCode,
+                            from_uom: originalStockUom,
+                            to_uom: selectedUom
+                        });
+                        
+                        const conversionFactor = conversionResult.message.conversion_factor;
+                        const convertedQty = parseFloat(currentQty) * conversionFactor;
+                        $(`#${rowId} .item-qty`).val(convertedQty.toFixed(2));
+                        
+                        console.log('Quantity converted:', currentQty, '->', convertedQty, 'Factor:', conversionFactor);
+                    }
+                    
+                    console.log('UOM changed to:', selectedUom, 'Stock info:', result);
+                    
+                } catch (error) {
+                    console.error('Error updating stock info for UOM change:', error);
+                }
+            }
+        });
+        
+        // Store original stock UOM for conversion calculations
+        $(`#${rowId} .item-code`).data('original-stock-uom', '');
+        $(`#${rowId} .item-code`).data('original-stock-qty', 0);
+        
+        // Handle quantity input changes to validate against stock
+        $(`#${rowId} .item-qty`).on('input', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const stockText = $(`#${rowId} .stock-info`).text();
+            const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
+            
+            if (stockMatch) {
+                const stockQty = parseFloat(stockMatch[1]);
+                const stockUom = stockMatch[2];
+                
+                // Add visual feedback for quantity validation
+                if (qty > stockQty) {
+                    $(this).addClass('quantity-exceeds-stock');
+                    $(`#${rowId} .stock-info`).addClass('stock-warning');
+                    // Set max attribute to prevent further input
+                    $(this).attr('max', stockQty);
+                } else {
+                    $(this).removeClass('quantity-exceeds-stock');
+                    $(`#${rowId} .stock-info`).removeClass('stock-warning');
+                    // Remove max attribute when quantity is valid
+                    $(this).removeAttr('max');
+                }
+            }
+        });
+        
+        // Prevent entering quantities greater than available stock
+        $(`#${rowId} .item-qty`).on('keydown', function(e) {
+            const qty = parseFloat($(this).val()) || 0;
+            const stockText = $(`#${rowId} .stock-info`).text();
+            const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
+            
+            if (stockMatch) {
+                const stockQty = parseFloat(stockMatch[1]);
+                
+                // Allow backspace, delete, arrow keys, etc.
+                if ([8, 9, 37, 38, 39, 40, 46].includes(e.keyCode)) {
+                    return true;
+                }
+                
+                // Allow decimal point
+                if (e.keyCode === 190 || e.keyCode === 110) {
+                    return true;
+                }
+                
+                // Allow numbers
+                if (e.keyCode >= 48 && e.keyCode <= 57) {
+                    const newValue = parseFloat($(this).val() + e.key) || 0;
+                    if (newValue > stockQty) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            }
+        });
+        
+        // Handle paste events to validate pasted quantities
+        $(`#${rowId} .item-qty`).on('paste', function(e) {
+            setTimeout(() => {
+                const qty = parseFloat($(this).val()) || 0;
+                const stockText = $(`#${rowId} .stock-info`).text();
+                const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
+                
+                if (stockMatch) {
+                    const stockQty = parseFloat(stockMatch[1]);
+                    
+                    if (qty > stockQty) {
+                        // Cap the quantity at available stock
+                        $(this).val(stockQty.toFixed(2));
+                        $(this).addClass('quantity-exceeds-stock');
+                        $(`#${rowId} .stock-info`).addClass('stock-warning');
+                        
+                        // Show a brief message
+                        frappe.show_alert(`Quantity capped at available stock: ${stockQty}`, 3);
+                    }
+                }
+            }, 10);
+        });
+        
+        // Handle blur event to cap quantities
+        $(`#${rowId} .item-qty`).on('blur', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const stockText = $(`#${rowId} .stock-info`).text();
+            const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
+            
+            if (stockMatch) {
+                const stockQty = parseFloat(stockMatch[1]);
+                
+                if (qty > stockQty) {
+                    // Cap the quantity at available stock
+                    $(this).val(stockQty.toFixed(2));
+                    $(this).addClass('quantity-exceeds-stock');
+                    $(`#${rowId} .stock-info`).addClass('stock-warning');
+                    
+                    // Show a brief message
+                    frappe.show_alert(`Quantity adjusted to available stock: ${stockQty}`, 3);
+                }
+            }
+        });
+    }
 
     window.removeItemRow = function(btn) {
         $(btn).closest('.item-row').remove();
@@ -2261,7 +4081,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     window.showError = function(message, details = null) {
         const errorDisplay = $('#errorDisplay');
         let errorHTML = `
-            <button class="close-error" onclick="hideError()">&times;</button>
+            <button class="close-error" onclick="hideError()" title="Close error">&times;</button>
             <h4><i class="fa fa-exclamation-triangle"></i> Error</h4>
             <p>${message}</p>
         `;
@@ -2278,11 +4098,72 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         
         // Scroll to top of modal
         $('.transfer-modal-content').scrollTop(0);
+        
+        // Add subtle animation
+        errorDisplay.hide().fadeIn(300);
     };
 
     window.hideError = function() {
         $('#errorDisplay').removeClass('show');
     };
+    
+    async function refreshItemsForWarehouse(warehouse) {
+        try {
+            console.log('Starting item refresh for warehouse:', warehouse);
+            
+            // Get updated items for the warehouse
+            const items = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown', {
+                warehouse: warehouse,
+                show_only_stock_items: window.transferModalData.profile_settings.show_only_stock_items || false
+            });
+            
+            console.log('Received items from backend:', items.message);
+            
+            // Update the global items data
+            window.transferModalData.items = items.message;
+            
+            // Clear existing item rows
+            $('#itemsContainer').empty();
+            
+            // Update all existing item dropdowns with new data
+            $('.item-row').each(function() {
+                const rowId = $(this).attr('id');
+                if (rowId) {
+                    updateItemDropdownInRow(rowId);
+                }
+            });
+            
+            console.log('Items refreshed for warehouse:', warehouse);
+        } catch (error) {
+            console.error('Error refreshing items:', error);
+        }
+    }
+    
+    function updateItemDropdownInRow(rowId) {
+        const $row = $(`#${rowId}`);
+        const $itemDropdown = $row.find('.item-dropdown-list');
+        
+        // Update item dropdown with new data
+        const itemOptions = window.transferModalData.items.map(item => {
+            const itemCode = item.item_code || item.name;
+            const itemName = item.item_name || itemCode;
+            const stockQty = item.stock_qty || 0;
+            const stockUom = item.stock_uom || '';
+            
+            return `<div class="dropdown-item" data-value="${itemCode}" data-name="${itemName}" data-stock-qty="${stockQty}" data-stock-uom="${stockUom}">
+                        <div class="item-info">
+                            <span class="item-code">${itemCode}:</span>
+                            <span class="item-name">${itemName}</span>
+                        </div>
+                        <div class="stock-info">
+                            <span class="stock-qty">${stockQty}</span>
+                            <span class="stock-uom">${stockUom}</span>
+                        </div>
+                    </div>`;
+        }).join('');
+        
+        $itemDropdown.html(itemOptions);
+    }
 
     // Default warehouse functions
     window.populateDefaultWarehouseDropdown = async function(profile_name, selected_warehouse = null) {
@@ -2365,38 +4246,16 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     };
 
     function setupTransferModalEvents() {
-        // Item code change event
-        $(document).on('change', '.item-code', async function() {
-            const itemCode = $(this).val();
-            const sourceWarehouse = $('#sourceWarehouse').val();
-            const row = $(this).closest('.item-row');
-            
-            if (itemCode && sourceWarehouse) {
-                // Get stock info and UOMs
-                const [stockInfo, uoms] = await Promise.all([
-                    frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_stock_info', {
-                        item_code: itemCode,
-                        warehouse: sourceWarehouse
-                    }),
-                    frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_uoms', {
-                        item_code: itemCode
-                    })
-                ]);
-                
-                const stock = stockInfo.message;
-                const availableUoms = uoms.message;
-                
-                // Update UOM dropdown with available UOMs
-                const uomSelect = row.find('.item-uom');
-                uomSelect.html('<option value="">Select UOM</option>' + 
-                    availableUoms.map(uom => `<option value="${uom}">${uom}</option>`).join('')
-                );
-                
-                // Auto-select stock UOM
-                uomSelect.val(stock.stock_uom);
-                
-                // Update stock info
-                row.find('.stock-info').text(`Stock: ${stock.stock_qty} ${stock.stock_uom}`);
+        // Setup custom dropdown functionality
+        setupCustomDropdowns();
+        
+        // Handle source warehouse changes to refresh items
+        $(document).on('change', '#sourceWarehouse', async function() {
+            const sourceWarehouse = $(this).val();
+            console.log('Source warehouse changed to:', sourceWarehouse);
+            if (sourceWarehouse && window.transferModalData && window.transferModalData.profile_settings) {
+                console.log('Refreshing items for warehouse:', sourceWarehouse);
+                await refreshItemsForWarehouse(sourceWarehouse);
             }
         });
         
@@ -2421,17 +4280,34 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 validationErrors.push('Target Warehouse is required');
             }
             
-            // Collect items
+            // Collect items and validate quantities
             const items = [];
+            let hasQuantityErrors = false;
+            
             $('.item-row').each(function() {
-                const itemCode = $(this).find('.item-code').val();
-                const qty = $(this).find('.item-qty').val();
-                const uom = $(this).find('.item-uom').val();
+                const itemCode = $(this).find('.col-item .item-code').val();
+                const qty = parseFloat($(this).find('.col-qty input').val()) || 0;
+                const uom = $(this).find('.col-uom .item-uom').val();
+                const stockText = $(this).find('.stock-info').text();
+                const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
                 
-                if (itemCode && qty && uom) {
+                if (itemCode && qty > 0 && uom) {
+                    // Validate quantity against available stock
+                    if (stockMatch) {
+                        const stockQty = parseFloat(stockMatch[1]);
+                        const stockUom = stockMatch[2];
+                        
+                        if (qty > stockQty) {
+                            validationErrors.push(`Quantity ${qty} ${uom} exceeds available stock ${stockQty} ${stockUom} for item ${itemCode}`);
+                            hasQuantityErrors = true;
+                            $(this).find('.col-qty input').addClass('quantity-exceeds-stock');
+                            $(this).find('.stock-info').addClass('stock-warning');
+                        }
+                    }
+                    
                     items.push({
                         item_code: itemCode,
-                        qty: parseFloat(qty),
+                        qty: qty,
                         uom: uom
                     });
                 }
@@ -2439,6 +4315,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             if (items.length === 0) {
                 validationErrors.push('Please add at least one item to transfer');
+            }
+            
+            if (hasQuantityErrors) {
+                validationErrors.unshift('One or more items have quantities exceeding available stock');
             }
             
             // Show validation errors if any
@@ -2456,7 +4336,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     target_warehouse: targetWarehouse,
                     in_transit_warehouse: inTransitWarehouse,
                     items: JSON.stringify(items),
-                    company: frappe.defaults.get_default('company'),
+                    company: frappe.defaults.get_global_default('company'),
                     session_name: window.transferModalData.session_name
                 });
                 
@@ -2509,65 +4389,114 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         });
     }
 
-    function setupTransferReceiveFilters() {
-        // Search functionality
-        $('#searchTransfers').on('input', function() {
-            const searchTerm = $(this).val().toLowerCase();
-            $('.transfer-grid-item').each(function() {
-                const stockEntry = $(this).find('.stock-entry-name').text().toLowerCase();
-                const itemCodes = $(this).find('.item-code').map(function() {
-                    return $(this).text().toLowerCase();
-                }).get().join(' ');
-                const itemNames = $(this).find('.item-name').map(function() {
-                    return $(this).text().toLowerCase();
-                }).get().join(' ');
-                
-                const matches = stockEntry.includes(searchTerm) || 
-                               itemCodes.includes(searchTerm) || 
-                               itemNames.includes(searchTerm);
-                
-                $(this).toggle(matches);
-            });
-            // Update count after search
-            updateTransferCount();
-        });
-        
-        // Sort functionality
-        $('#sortTransfers').on('change', function() {
-            const sortBy = $(this).val();
-            const grid = $('.transfer-grid');
-            const items = grid.find('.transfer-grid-item').get();
-            
-            items.sort(function(a, b) {
-                const $a = $(a);
-                const $b = $(b);
-                
-                switch(sortBy) {
-                    case 'date-desc':
-                        return new Date($b.data('date')) - new Date($a.data('date'));
-                    case 'date-asc':
-                        return new Date($a.data('date')) - new Date($b.data('date'));
-                    case 'stock-entry':
-                        return $a.data('stock-entry').localeCompare($b.data('stock-entry'));
-                    default:
-                        return 0;
-                }
-            });
-            
-            grid.empty().append(items);
-        });
-        
-        // Click outside modal to close
-        $('#transferReceiveModal').on('click', function(e) {
-            if (e.target === this) {
-                closeTransferReceiveModal();
-            }
-        });
-    }
+
     
     function updateTransferCount() {
-        const visibleCount = $('.transfer-grid-item:visible').length;
-        $('.stat-item').html(`<i class="fa fa-file-text"></i> ${visibleCount} Transfers`);
+        const totalCount = $('.transfer-grid-item').length;
+        $('.stat-item').html(`<i class="fa fa-file-text"></i> ${totalCount} Transfers`);
+    }
+    
+    function setupTransferReceiveQuantityValidation() {
+        // Handle quantity input validation
+        $(document).on('input', '.receive-qty-input', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            const expectedQty = parseFloat($(this).data('expected-qty')) || 0;
+            
+            // Add visual feedback for quantity validation
+            if (qty > maxQty) {
+                $(this).addClass('quantity-exceeds-stock');
+                $(this).closest('.item-grid-row').find('.remaining-qty').addClass('stock-warning');
+            } else {
+                $(this).removeClass('quantity-exceeds-stock');
+                $(this).closest('.item-grid-row').find('.remaining-qty').removeClass('stock-warning');
+            }
+            
+            // Check for expected vs actual discrepancies
+            if (qty !== expectedQty && qty > 0) {
+                const variance = qty - expectedQty;
+                const variancePercentage = expectedQty !== 0 ? (variance / expectedQty * 100) : 0;
+                
+                const $indicator = $(this).closest('.item-grid-row').find('.discrepancy-indicator');
+                const $badge = $indicator.find('.discrepancy-badge');
+                const $text = $indicator.find('.discrepancy-text');
+                
+                let discrepancyClass = 'discrepancy-minor';
+                if (Math.abs(variancePercentage) >= 50) {
+                    discrepancyClass = 'discrepancy-critical';
+                } else if (Math.abs(variancePercentage) >= 25) {
+                    discrepancyClass = 'discrepancy-major';
+                } else if (Math.abs(variancePercentage) >= 10) {
+                    discrepancyClass = 'discrepancy-moderate';
+                }
+                
+                $badge.removeClass('discrepancy-minor discrepancy-moderate discrepancy-major discrepancy-critical')
+                      .addClass(discrepancyClass);
+                
+                $text.text(`${variance > 0 ? '+' : ''}${variance.toFixed(2)} (${variancePercentage > 0 ? '+' : ''}${variancePercentage.toFixed(1)}%)`);
+                $indicator.show();
+            } else {
+                $(this).closest('.item-grid-row').find('.discrepancy-indicator').hide();
+            }
+        });
+        
+        // Prevent entering quantities greater than available stock
+        $(document).on('keydown', '.receive-qty-input', function(e) {
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            
+            // Allow backspace, delete, arrow keys, etc.
+            if ([8, 9, 37, 38, 39, 40, 46].includes(e.keyCode)) {
+                return true;
+            }
+            
+            // Allow decimal point
+            if (e.keyCode === 190 || e.keyCode === 110) {
+                return true;
+            }
+            
+            // Allow numbers
+            if (e.keyCode >= 48 && e.keyCode <= 57) {
+                const newValue = parseFloat($(this).val() + e.key) || 0;
+                if (newValue > maxQty) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+        
+        // Handle paste events to validate pasted quantities
+        $(document).on('paste', '.receive-qty-input', function(e) {
+            setTimeout(() => {
+                const qty = parseFloat($(this).val()) || 0;
+                const maxQty = parseFloat($(this).attr('max')) || 0;
+                
+                if (qty > maxQty) {
+                    // Cap the quantity at available stock
+                    $(this).val(maxQty.toFixed(2));
+                    $(this).addClass('quantity-exceeds-stock');
+                    $(this).closest('.item-grid-row').find('.remaining-qty').addClass('stock-warning');
+                    
+                    // Show a brief message
+                    frappe.show_alert(`Quantity capped at available stock: ${maxQty}`, 3);
+                }
+            }, 10);
+        });
+        
+        // Handle blur event to cap quantities
+        $(document).on('blur', '.receive-qty-input', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            
+            if (qty > maxQty) {
+                // Cap the quantity at available stock
+                $(this).val(maxQty.toFixed(2));
+                $(this).addClass('quantity-exceeds-stock');
+                $(this).closest('.item-grid-row').find('.remaining-qty').addClass('stock-warning');
+                
+                // Show a brief message
+                frappe.show_alert(`Quantity adjusted to available stock: ${maxQty}`, 3);
+            }
+        });
     }
 
     // Stock Count Modal Functions
