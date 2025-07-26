@@ -3,140 +3,189 @@
 
 frappe.ui.form.on("POW Stock Concern", {
     refresh(frm) {
-        // Add custom buttons
-        frm.add_custom_button(__('View Related Documents'), function() {
-            frm.trigger('view_related_documents');
-        });
-        
-        frm.add_custom_button(__('Assign to Me'), function() {
-            frm.set_value('assigned_to', frappe.session.user);
-        });
-        
-        // Add resolve button if status is not resolved/closed
-        if (!['Resolved', 'Closed'].includes(frm.doc.status)) {
-            frm.add_custom_button(__('Mark as Resolved'), function() {
-                frm.trigger('mark_as_resolved');
-            }, __('Actions'));
+        // Hide standard submit button text and add custom actions
+        if (frm.doc.docstatus === 0) {
+            frm.set_df_property("submit", "label", "Submit Concern");
         }
-    },
-    
-    item_code(frm) {
-        // Auto-populate item name when item code is selected
-        if (frm.doc.item_code) {
-            frappe.db.get_value('Item', frm.doc.item_code, 'item_name', (r) => {
-                if (r) {
-                    frm.set_value('item_name', r.item_name);
-                }
-            });
+        
+        // Add custom buttons based on status and permissions
+        if (frm.doc.docstatus === 1) {
+            // For submitted concerns
+            if (frm.doc.status === "Open") {
+                // Check if current user can change status before showing buttons
+                frappe.call({
+                    method: "warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern.can_change_status",
+                    args: {
+                        concern_name: frm.doc.name
+                    }
+                }).then(r => {
+                    if (r.message) {
+                        // Show resolve buttons only for users who can change status
+                        frm.add_custom_button(__("Resolve Will Receive"), function() {
+                            changeStatusToResolve(frm, "Resolve Will Receive");
+                        }, __("Actions"));
+                        
+                        frm.add_custom_button(__("Resolve Will Revert"), function() {
+                            changeStatusToResolve(frm, "Resolve Will Revert");
+                        }, __("Actions"));
+                    } else {
+                        // Show specific message based on user role
+                        const currentUser = frappe.session.user;
+                        let message = __("Only assigned users or managers can resolve this concern");
+                        
+                        if (frm.doc.reported_by === currentUser) {
+                            message = __("You cannot resolve concerns that you created. Only assigned users or managers can resolve this concern.");
+                        } else if (frm.doc.source_document_type === "Stock Entry" && frm.doc.source_document) {
+                            // Check if current user is the sender
+                            frappe.call({
+                                method: "frappe.client.get",
+                                args: {
+                                    doctype: "Stock Entry",
+                                    name: frm.doc.source_document
+                                }
+                            }).then(r => {
+                                if (r.message && r.message.owner === currentUser) {
+                                    frm.dashboard.add_indicator(__("You cannot resolve concerns from transfers you created. Only assigned users or managers can resolve this concern."), "orange");
+                                } else {
+                                    frm.dashboard.add_indicator(message, "orange");
+                                }
+                            });
+                        } else {
+                            frm.dashboard.add_indicator(message, "orange");
+                        }
+                    }
+                });
+            }
         }
-    },
-    
-    expected_qty(frm) {
-        frm.trigger('calculate_variance');
-    },
-    
-    actual_qty(frm) {
-        frm.trigger('calculate_variance');
-    },
-    
-    calculate_variance(frm) {
-        // Calculate variance when expected or actual quantity changes
-        if (frm.doc.expected_qty && frm.doc.actual_qty) {
-            const variance = frm.doc.actual_qty - frm.doc.expected_qty;
-            const percentage = frm.doc.expected_qty !== 0 ? (variance / frm.doc.expected_qty) * 100 : 0;
+        
+        // Update document status to show concern status instead of Draft/Submitted
+        if (frm.doc.docstatus === 1) {
+            const statusColors = {
+                "Open": "orange",
+                "Resolve Will Receive": "green", 
+                "Resolve Will Revert": "red"
+            };
             
-            frm.set_value('variance_qty', variance);
-            frm.set_value('variance_percentage', percentage);
-            
-            // Auto-assign priority based on variance percentage
-            if (Math.abs(percentage) >= 50) {
-                frm.set_value('priority', 'Critical');
-            } else if (Math.abs(percentage) >= 25) {
-                frm.set_value('priority', 'High');
-            } else if (Math.abs(percentage) >= 10) {
-                frm.set_value('priority', 'Medium');
-            } else {
-                frm.set_value('priority', 'Low');
-            }
+            const statusColor = statusColors[frm.doc.status] || "blue";
+            frm.dashboard.set_indicator(frm.doc.status, statusColor);
         }
     },
     
-    view_related_documents(frm) {
-        // Show related documents in a dialog
-        const dialog = new frappe.ui.Dialog({
-            title: __('Related Documents'),
-            fields: [
-                {
-                    fieldtype: 'HTML',
-                    fieldname: 'related_docs',
-                    options: '<div id="related-docs-content">Loading...</div>'
-                }
-            ],
-            size: 'large'
-        });
-        
-        dialog.show();
-        
-        // Load related documents
-        frappe.call({
-            method: 'warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern.get_related_documents',
-            args: {
-                concern_name: frm.doc.name
-            },
-            callback: function(r) {
-                if (r.message) {
-                    let html = '<div class="related-documents">';
-                    r.message.forEach(doc => {
-                        html += `
-                            <div class="doc-item">
-                                <strong>${doc.doctype}:</strong> 
-                                <a href="/app/${doc.doctype.toLowerCase().replace(' ', '-')}/${doc.name}" target="_blank">
-                                    ${doc.name}
-                                </a>
-                                <span class="text-muted">(${doc.date})</span>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                    
-                    dialog.get_field('related_docs').$wrapper.html(html);
-                }
+    status(frm) {
+        // Auto-update resolved fields when status changes
+        if (frm.doc.status === "Resolve Will Receive" || frm.doc.status === "Resolve Will Revert") {
+            if (!frm.doc.resolved_by) {
+                frm.set_value("resolved_by", frappe.session.user);
             }
-        });
-    },
-    
-    mark_as_resolved(frm) {
-        // Show resolution dialog
-        const dialog = new frappe.ui.Dialog({
-            title: __('Mark as Resolved'),
-            fields: [
-                {
-                    fieldtype: 'Text',
-                    fieldname: 'resolution_notes',
-                    label: __('Resolution Notes'),
-                    reqd: 1
-                }
-            ],
-            primary_action: {
-                label: __('Resolve'),
-                action: function() {
-                    const notes = dialog.get_value('resolution_notes');
-                    frm.set_value('status', 'Resolved');
-                    frm.set_value('resolution_notes', notes);
-                    frm.set_value('resolved_by', frappe.session.user);
-                    frm.set_value('resolved_date', frappe.datetime.now_datetime());
-                    
-                    frm.save();
-                    dialog.hide();
-                }
+            if (!frm.doc.resolved_date) {
+                frm.set_value("resolved_date", frappe.datetime.now_datetime());
             }
-        });
-        
-        dialog.show();
+        }
     }
 });
 
-// Global function to create concern from transfer receive
+async function changeStatusToResolve(frm, newStatus) {
+    try {
+        // Get resolver notes if needed
+        let resolverNotes = "";
+        if (newStatus !== "Closed") {
+            resolverNotes = await getResolverNotes(newStatus);
+            if (resolverNotes === null) {
+                return; // User cancelled
+            }
+        }
+        
+        // Show loading state
+        frm.dashboard.add_indicator(__("Updating status..."), "blue");
+        
+        // Call the API to update status
+        const result = await frappe.call({
+            method: "warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern.update_concern_status",
+            args: {
+                concern_name: frm.doc.name,
+                new_status: newStatus,
+                resolver_notes: resolverNotes
+            }
+        });
+        
+        if (result.message.status === "success") {
+            // Update the form
+            frm.set_value("status", newStatus);
+            if (resolverNotes) {
+                frm.set_value("resolver_notes", resolverNotes);
+            }
+            if (newStatus !== "Closed") {
+                frm.set_value("resolved_by", frappe.session.user);
+                frm.set_value("resolved_date", frappe.datetime.now_datetime());
+            }
+            
+            // Refresh the form to show updated buttons
+            frm.refresh();
+            
+            // Show success message
+            frappe.msgprint({
+                title: __("Success"),
+                message: result.message.message,
+                indicator: "green"
+            });
+            
+            // Reload the form to reflect changes
+            frm.reload_doc();
+            
+        } else {
+            frappe.msgprint({
+                title: __("Error"),
+                message: result.message.message,
+                indicator: "red"
+            });
+        }
+        
+    } catch (error) {
+        console.error("Error changing status:", error);
+        frappe.msgprint({
+            title: __("Error"),
+            message: __("Error updating status: ") + error.message,
+            indicator: "red"
+        });
+    } finally {
+        // Remove loading indicator
+        frm.dashboard.clear_indicator();
+                }
+            }
+
+function getResolverNotes(newStatus) {
+    return new Promise((resolve) => {
+        const d = new frappe.ui.Dialog({
+            title: __("Add Resolution Notes"),
+            fields: [
+                {
+                    fieldtype: "Text",
+                    label: __("Resolution Notes"),
+                    fieldname: "resolver_notes",
+                    reqd: 1,
+                    description: __("Please provide details about how you resolved this concern.")
+                }
+            ],
+            primary_action_label: __("Submit"),
+            primary_action: function() {
+                const values = d.get_values();
+                if (values) {
+                    d.hide();
+                    resolve(values.resolver_notes);
+                }
+            },
+            secondary_action_label: __("Cancel"),
+            secondary_action: function() {
+                d.hide();
+                resolve(null);
+            }
+        });
+        
+        d.show();
+});
+}
+
+// Global function to create concern from transfer receive (updated for new structure)
 window.createStockConcernFromTransfer = function(itemData, sourceDocumentType, sourceDocument, powSessionId) {
     return frappe.call({
         method: 'warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern.create_stock_concern_from_transfer',

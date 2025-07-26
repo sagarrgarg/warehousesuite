@@ -598,6 +598,130 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
             
             .discrepancy-critical {
+                background: #721c24;
+                color: #f8d7da;
+                border: 1px solid #f5c6cb;
+            }
+            
+            /* Concern Warning Styles */
+            .concern-warning {
+                background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-right: auto;
+                box-shadow: 0 2px 4px rgba(245, 101, 101, 0.2);
+            }
+            
+            .concern-warning i {
+                font-size: 1rem;
+                animation: pulse 2s infinite;
+            }
+            
+            /* Disabled button styles */
+            .btn-receive-all:disabled,
+            .btn-raise-concern:disabled,
+            .btn-set-max:disabled,
+            .btn-clear-all:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            .btn-receive-all:disabled:hover,
+            .btn-raise-concern:disabled:hover,
+            .btn-set-max:disabled:hover,
+            .btn-clear-all:disabled:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Disabled input styles */
+            .disabled-input {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background-color: #f7fafc !important;
+                border-color: #e2e8f0 !important;
+            }
+            
+            .disabled-input:focus {
+                border-color: #e2e8f0 !important;
+                box-shadow: none !important;
+            }
+            
+            /* Transfer grid item with open concerns */
+            .transfer-grid-item.has-open-concerns {
+                border: 2px solid #f56565;
+                background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+                position: relative;
+            }
+            
+            .transfer-grid-item.has-open-concerns::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+                border-radius: 12px 12px 0 0;
+            }
+            
+            /* Bulk Operations Panel */
+            .bulk-operations-panel {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-right: auto;
+            }
+            
+            .bulk-buttons {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            
+            .btn-set-max,
+            .btn-clear-all {
+                background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.85rem;
+                box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
+                min-width: 100px;
+                justify-content: center;
+            }
+            
+            .btn-set-max:hover,
+            .btn-clear-all:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+            }
+            
+            .btn-set-max:active,
+            .btn-clear-all:active {
+                transform: translateY(0);
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); }
+            }
                 background: #dc3545;
                 color: white;
                 border: 1px solid #dc3545;
@@ -2993,7 +3117,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 frappe.msgprint('Error: Could not load items data');
                 return;
             }
-            
+            // If no items, show disabled red button and remove add button
+            const noItems = items_data.length === 0;
             // Create modal HTML with improved compact design
             const modalHTML = `
                 <div class="transfer-modal" id="transferModal">
@@ -3066,9 +3191,15 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             <div class="items-section">
                                 <div class="items-header">
                                     <h4>Items</h4>
-                                    <button type="button" class="add-item-btn compact" onclick="addItemRow()">
-                                        <i class="fa fa-plus"></i> Add
-                                    </button>
+                                    ${noItems ?
+                                        `<button type="button" class="add-item-btn compact" style="background:#dc3545; color:white; cursor:not-allowed; opacity:0.7;" disabled>
+                                            <i class="fa fa-ban"></i> No items in stock for this warehouse
+                                        </button>`
+                                        :
+                                        `<button type="button" class="add-item-btn compact" onclick="addItemRow()">
+                                            <i class="fa fa-plus"></i> Add
+                                        </button>`
+                                    }
                                 </div>
                                 
                                 <div class="items-table">
@@ -3087,7 +3218,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             
                             <div class="transfer-actions">
                                 <button type="button" class="btn-cancel" onclick="closeTransferModal()">Cancel</button>
-                                <button type="submit" class="btn-move-stock">
+                                <button type="submit" class="btn-move-stock" ${noItems ? 'disabled style="background:#dc3545;opacity:0.7;cursor:not-allowed;"' : ''}>
                                     <i class="fa fa-paper-plane"></i> Send Transfer
                                 </button>
                             </div>
@@ -3356,7 +3487,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             
                             <div class="transfer-grid">
                                 ${transfers.map(transfer => `
-                                    <div class="transfer-grid-item" data-stock-entry="${transfer.stock_entry}" data-date="${transfer.posting_date}">
+                                    <div class="transfer-grid-item ${transfer.has_open_concerns ? 'has-open-concerns' : ''}" data-stock-entry="${transfer.stock_entry}" data-date="${transfer.posting_date}">
                                         <div class="transfer-grid-header">
                                             <div class="transfer-basic-info">
                                                 <h4 class="stock-entry-name">
@@ -3397,27 +3528,38 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                         <div class="item-code">${item.item_code}</div>
                                                         <div class="item-name">${item.item_name}</div>
                                                     </div>
-                                                    <div class="qty-cell total-qty" data-label="Total:">${item.qty} ${item.uom}</div>
-                                                    <div class="qty-cell received-qty" data-label="Received:">${item.transferred_qty} ${item.uom}</div>
-                                                    <div class="qty-cell remaining-qty" data-label="Remaining:">${item.remaining_qty} ${item.uom}</div>
+                                                    <div class="qty-cell total-qty" data-label="Total:">
+                                                        ${item.qty} ${item.uom}
+                                                        ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                        </div>` : ''}
+                                                    </div>
+                                                    <div class="qty-cell received-qty" data-label="Received:">
+                                                        ${item.transferred_qty} ${item.uom}
+                                                        ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                        </div>` : ''}
+                                                    </div>
+                                                    <div class="qty-cell remaining-qty" data-label="Remaining:">
+                                                        ${item.remaining_qty} ${item.uom}
+                                                        ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                        </div>` : ''}
+                                                    </div>
                                                     <div class="receive-cell" data-label="Receive:">
                                                         <div class="receive-input-group">
                                                         <input type="number" 
-                                                               class="receive-qty-input" 
+                                                               class="receive-qty-input ${transfer.has_open_concerns ? 'disabled-input' : ''}" 
                                                                value="${item.remaining_qty}" 
                                                                max="${item.remaining_qty}" 
                                                                min="0" 
                                                                step="0.01"
+                                                               ${transfer.has_open_concerns ? 'disabled' : ''}
                                                                data-item-code="${item.item_code}"
                                                                data-item-name="${item.item_name}"
                                                                    data-uom="${item.uom}"
                                                                    data-expected-qty="${item.remaining_qty}">
-                                                            <button type="button" 
-                                                                    class="btn-raise-case" 
-                                                                    onclick="raiseStockConcern('${transfer.stock_entry}', '${item.item_code}', '${item.item_name}', '${item.remaining_qty}', '${item.uom}', '${transfer.dest_warehouse}')"
-                                                                    title="Raise Stock Concern">
-                                                                <i class="fa fa-exclamation-triangle"></i>
-                                                            </button>
+
                                                         </div>
                                                         <div class="discrepancy-indicator" style="display: none;">
                                                             <span class="discrepancy-badge">
@@ -3431,31 +3573,45 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                         </div>
                                         
                                         <div class="transfer-grid-actions">
-                                            <div class="bulk-operations-panel">
-                                                <div class="bulk-buttons">
-                                                    <button class="btn-set-max" onclick="setAllToMax('${transfer.stock_entry}')" title="Set all quantities to maximum available">
-                                                        <i class="fa fa-arrow-up"></i> Set Max
-                                                    </button>
-                                                    <button class="btn-clear-all" onclick="clearAllQuantities('${transfer.stock_entry}')" title="Clear all quantities">
-                                                        <i class="fa fa-times"></i> Clear All
-                                                    </button>
-                                                    <button class="btn-reset" onclick="resetToOriginal('${transfer.stock_entry}')" title="Reset to original remaining quantities">
-                                                        <i class="fa fa-undo"></i> Reset
-                                                    </button>
+                                            ${transfer.has_open_concerns ? `
+                                                <div class="concern-warning">
+                                                    <i class="fa fa-exclamation-triangle"></i>
+                                                    <span>${transfer.concern_count} Open Concern${transfer.concern_count > 1 ? 's' : ''} - Receiving Disabled</span>
                                                 </div>
-                                                <div class="completion-status">
-                                                    <div class="progress-bar">
-                                                        <div class="progress-fill" style="width: ${transfer.completion_percentage}%"></div>
+                                                <div class="bulk-operations-panel">
+                                                    <div class="bulk-buttons">
+                                                        <button class="btn-set-max" disabled title="Cannot set max while concerns are open">
+                                                            <i class="fa fa-arrow-up"></i> Set Max
+                                                        </button>
+                                                        <button class="btn-clear-all" disabled title="Cannot clear while concerns are open">
+                                                            <i class="fa fa-times"></i> Clear All
+                                                        </button>
                                                     </div>
-                                                    <span class="status-badge ${transfer.status.toLowerCase()}">
-                                                        <i class="fa fa-${transfer.status === 'Complete' ? 'check-circle' : transfer.status === 'Partial' ? 'clock-o' : 'circle-o'}"></i>
-                                                        ${transfer.status} (${transfer.completed_items}/${transfer.total_items})
-                                                    </span>
                                                 </div>
-                                            </div>
-                                            <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
-                                                <i class="fa fa-check"></i> Receive All
-                                            </button>
+                                                <button class="btn-receive-all" disabled title="Cannot receive while concerns are open">
+                                                    <i class="fa fa-check"></i> Receive All
+                                                </button>
+                                                <button class="btn-raise-concern" disabled title="Cannot raise new concern while existing concerns are open">
+                                                    <i class="fa fa-exclamation-triangle"></i> Raise Concern
+                                                </button>
+                                            ` : `
+                                                <div class="bulk-operations-panel">
+                                                    <div class="bulk-buttons">
+                                                        <button class="btn-set-max" onclick="setAllToMax('${transfer.stock_entry}')" title="Set all quantities to maximum available">
+                                                            <i class="fa fa-arrow-up"></i> Set Max
+                                                        </button>
+                                                        <button class="btn-clear-all" onclick="clearAllQuantities('${transfer.stock_entry}')" title="Clear all quantities">
+                                                            <i class="fa fa-times"></i> Clear All
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
+                                                    <i class="fa fa-check"></i> Receive All
+                                                </button>
+                                                <button class="btn-raise-concern" onclick="raiseStockConcern('${transfer.stock_entry}')">
+                                                    <i class="fa fa-exclamation-triangle"></i> Raise Concern
+                                                </button>
+                                            `}
                                         </div>
                                     </div>
                                 `).join('')}
@@ -3517,51 +3673,20 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         frappe.show_alert('All quantities cleared', 3);
     };
 
-    window.resetToOriginal = function(stockEntryName) {
-        const card = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"]`);
-        card.find('.receive-qty-input').each(function() {
-            const maxQty = parseFloat($(this).attr('max')) || 0;
-            $(this).val(maxQty.toFixed(2));
-            $(this).removeClass('quantity-exceeds-stock');
-            $(this).closest('.item-grid-row').find('.remaining-qty').removeClass('stock-warning');
-            // Clear discrepancy indicators
-            $(this).closest('.item-grid-row').find('.discrepancy-indicator').hide();
-        });
-        frappe.show_alert('Quantities reset to original remaining amounts', 3);
-    };
 
-    // Stock Concern Functions
-    window.raiseStockConcern = function(stockEntryName, itemCode, itemName, expectedQty, uom, warehouse) {
-        // Show concern creation modal
+
+    // Stock Concern Functions - Updated for Stock Entry Level
+    window.raiseStockConcern = function(stockEntryName) {
+        // Show concern creation modal for stock entry level
         const concernModal = `
-            <div class="concern-modal" id="concernModal">
-                <div class="concern-modal-content">
-                    <div class="concern-modal-header">
+            <div class="transfer-modal" id="concernModal">
+                <div class="transfer-modal-content" style="max-width: 600px;">
+                    <div class="transfer-modal-header">
                         <h3><i class="fa fa-exclamation-triangle"></i> Raise Stock Concern</h3>
                         <button class="close-btn" onclick="closeConcernModal()">&times;</button>
                     </div>
                     
-                    <div class="concern-modal-body">
-                        <div class="concern-details">
-                            <div class="detail-row">
-                                <label>Item:</label>
-                                <span>${itemCode} - ${itemName}</span>
-                            </div>
-                            <div class="detail-row">
-                                <label>Warehouse:</label>
-                                <span>${warehouse}</span>
-                            </div>
-                            <div class="detail-row">
-                                <label>Expected Quantity:</label>
-                                <span>${expectedQty} ${uom}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="actualQty">Actual Quantity Received:</label>
-                            <input type="number" id="actualQty" class="form-control" step="0.01" min="0">
-                        </div>
-                        
+                    <div class="concern-form">
                         <div class="form-group">
                             <label for="concernType">Concern Type:</label>
                             <select id="concernType" class="form-control">
@@ -3576,7 +3701,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         
                         <div class="form-group">
                             <label for="concernDescription">Description:</label>
-                            <textarea id="concernDescription" class="form-control" rows="3" placeholder="Describe the issue..."></textarea>
+                            <textarea id="concernDescription" class="form-control" rows="3" placeholder="Describe the issue with this transfer..."></textarea>
                         </div>
                         
                         <div class="form-group">
@@ -3588,11 +3713,16 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                 <option value="Critical">Critical</option>
                             </select>
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="receiverNotes">Receiver Notes:</label>
+                            <textarea id="receiverNotes" class="form-control" rows="2" placeholder="Additional notes from receiver..."></textarea>
+                        </div>
                     </div>
                     
-                    <div class="concern-modal-actions">
+                    <div class="transfer-actions">
                         <button type="button" class="btn-cancel" onclick="closeConcernModal()">Cancel</button>
-                        <button type="button" class="btn-create-concern" onclick="createStockConcern('${stockEntryName}', '${itemCode}', '${itemName}', '${expectedQty}', '${uom}', '${warehouse}')">
+                        <button type="button" class="btn-create-concern" onclick="createStockConcern('${stockEntryName}')">
                             <i class="fa fa-save"></i> Create Concern
                         </button>
                     </div>
@@ -3607,31 +3737,26 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         $('#concernModal').remove();
     };
 
-    window.createStockConcern = function(stockEntryName, itemCode, itemName, expectedQty, uom, warehouse) {
-        console.log('createStockConcern called with:', { stockEntryName, itemCode, itemName, expectedQty, uom, warehouse });
+    window.createStockConcern = function(stockEntryName) {
+        console.log('createStockConcern called with:', { stockEntryName });
         
-        const actualQty = parseFloat($('#actualQty').val()) || 0;
         const concernType = $('#concernType').val();
-        const description = $('#concernDescription').val();
+        const concernDescription = $('#concernDescription').val();
         const priority = $('#concernPriority').val();
+        const receiverNotes = $('#receiverNotes').val();
         
-        console.log('Form values:', { actualQty, concernType, description, priority });
+        console.log('Form values:', { concernType, concernDescription, priority, receiverNotes });
         
-        if (!description.trim()) {
+        if (!concernDescription.trim()) {
             frappe.msgprint('Please provide a description for the concern');
             return;
         }
         
         const concernData = {
-            item_code: itemCode,
-            item_name: itemName,
-            warehouse: warehouse,
-            expected_qty: parseFloat(expectedQty),
-            actual_qty: actualQty,
-            uom: uom,
             concern_type: concernType,
-            description: description,
-            priority: priority
+            concern_description: concernDescription,
+            priority: priority,
+            receiver_notes: receiverNotes
         };
         
         console.log('Concern data to send:', concernData);
@@ -3640,7 +3765,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         frappe.call({
             method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_concerns_from_discrepancies',
             args: {
-                discrepancies_data: JSON.stringify([concernData]),
+                concern_data: JSON.stringify(concernData),
                 source_document_type: 'Stock Entry',
                 source_document: stockEntryName,
                 pow_session_id: window.transferReceiveSessionName
@@ -3654,6 +3779,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         indicator: 'green'
                     });
                     closeConcernModal();
+                    // Refresh the transfer data to show the concern warning
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
                     frappe.msgprint({
                         title: 'Error',
@@ -3835,6 +3964,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         </div>
                         <input type="hidden" class="item-uom" required>
                     </div>
+                    <div class="uom-conversion-info" style="display: none; font-size: 11px; color: #666; margin-top: 2px;">
+                        <i class="fa fa-info-circle"></i>
+                        <span class="conversion-text"></span>
+                    </div>
                 </div>
                 <div class="col-stock">
                     <span class="stock-info">0</span>
@@ -3886,7 +4019,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             $(`#${rowId} .item-code`).data('original-stock-qty', stockQty);
             
             // Update stock info immediately from dropdown data
-            $(`#${rowId} .stock-info`).text(`${stockQty} ${stockUom}`);
+            $(`#${rowId} .stock-info`).text(`${Number.isInteger(stockQty) ? stockQty : stockQty.toFixed(2)} ${stockUom}`);
             
             // Set max attribute for quantity input
             $(`#${rowId} .item-qty`).attr('max', stockQty);
@@ -3940,10 +4073,45 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     const result = stockInfo.message;
                     
                     // Update stock info display
-                    $(`#${rowId} .stock-info`).text(`${result.converted_qty.toFixed(2)} ${result.converted_uom}`);
+                    let displayQty = result.converted_qty;
+                    if (result.uom_must_be_whole_number) {
+                        displayQty = Math.round(displayQty);
+                    } else {
+                        displayQty = displayQty.toFixed(2);
+                    }
+                    $(`#${rowId} .stock-info`).text(`${displayQty} ${result.converted_uom}`);
                     
                     // Update max attribute for quantity input
                     $(`#${rowId} .item-qty`).attr('max', result.converted_qty);
+                    
+                    // Show UOM conversion info if different from stock UOM
+                    const $conversionInfo = $(`#${rowId} .uom-conversion-info`);
+                    const $conversionText = $(`#${rowId} .conversion-text`);
+                    
+                    if (selectedUom !== originalStockUom) {
+                        // Get conversion factor for display - we want to show how many stock UOMs are in 1 selected UOM
+                        const conversionResult = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_uom_conversion_factor', {
+                            item_code: itemCode,
+                            from_uom: selectedUom,
+                            to_uom: originalStockUom
+                        });
+                        
+                        const conversionFactor = conversionResult.message.conversion_factor;
+                        const toUomMustBeWholeNumber = conversionResult.message.to_uom_must_be_whole_number;
+                        
+                        // Format conversion factor based on UOM settings
+                        let formattedFactor;
+                        if (toUomMustBeWholeNumber) {
+                            formattedFactor = Math.round(conversionFactor);
+                        } else {
+                            formattedFactor = conversionFactor.toFixed(3);
+                        }
+                        
+                        $conversionText.text(`1 ${selectedUom} = ${formattedFactor} ${originalStockUom}`);
+                        $conversionInfo.show();
+                    } else {
+                        $conversionInfo.hide();
+                    }
                     
                     // Convert quantity if there's a current quantity and UOM changed
                     if (currentQty && currentQty > 0 && originalStockUom && originalStockUom !== selectedUom) {

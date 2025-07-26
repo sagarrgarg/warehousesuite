@@ -3,44 +3,8 @@ from frappe.model.document import Document
 from frappe.utils import now_datetime
 
 class POWStockConcern(Document):
-    def autoname(self):
-        """Generate unique concern ID"""
-        if not self.concern_id:
-            # Generate concern ID with format: CONC-YYYYMMDD-XXXX
-            from datetime import datetime
-            date_str = datetime.now().strftime("%Y%m%d")
-            
-            # Get the next sequence number for today
-            last_concern = frappe.get_all(
-                "POW Stock Concern",
-                filters={"concern_id": ["like", f"CONC-{date_str}-%"]},
-                fields=["concern_id"],
-                order_by="concern_id desc",
-                limit=1
-            )
-            
-            if last_concern:
-                last_seq = int(last_concern[0].concern_id.split("-")[-1])
-                new_seq = last_seq + 1
-            else:
-                new_seq = 1
-            
-            self.concern_id = f"CONC-{date_str}-{new_seq:04d}"
-    
     def validate(self):
         """Validate concern data"""
-        # Auto-populate item name if not set
-        if self.item_code and not self.item_name:
-            self.item_name = frappe.db.get_value("Item", self.item_code, "item_name")
-        
-        # Calculate variance
-        if self.expected_qty and self.actual_qty:
-            self.variance_qty = self.actual_qty - self.expected_qty
-            if self.expected_qty != 0:
-                self.variance_percentage = (self.variance_qty / self.expected_qty) * 100
-            else:
-                self.variance_percentage = 0
-        
         # Set reported by and date if not set
         if not self.reported_by:
             self.reported_by = frappe.session.user
@@ -48,206 +12,245 @@ class POWStockConcern(Document):
         if not self.reported_date:
             self.reported_date = now_datetime()
         
-        # Auto-assign priority based on variance percentage
-        if self.variance_percentage:
-            if abs(self.variance_percentage) >= 50:
-                self.priority = "Critical"
-            elif abs(self.variance_percentage) >= 25:
-                self.priority = "High"
-            elif abs(self.variance_percentage) >= 10:
-                self.priority = "Medium"
-            else:
-                self.priority = "Low"
+    def before_submit(self):
+        """Set initial status when submitting"""
+        self.status = "Open"
     
-    def on_update(self):
-        """Handle status changes"""
-        # If status is changed to Resolved or Closed, set resolved info
-        if self.status in ["Resolved", "Closed"] and not self.resolved_by:
-            self.resolved_by = frappe.session.user
-            self.resolved_date = now_datetime()
-        
-        # Send notifications for status changes
-        self.send_status_notification()
+    def on_submit(self):
+        """Handle post-submit actions"""
+        # Create notification for stock users
+        self.create_assignment_notification()
     
-    def send_status_notification(self):
-        """Send notifications for concern status changes"""
-        if self.assigned_to and self.assigned_to != frappe.session.user:
-            # Send notification to assigned user
-            frappe.sendmail(
-                recipients=[self.assigned_to],
-                subject=f"POW Stock Concern {self.concern_id} - Status Updated",
-                message=f"""
-                <p>Hello,</p>
-                <p>The status of POW Stock Concern <strong>{self.concern_id}</strong> has been updated to <strong>{self.status}</strong>.</p>
-                <p><strong>Item:</strong> {self.item_code} - {self.item_name}</p>
-                <p><strong>Warehouse:</strong> {self.warehouse}</p>
-                <p><strong>Variance:</strong> {self.variance_qty} {self.uom} ({self.variance_percentage:.2f}%)</p>
-                <p><strong>Priority:</strong> {self.priority}</p>
-                <p>Please review and take necessary action.</p>
-                """,
-                now=True
+    def create_assignment_notification(self):
+        """Create a ToDo assignment for stock users"""
+        try:
+            # Get stock users or users with POW Manager role
+            managers = frappe.get_all("User", 
+                filters={"enabled": 1},
+                or_filters=[
+                    ["Has Role", "role", "=", "POW Manager"],
+                    ["Has Role", "role", "=", "Stock User"]
+                ],
+                pluck="name"
             )
+            
+            if not managers:
+                # Fallback to system manager
+                managers = ["Administrator"]
+            
+            # Create ToDo for assignment
+            todo = frappe.get_doc({
+                "doctype": "ToDo",
+                "description": f"Stock Concern: {self.name} - {self.source_document}",
+                "reference_type": "POW Stock Concern",
+                "reference_name": self.name,
+                "assigned_by": frappe.session.user,
+                "assigned_to": managers[0],  # Assign to first manager
+                "priority": "Medium",
+                "status": "Open"
+            })
+            todo.insert(ignore_permissions=True)
+            
+        except Exception as e:
+            frappe.log_error(f"Error creating assignment notification for POW Stock Concern {self.name}: {str(e)}")
+    
+    def check_user_assignment(self):
+        """Check if current user is assigned to this concern"""
+        try:
+            # Check if user has ToDo assignment for this concern
+            todo = frappe.get_all("ToDo", 
+                filters={
+                    "reference_type": "POW Stock Concern",
+                    "reference_name": self.name,
+                    "assigned_to": frappe.session.user,
+                    "status": "Open"
+                },
+                limit=1
+            )
+            
+            return len(todo) > 0
+        except Exception as e:
+            frappe.log_error(f"Error checking user assignment for POW Stock Concern {self.name}: {str(e)}")
+            return False
+    
+    def can_change_status(self):
+        """Check if current user can change status - only assigned users or specific roles"""
+        current_user = frappe.session.user
+        
+        # DENY access to creator (receiver) - they cannot resolve their own concerns
+        if self.reported_by == current_user:
+            return False
+        
+        # DENY access to sender - they cannot resolve concerns from their transfers
+        if self.source_document_type == "Stock Entry" and self.source_document:
+            try:
+                stock_entry = frappe.get_doc("Stock Entry", self.source_document)
+                if stock_entry.owner == current_user:
+                    return False
+            except:
+                pass  # If stock entry doesn't exist, continue with other checks
+        
+        # Allow if user is assigned to this concern
+        if self.check_user_assignment():
+            return True
+        
+        # Check if user has specific roles that can resolve concerns
+        user_roles = frappe.get_roles(current_user)
+        allowed_roles = ["POW Manager", "Stock User", "System Manager"]
+        
+        for role in allowed_roles:
+            if role in user_roles:
+                return True
+        
+        # Deny access to everyone else
+        return False
 
 @frappe.whitelist()
-def create_stock_concern_from_transfer(item_data, source_document_type, source_document, pow_session_id=None):
-    """Create a stock concern from transfer receive discrepancy"""
+def can_change_status(concern_name):
+    """Check if current user can change status of a concern"""
     try:
-        frappe.logger().info(f"Starting stock concern creation from transfer...")
-        frappe.logger().info(f"Input data: item_data={item_data}, source_document_type={source_document_type}, source_document={source_document}, pow_session_id={pow_session_id}")
+        concern = frappe.get_doc("POW Stock Concern", concern_name)
+        return concern.can_change_status()
+    except Exception as e:
+        frappe.log_error(f"Error checking status change permission for POW Stock Concern {concern_name}: {str(e)}")
+        return False
+
+@frappe.whitelist()
+def update_concern_status(concern_name, new_status, resolver_notes=None):
+    """Update concern status - allows changes even on submitted documents"""
+    try:
+        concern = frappe.get_doc("POW Stock Concern", concern_name)
         
-        item_data = frappe.parse_json(item_data)
-        frappe.logger().info(f"Parsed item_data: {item_data}")
+        # Check if user can change status
+        if not concern.can_change_status():
+            current_user = frappe.session.user
+            error_message = "You don't have permission to change the status of this concern"
+            
+            # Provide more specific error messages
+            if concern.reported_by == current_user:
+                error_message = "You cannot resolve concerns that you created. Only assigned users or managers can resolve this concern."
+            elif concern.source_document_type == "Stock Entry" and concern.source_document:
+                try:
+                    stock_entry = frappe.get_doc("Stock Entry", concern.source_document)
+                    if stock_entry.owner == current_user:
+                        error_message = "You cannot resolve concerns from transfers you created. Only assigned users or managers can resolve this concern."
+                except:
+                    pass
+            
+            return {
+                "status": "error",
+                "message": error_message
+            }
         
-        # Get company with fallback
+        # Validate status transition - only Open to Resolved statuses
+        valid_transitions = {
+            "Open": ["Resolve Will Receive", "Resolve Will Revert"]
+        }
+        
+        if concern.status not in valid_transitions or new_status not in valid_transitions.get(concern.status, []):
+            return {
+                "status": "error", 
+                "message": f"Invalid status transition from '{concern.status}' to '{new_status}'"
+            }
+        
+        # Use frappe.db.set_value to bypass form validation for submitted documents
+        update_fields = {
+            "status": new_status,
+            "resolved_by": frappe.session.user,
+            "resolved_date": now_datetime()
+        }
+        
+        if resolver_notes:
+            update_fields["resolver_notes"] = resolver_notes
+        
+        # Update the document directly in the database
+        frappe.db.set_value("POW Stock Concern", concern_name, update_fields, update_modified=False)
+        
+        # Close the ToDo assignment when concern is resolved
+        close_todo_assignment(concern_name)
+        
+        return {
+            "status": "success",
+            "message": f"Concern resolved successfully as '{new_status}'"
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error updating POW Stock Concern status: {str(e)}")
+        return {
+            "status": "error",
+            "message": f"Error updating status: {str(e)}"
+        }
+
+def close_todo_assignment(concern_name):
+    """Close ToDo assignment when concern is resolved"""
+    try:
+        todos = frappe.get_all("ToDo", 
+            filters={
+                "reference_type": "POW Stock Concern",
+                "reference_name": concern_name,
+                "status": "Open"
+            }
+        )
+        
+        for todo in todos:
+            frappe.db.set_value("ToDo", todo.name, "status", "Closed")
+            
+    except Exception as e:
+        frappe.log_error(f"Error closing ToDo assignment for POW Stock Concern {concern_name}: {str(e)}")
+
+@frappe.whitelist()
+def get_concern_status_options(concern_name):
+    """Get available status options for a concern"""
+    try:
+        concern = frappe.get_doc("POW Stock Concern", concern_name)
+        
+        valid_transitions = {
+            "Open": ["Resolve Will Receive", "Resolve Will Revert"]
+        }
+        
+        return valid_transitions.get(concern.status, [])
+        
+    except Exception as e:
+        frappe.log_error(f"Error getting status options for POW Stock Concern {concern_name}: {str(e)}")
+        return []
+
+@frappe.whitelist()
+def create_stock_concern_from_transfer(concern_data, source_document_type, source_document, pow_session_id=None):
+    """Create a stock concern from transfer receive process"""
+    try:
+        concern_data = frappe.parse_json(concern_data)
+        
+        # Get company
         company = frappe.defaults.get_global_default('company')
         if not company:
             company = frappe.db.get_single_value('Global Defaults', 'default_company')
         if not company:
             company = frappe.get_all('Company', limit=1, pluck='name')[0] if frappe.get_all('Company') else None
         
-        frappe.logger().info(f"Using company: {company}")
-        
+        # Create concern
         concern = frappe.new_doc("POW Stock Concern")
         concern.company = company
-        concern.concern_type = "Quantity Mismatch"
-        concern.item_code = item_data.get('item_code')
-        concern.item_name = item_data.get('item_name')
-        concern.warehouse = item_data.get('warehouse')
-        concern.expected_qty = item_data.get('expected_qty', 0)
-        concern.actual_qty = item_data.get('actual_qty', 0)
-        concern.uom = item_data.get('uom')
+        concern.concern_type = concern_data.get('concern_type', 'Quantity Mismatch')
+        concern.priority = concern_data.get('priority', 'Medium')
         concern.source_document_type = source_document_type
         concern.source_document = source_document
         concern.pow_session_id = pow_session_id
+        concern.concern_description = concern_data.get('concern_description', f'Concern raised for {source_document_type}: {source_document}')
+        concern.receiver_notes = concern_data.get('receiver_notes', '')
         
-        # Create a more descriptive message based on the source document type
-        if source_document_type == "Stock Entry":
-            concern.description = f"Quantity mismatch detected during transfer receive process. Expected: {concern.expected_qty} {concern.uom}, Actual: {concern.actual_qty} {concern.uom}."
-        else:
-            concern.description = f"Quantity mismatch detected during {source_document_type.lower()} process. Expected: {concern.expected_qty} {concern.uom}, Actual: {concern.actual_qty} {concern.uom}."
-        
-        frappe.logger().info(f"Concern data before insert: {concern.as_dict()}")
-        
-        # Validate concern before insert
-        concern.validate()
-        frappe.logger().info(f"Concern validation passed")
-        
-        # Insert the concern
+        # Insert and submit
         concern.insert()
-        frappe.logger().info(f"Concern inserted successfully: {concern.name}")
-        
-        # Commit the transaction
-        frappe.db.commit()
-        frappe.logger().info(f"Database committed for concern: {concern.name}")
-        
-        frappe.logger().info(f"Stock concern created successfully: {concern.concern_id}")
+        concern.submit()
         
         return {
             "status": "success",
-            "concern_id": concern.concern_id,
-            "message": f"Stock concern created: {concern.concern_id}"
+            "concern_name": concern.name,
+            "message": f"Stock concern created successfully: {concern.name}"
         }
         
     except Exception as e:
-        frappe.logger().error(f"Error creating stock concern: {str(e)}")
-        frappe.logger().error(f"Full traceback: {frappe.get_traceback()}")
+        frappe.log_error(f"Error creating stock concern from transfer: {str(e)}")
         return {
             "status": "error",
             "message": str(e)
-        }
-
-@frappe.whitelist()
-def get_concerns_for_warehouse(warehouse, status=None):
-    """Get stock concerns for a specific warehouse"""
-    try:
-        filters = {"warehouse": warehouse}
-        if status:
-            filters["status"] = status
-        
-        concerns = frappe.get_all(
-            "POW Stock Concern",
-            filters=filters,
-            fields=["name", "concern_id", "item_code", "item_name", "concern_type", "priority", "status", "expected_qty", "actual_qty", "variance_qty", "variance_percentage", "reported_date"],
-            order_by="reported_date desc"
-        )
-        
-        return concerns
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting concerns for warehouse: {str(e)}")
-        return []
-
-@frappe.whitelist()
-def get_concern_statistics(warehouse=None):
-    """Get concern statistics for dashboard"""
-    try:
-        filters = {}
-        if warehouse:
-            filters["warehouse"] = warehouse
-        
-        # Get total concerns
-        total_concerns = frappe.db.count("POW Stock Concern", filters)
-        
-        # Get concerns by status
-        status_counts = frappe.db.sql("""
-            SELECT status, COUNT(*) as count
-            FROM `tabPOW Stock Concern`
-            WHERE warehouse = %s
-            GROUP BY status
-        """, warehouse, as_dict=True)
-        
-        # Get concerns by priority
-        priority_counts = frappe.db.sql("""
-            SELECT priority, COUNT(*) as count
-            FROM `tabPOW Stock Concern`
-            WHERE warehouse = %s
-            GROUP BY priority
-        """, warehouse, as_dict=True)
-        
-        # Get recent concerns (last 7 days)
-        recent_concerns = frappe.db.sql("""
-            SELECT COUNT(*) as count
-            FROM `tabPOW Stock Concern`
-            WHERE warehouse = %s
-            AND reported_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        """, warehouse, as_dict=True)
-        
-        return {
-            "total_concerns": total_concerns,
-            "status_counts": status_counts,
-            "priority_counts": priority_counts,
-            "recent_concerns": recent_concerns[0].count if recent_concerns else 0
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting concern statistics: {str(e)}")
-        return {} 
-
-@frappe.whitelist()
-def get_related_documents(concern_name):
-    """Get related documents for a stock concern"""
-    try:
-        concern = frappe.get_doc("POW Stock Concern", concern_name)
-        related_docs = []
-        
-        # Add source document if exists
-        if concern.source_document and concern.source_document_type:
-            related_docs.append({
-                'doctype': concern.source_document_type,
-                'name': concern.source_document,
-                'date': concern.reported_date.strftime('%Y-%m-%d') if concern.reported_date else ''
-            })
-        
-        # Add POW Session if exists
-        if concern.pow_session_id:
-            related_docs.append({
-                'doctype': 'POW Session',
-                'name': concern.pow_session_id,
-                'date': concern.reported_date.strftime('%Y-%m-%d') if concern.reported_date else ''
-            })
-        
-        return related_docs
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting related documents: {str(e)}")
-        return [] 
+        } 
