@@ -3430,6 +3430,197 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     border: 2px solid #000 !important;
                 }
             }
+            
+            /* Print Labels Modal Styles */
+            .print-labels-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                display: none;
+            }
+            
+            .print-labels-content {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                max-width: 600px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .print-labels-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .print-labels-header h3 {
+                margin: 0;
+                color: #2d3748;
+                font-size: 1.25rem;
+            }
+            
+            .print-labels-body {
+                padding: 1.5rem;
+            }
+            
+            .item-info {
+                margin-bottom: 1.5rem;
+                padding: 1rem;
+                background: #f7fafc;
+                border-radius: 8px;
+            }
+            
+            .item-info h4 {
+                margin: 0 0 0.5rem 0;
+                color: #2d3748;
+            }
+            
+            .item-code {
+                color: #718096;
+                font-family: monospace;
+                font-size: 0.875rem;
+            }
+            
+            .print-options {
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+                color: #2d3748;
+            }
+            
+            .form-control {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 1rem;
+                transition: border-color 0.2s ease;
+            }
+            
+            .form-control:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .form-text {
+                font-size: 0.875rem;
+                color: #718096;
+                margin-top: 0.25rem;
+            }
+            
+            .label-preview {
+                margin-top: 1.5rem;
+                padding: 1rem;
+                background: #f7fafc;
+                border-radius: 8px;
+            }
+            
+            .label-preview h5 {
+                margin: 0 0 1rem 0;
+                color: #2d3748;
+            }
+            
+            .preview-container {
+                display: flex;
+                justify-content: center;
+            }
+            
+            .label-sample {
+                width: 200px;
+                height: 100px;
+                border: 2px solid #e2e8f0;
+                border-radius: 6px;
+                background: white;
+                padding: 0.5rem;
+                font-size: 0.75rem;
+                text-align: center;
+            }
+            
+            .label-content {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                height: 100%;
+            }
+            
+            .label-item-code {
+                font-weight: bold;
+                font-size: 0.8rem;
+                color: #2d3748;
+            }
+            
+            .label-item-name {
+                font-size: 0.7rem;
+                color: #4a5568;
+                line-height: 1.2;
+            }
+            
+            .label-weight {
+                font-size: 0.65rem;
+                color: #718096;
+            }
+            
+            .label-barcode {
+                font-size: 0.6rem;
+                color: #a0aec0;
+                font-family: monospace;
+            }
+            
+            .print-labels-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.75rem;
+                padding: 1.5rem;
+                border-top: 1px solid #e2e8f0;
+                background: #f7fafc;
+            }
+            
+            .item-actions {
+                margin-top: 1rem;
+            }
+            
+            /* Responsive adjustments for print labels modal */
+            @media (max-width: 768px) {
+                .print-labels-content {
+                    width: 95%;
+                    max-height: 95vh;
+                }
+                
+                .print-labels-footer {
+                    flex-direction: column;
+                }
+                
+                .print-labels-footer .btn {
+                    width: 100%;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .label-sample {
+                    width: 150px;
+                    height: 80px;
+                }
+            }
         </style>
     `;
     
@@ -5954,6 +6145,12 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         </span>
                         ${itemData.disabled ? '<span class="badge badge-warning">Disabled</span>' : ''}
                     </div>
+                    
+                    <div class="item-actions">
+                        <button class="btn btn-primary btn-sm" onclick="openPrintLabelsModal('${itemData.item_code}')">
+                            <i class="fa fa-print"></i> Print Labels
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -6788,4 +6985,372 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             frappe.msgprint('Error creating stock verification: ' + error.message);
         }
     };
+
+
+};
+
+// Global Print Labels Modal Functions
+window.openPrintLabelsModal = async function(itemCode) {
+    try {
+        // Get item details for barcode selection
+        const itemResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_inquiry_data', {
+            item_code: itemCode,
+            allowed_warehouses: []
+        });
+        
+        if (itemResponse.message.status !== 'success') {
+            frappe.msgprint('Error loading item details');
+            return;
+        }
+        
+        const itemData = itemResponse.message.data;
+        
+        // Create print labels modal
+        const modalHTML = `
+            <div class="print-labels-modal" id="printLabelsModal">
+                <div class="print-labels-content">
+                    <div class="print-labels-header">
+                        <h3><i class="fa fa-print"></i> Print Labels</h3>
+                        <button class="close-btn" onclick="closePrintLabelsModal()">&times;</button>
+                    </div>
+                    
+                    <div class="print-labels-body">
+                        <div class="item-info">
+                            <h4>${itemData.item_name || itemData.item_code}</h4>
+                            <div class="item-code">${itemData.item_code}</div>
+                        </div>
+                        
+                        <div class="print-options">
+                            ${itemData.barcodes && itemData.barcodes.length > 0 ? `
+                                <div class="form-group">
+                                    <label>Barcode Selection</label>
+                                    <select id="barcodeSelection" class="form-control">
+                                        <option value="">No Barcode (Simple Label)</option>
+                                        ${itemData.barcodes.map(barcode => `
+                                            <option value="${barcode.barcode}" 
+                                                    ${barcode.uom === itemData.stock_uom ? 'selected' : ''}>
+                                                ${barcode.barcode} ${barcode.uom ? `(${barcode.uom})` : ''}
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                    <small class="form-text text-muted">Select barcode or choose "No Barcode" for simple label</small>
+                                </div>
+                            ` : `
+                                <div class="form-group">
+                                    <div class="alert alert-info">
+                                        <i class="fa fa-info-circle"></i> No barcodes found for this item. Labels will be printed without barcodes.
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                        
+                        <div class="label-preview" id="labelPreview">
+                            <h5>Label Preview</h5>
+                            <div class="preview-container">
+                                <div class="label-sample">
+                                    <div class="label-content">
+                                        <div class="label-item-code">${itemData.item_code}</div>
+                                        <div class="label-item-name">${itemData.item_name || itemData.item_code}</div>
+                                        ${itemData.weight > 0 ? `<div class="label-weight">${itemData.weight} ${itemData.weight_uom || 'Gram'}</div>` : ''}
+                                        <div class="label-barcode">[Barcode will appear here]</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="print-labels-footer">
+                        <button class="btn btn-secondary" onclick="closePrintLabelsModal()">
+                            <i class="fa fa-times"></i> Cancel
+                        </button>
+                        <button class="btn btn-primary" onclick="generateAndDownloadZPL()">
+                            <i class="fa fa-download"></i> Download ZPL File
+                        </button>
+                        <button class="btn btn-success" onclick="generateAndPrintZPL()">
+                            <i class="fa fa-print"></i> Print Directly
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHTML);
+        $('#printLabelsModal').fadeIn(300);
+        
+        // Store item data globally for use in print functions
+        window.currentPrintItemData = itemData;
+        
+        // Setup event handlers
+        setupPrintLabelsEvents();
+        
+    } catch (error) {
+        console.error('Error opening print labels modal:', error);
+        frappe.msgprint('Error opening print labels modal');
+    }
+};
+
+window.closePrintLabelsModal = function() {
+    $('#printLabelsModal').fadeOut(300, function() {
+        $(this).remove();
+    });
+    window.currentPrintItemData = null;
+};
+
+function setupPrintLabelsEvents() {
+    // Update preview when barcode selection changes
+    $('#barcodeSelection').on('change', updateLabelPreview);
+    
+    // Initial preview update
+    updateLabelPreview();
+}
+
+function updateLabelPreview() {
+    const selectedBarcode = $('#barcodeSelection').val();
+    const itemData = window.currentPrintItemData;
+    
+    if (!itemData) return;
+    
+    // Weight text
+    const weightText = itemData.weight > 0 ? `${itemData.weight} ${itemData.weight_uom || 'Gram'}` : '';
+    
+    if (selectedBarcode) {
+        // Preview with barcode format
+        const previewHTML = `
+            <h5>Label Preview (With Barcode)</h5>
+            <div class="preview-container">
+                <div class="label-sample" style="width: 400px; height: 200px; border: 2px solid #333; background: white; padding: 10px; font-family: monospace; position: relative;">
+                    <div class="label-content" style="text-align: center;">
+                        <div class="label-item-code" style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">${itemData.item_code}</div>
+                        <div class="label-item-name" style="font-size: 14px; margin-bottom: 10px; line-height: 1.2;">${itemData.item_name || itemData.item_code}</div>
+                        ${weightText ? `<div class="label-weight" style="font-size: 12px; margin-bottom: 10px;">${weightText}</div>` : ''}
+                        <div class="label-pcs" style="font-size: 12px; margin-bottom: 15px;">220 Pcs/Carton</div>
+                        <div class="label-barcode" style="margin-top: 10px;">
+                            <canvas id="barcodeCanvas" width="200" height="40"></canvas>
+                            <div style="font-size: 8px; margin-top: 2px;">${selectedBarcode}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#labelPreview').html(previewHTML);
+        
+        // Generate barcode after HTML is added
+        setTimeout(() => {
+            generateBarcode(selectedBarcode, 'barcodeCanvas');
+        }, 100);
+    } else {
+        // Preview without barcode format
+        const previewHTML = `
+            <h5>Label Preview (Simple Label)</h5>
+            <div class="preview-container">
+                <div class="label-sample" style="width: 400px; height: 150px; border: 2px solid #333; background: white; padding: 10px; font-family: monospace; position: relative;">
+                    <div class="label-content" style="text-align: center;">
+                        <div class="label-item-code" style="font-size: 16px; font-weight: bold; margin-bottom: 20px; margin-top: 10px;">${itemData.item_code}</div>
+                        <div class="label-item-name" style="font-size: 14px; margin-bottom: 20px; line-height: 1.2;">${itemData.item_name || itemData.item_code}</div>
+                        ${weightText ? `<div class="label-weight" style="font-size: 12px;">${weightText}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#labelPreview').html(previewHTML);
+    }
+}
+
+function generateBarcode(text, canvasId) {
+    try {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        
+        // Simple Code 128 barcode generation
+        const code128Patterns = {
+            '0': '11011001100', '1': '11001101100', '2': '11001100110', '3': '10010011000',
+            '4': '10010001100', '5': '10001001100', '6': '10011001000', '7': '10011000100',
+            '8': '10001100100', '9': '11001001000', 'A': '11001000100', 'B': '11000100100',
+            'C': '10110011100', 'D': '10011011100', 'E': '10011001110', 'F': '10111001100',
+            'G': '10011101100', 'H': '10011100110', 'I': '11001110010', 'J': '11001011100',
+            'K': '11001001110', 'L': '11011100100', 'M': '11001110100', 'N': '10011110100',
+            'O': '10011110010', 'P': '11100101100', 'Q': '11100100110', 'R': '11101100100',
+            'S': '11100110100', 'T': '11100110010', 'U': '11011011000', 'V': '11011000110',
+            'W': '11000110110', 'X': '10100011000', 'Y': '10001011000', 'Z': '10001000110'
+        };
+        
+        // Start pattern for Code 128
+        const startPattern = '11010010000';
+        const stopPattern = '1100011101011';
+        
+        // Build barcode pattern
+        let barcodePattern = startPattern;
+        
+        // Add each character
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i].toUpperCase();
+            if (code128Patterns[char]) {
+                barcodePattern += code128Patterns[char];
+            } else {
+                // Default to '0' for unknown characters
+                barcodePattern += code128Patterns['0'];
+            }
+        }
+        
+        barcodePattern += stopPattern;
+        
+        // Calculate bar width
+        const barWidth = width / barcodePattern.length;
+        
+        // Draw barcode
+        ctx.fillStyle = '#000000';
+        for (let i = 0; i < barcodePattern.length; i++) {
+            if (barcodePattern[i] === '1') {
+                ctx.fillRect(i * barWidth, 0, barWidth, height);
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error generating barcode:', error);
+        // Fallback to text if barcode generation fails
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000000';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        }
+    }
+}
+
+window.generateAndDownloadZPL = async function() {
+    try {
+        const selectedBarcode = $('#barcodeSelection').val();
+        const itemData = window.currentPrintItemData;
+        
+        if (!itemData) {
+            frappe.msgprint('No item data available');
+            return;
+        }
+        
+        // Show loading
+        frappe.show_alert('Generating ZPL file...', 'blue');
+        
+        // Generate ZPL
+        const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
+            item_code: itemData.item_code,
+            quantity: 1,
+            selected_barcode: selectedBarcode
+        });
+        
+        if (response.message.status === 'success') {
+            // Create and download file
+            const zplContent = response.message.zpl_code;
+            const fileName = `${itemData.item_code}_label.zpl`;
+            
+            // Create blob and download
+            const blob = new Blob([zplContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            frappe.show_alert(`ZPL file downloaded: ${fileName}`, 'green');
+        } else {
+            frappe.msgprint('Error generating ZPL: ' + response.message.message);
+        }
+        
+    } catch (error) {
+        console.error('Error generating ZPL:', error);
+        frappe.msgprint('Error generating ZPL file');
+    }
+};
+
+window.generateAndPrintZPL = async function() {
+    try {
+        const selectedBarcode = $('#barcodeSelection').val();
+        const itemData = window.currentPrintItemData;
+        
+        if (!itemData) {
+            frappe.msgprint('No item data available');
+            return;
+        }
+        
+        // Show loading
+        frappe.show_alert('Generating ZPL for printing...', 'blue');
+        
+        // Generate ZPL
+        const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
+            item_code: itemData.item_code,
+            quantity: 1,
+            selected_barcode: selectedBarcode
+        });
+        
+        if (response.message.status === 'success') {
+            const zplContent = response.message.zpl_code;
+            
+            // Try to print directly using browser print API
+            try {
+                // Create a new window with ZPL content
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Print Labels - ${itemData.item_code}</title>
+                            <style>
+                                body { font-family: monospace; margin: 0; padding: 20px; }
+                                .zpl-content { white-space: pre; font-size: 12px; }
+                                .print-info { margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="print-info">
+                                <h3>ZPL Label Data</h3>
+                                <p><strong>Item:</strong> ${itemData.item_code} - ${itemData.item_name}</p>
+                                <p><strong>Instructions:</strong> Copy the ZPL code below and send to your TSC printer</p>
+                            </div>
+                            <div class="zpl-content">${zplContent}</div>
+                        </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                
+                // Try to print
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500);
+                
+                frappe.show_alert('Print window opened. Please check your printer settings.', 'green');
+            } catch (printError) {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(zplContent).then(() => {
+                    frappe.msgprint({
+                        title: 'ZPL Copied to Clipboard',
+                        message: 'ZPL code has been copied to clipboard. Please paste it into your printer software.',
+                        indicator: 'green'
+                    });
+                }).catch(() => {
+                    frappe.msgprint({
+                        title: 'ZPL Generated',
+                        message: 'ZPL code generated successfully. Please copy the code and send to your printer.',
+                        indicator: 'blue'
+                    });
+                });
+            }
+        } else {
+            frappe.msgprint('Error generating ZPL: ' + response.message.message);
+        }
+        
+    } catch (error) {
+        console.error('Error generating ZPL for printing:', error);
+        frappe.msgprint('Error generating ZPL for printing');
+    }
 };

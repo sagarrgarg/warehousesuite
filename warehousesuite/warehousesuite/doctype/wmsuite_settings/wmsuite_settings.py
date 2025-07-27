@@ -44,7 +44,8 @@ class WMSuiteSettings(Document):
             'max_value_difference': getattr(self, 'max_value_difference', 0),
             'override_roles': getattr(self, 'override_roles', ''),
             'enable_barcode_scanning': getattr(self, 'enable_barcode_scanning', 1),
-            'auto_refresh_interval': getattr(self, 'auto_refresh_interval', 30)
+            'auto_refresh_interval': getattr(self, 'auto_refresh_interval', 30),
+            'max_label_quantity': getattr(self, 'max_label_quantity', 100)
         }
     
 

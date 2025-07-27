@@ -15,7 +15,9 @@
   "override_roles",
   "submission_control_section",
   "enable_barcode_scanning",
-  "auto_refresh_interval"
+  "auto_refresh_interval",
+  "label_printing_section",
+  "max_label_quantity"
  ],
  "fields": [
   {
@@ -89,6 +91,18 @@
    "label": "Auto Refresh Interval (seconds)",
    "default": 30,
    "description": "Dashboard auto-refresh interval"
+  },
+  {
+   "fieldname": "label_printing_section",
+   "fieldtype": "Section Break",
+   "label": "Label Printing"
+  },
+  {
+   "fieldname": "max_label_quantity",
+   "fieldtype": "Int",
+   "label": "Maximum Label Quantity",
+   "default": 100,
+   "description": "Maximum number of labels that can be printed at once"
   }
  ],
  "index_web_pages_for_search": 1,

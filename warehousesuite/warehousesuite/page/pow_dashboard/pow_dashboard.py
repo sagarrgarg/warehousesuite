@@ -1053,7 +1053,7 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
 
 @frappe.whitelist()
 def create_concerns_from_discrepancies(concern_data, source_document_type, source_document, pow_session_id=None):
-    """Create stock concerns from transfer receive discrepancies - now at stock entry level"""
+    """Create stock concerns from transfer discrepancies"""
     try:
         from warehousesuite.warehousesuite.utils.validation import (
             validate_concern_data, create_api_response
@@ -1280,3 +1280,132 @@ def get_item_inquiry_data(item_code, allowed_warehouses=None):
             "status": "error",
             "message": str(e)
         } 
+
+@frappe.whitelist()
+def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
+    """Generate ZPL code for item labels"""
+    try:
+        # Convert quantity to integer
+        quantity = int(quantity) if quantity else 1
+        
+        # Get item details
+        item = frappe.get_doc("Item", item_code)
+        
+        # Get barcodes
+        barcodes = frappe.get_all("Item Barcode",
+            filters={"parent": item_code},
+            fields=["barcode", "barcode_type", "uom"],
+            order_by="idx"
+        )
+        
+        # Get UOM conversions
+        uom_conversions = []
+        if item.uoms:
+            for uom_entry in item.uoms:
+                uom_conversions.append({
+                    "uom": uom_entry.uom,
+                    "conversion_factor": uom_entry.conversion_factor
+                })
+        
+        # Find selected barcode or default to stock UOM barcode
+        selected_barcode_data = None
+        if selected_barcode and selected_barcode.strip():  # Only if barcode is selected and not empty
+            selected_barcode_data = next((b for b in barcodes if b.barcode == selected_barcode), None)
+        elif barcodes and not selected_barcode:  # If no barcode selected but barcodes exist, default to stock UOM
+            # Default to stock UOM barcode if available
+            stock_uom_barcode = next((b for b in barcodes if b.uom == item.stock_uom), None)
+            if stock_uom_barcode:
+                selected_barcode_data = stock_uom_barcode
+            else:
+                selected_barcode_data = barcodes[0]  # First barcode if no stock UOM match
+        
+        # Generate ZPL code
+        zpl_code = generate_zpl_label(item, selected_barcode_data, uom_conversions, quantity)
+        
+        return {
+            "status": "success",
+            "zpl_code": zpl_code,
+            "item_data": {
+                "item_code": item.name,
+                "item_name": item.item_name,
+                "stock_uom": item.stock_uom,
+                "weight": item.weight_per_unit or 0,
+                "weight_uom": item.weight_uom or "",
+                "barcodes": barcodes,
+                "selected_barcode": selected_barcode_data
+            }
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error generating label ZPL: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+def generate_zpl_label(item, barcode_data, uom_conversions, quantity):
+    """Generate ZPL code for a single label"""
+    # Ensure quantity is an integer
+    quantity = int(quantity) if quantity else 1
+    
+    # Weight text
+    weight_text = ""
+    if item.weight_per_unit and item.weight_per_unit > 0:
+        weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
+    
+    # Item name
+    item_name = item.item_name or item.name
+    
+    # Generate ZPL code based on whether barcode is available
+    if barcode_data:
+        # Format with barcode
+        zpl_code = f"""^XA
+
+^FO0,10
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{item.name}\\&^FS
+
+^FO0,40
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{item_name}\\&^FS
+
+^FO0,70
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{weight_text}\\&^FS
+
+^FO0,100
+^FB400,1,0,C,0
+^A0N,30,30
+^FD220 Pcs/Carton\\&^FS
+
+^FO20,130
+^BCN,45,Y,N,N
+^FD{barcode_data.barcode}^FS
+
+^XZ"""
+    else:
+        # Format without barcode
+        zpl_code = f"""^XA
+
+^FO0,35
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{item.name}\\&^FS
+
+^FO0,80
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{item_name}\\&^FS
+
+^FO0,130
+^FB400,1,0,C,0
+^A0N,30,30
+^FD{weight_text}\\&^FS
+
+^XZ"""
+    
+    # Repeat for quantity
+    return zpl_code * quantity 
