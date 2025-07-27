@@ -14,36 +14,52 @@ This wiki contains detailed documentation for all features, installation, config
 
 ## 📋 Table of Contents
 
-### Core Features
+### Core Features ✅
 - **[POW Dashboard](features/pow-dashboard.md)** - Central warehouse operations interface
 - **[Transfer Management](features/transfer-management.md)** - Multi-warehouse transfer operations
 - **[Stock Counting](features/stock-counting.md)** - Session-based stock counting
-- **[Concern Management](features/concern-management.md)** - Issue tracking and resolution
 - **[Item Inquiry](features/item-inquiry.md)** - Comprehensive item lookup system
 
-### Configuration & Setup
+### Configuration & Setup ✅
 - **[POW Profiles](configuration/pow-profiles.md)** - User and operation configuration
-- **[POW Sessions](configuration/pow-sessions.md)** - Work session management
-- **[WMSuite Settings](configuration/wmsuite-settings.md)** - Global application settings
-- **[Permissions & Roles](configuration/permissions.md)** - User access control
 
-### Technical Documentation
-- **[Architecture Overview](technical/architecture.md)** - System design and components
-- **[API Reference](technical/api-reference.md)** - Backend API documentation
-- **[Database Schema](technical/database-schema.md)** - Doctype structures and relationships
-- **[Validation Framework](technical/validation.md)** - Business rule validation system
+### 📚 Available Documentation
 
-### Development & Customization
-- **[Development Setup](development/setup.md)** - Development environment configuration
-- **[Customization Guide](development/customization.md)** - Extending and customizing features
-- **[Testing Guide](development/testing.md)** - Testing procedures and best practices
-- **[Troubleshooting](development/troubleshooting.md)** - Common issues and solutions
+#### ✅ Currently Available
+- **[Installation Guide](installation.md)** - Complete installation instructions for ERPNext 14+ and 15+
+- **[Getting Started](getting-started.md)** - First-time setup and basic configuration
+- **[User Guide](user-guide.md)** - Complete user manual for all features
+- **[POW Dashboard](features/pow-dashboard.md)** - Dashboard operations and configuration
+- **[Transfer Management](features/transfer-management.md)** - Transfer send/receive workflows
+- **[Stock Counting](features/stock-counting.md)** - Stock counting and reconciliation
+- **[Item Inquiry](features/item-inquiry.md)** - Item lookup and stock inquiry
+- **[POW Profiles](configuration/pow-profiles.md)** - Profile configuration and management
 
-### Deployment & Operations
-- **[Production Deployment](deployment/production.md)** - Production environment setup
-- **[Performance Optimization](deployment/performance.md)** - Optimization guidelines
-- **[Monitoring & Logging](deployment/monitoring.md)** - System monitoring and logging
-- **[Backup & Recovery](deployment/backup.md)** - Data backup and recovery procedures
+#### 🔄 Coming Soon
+The following documentation sections are planned and will be added based on community needs:
+
+**Configuration & Setup**
+- POW Sessions - Work session management
+- WMSuite Settings - Global application settings
+- Permissions & Roles - User access control
+
+**Technical Documentation**
+- Architecture Overview - System design and components
+- API Reference - Backend API documentation
+- Database Schema - Doctype structures and relationships
+- Validation Framework - Business rule validation system
+
+**Development & Customization**
+- Development Setup - Development environment configuration
+- Customization Guide - Extending and customizing features
+- Testing Guide - Testing procedures and best practices
+- Troubleshooting - Common issues and solutions
+
+**Deployment & Operations**
+- Production Deployment - Production environment setup
+- Performance Optimization - Optimization guidelines
+- Monitoring & Logging - System monitoring and logging
+- Backup & Recovery - Data backup and recovery procedures
 
 ## 🎯 Target Audience
 
@@ -63,13 +79,13 @@ This documentation is designed for:
 
 ### For Administrators
 1. Review [Configuration & Setup](configuration/) section
-2. Understand [Permissions & Roles](configuration/permissions.md)
-3. Set up [WMSuite Settings](configuration/wmsuite-settings.md)
+2. Set up [POW Profiles](configuration/pow-profiles.md)
+3. Configure user assignments and permissions
 
 ### For Developers
-1. Study the [Technical Documentation](technical/) section
-2. Review [Development Setup](development/setup.md)
-3. Explore [Customization Guide](development/customization.md)
+1. Review the [User Guide](user-guide.md) for feature understanding
+2. Study the existing feature documentation
+3. Contact support for technical questions
 
 ## 🔗 Related Resources
 
