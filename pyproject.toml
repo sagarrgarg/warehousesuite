@@ -1,9 +1,9 @@
 [project]
 name = "warehousesuite"
 authors = [
-    { name = "Streamline receiving, picking, packing, stock counts, and more with a touch-friendly interface.", email = "sagar1ratan1garg1@gmail.com"}
+    { name = "Sagar Ratan Garg", email = "sagar1ratan1garg1@gmail.com"}
 ]
-description = "WMSuitePro is a mobile-first warehouse management solution for ERPNext."
+description = "WarehouseSuite is a mobile-first warehouse management solution for ERPNext."
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

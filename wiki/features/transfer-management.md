@@ -499,6 +499,4 @@ performance.measure('transfer-time', 'transfer-start', 'transfer-end');
 
 **Related Documentation**:
 - [POW Dashboard](pow-dashboard.md)
-- [Concern Management](concern-management.md)
-- [POW Profiles](../configuration/pow-profiles.md)
-- [WMSuite Settings](../configuration/wmsuite-settings.md) 
+- [POW Profiles](../configuration/pow-profiles.md) 

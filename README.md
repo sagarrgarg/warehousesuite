@@ -252,6 +252,13 @@ WarehouseSuite is a comprehensive, mobile-first warehouse management solution de
 
 ---
 
+## Legal Information
+
+- **[License](https://github.com/sagarrgarg/warehousesuite/blob/main/LICENSE)** - Commercial License
+- **[Privacy Policy](https://github.com/sagarrgarg/warehousesuite/blob/main/PRIVACY.md)** - Data protection and privacy information
+
+---
+
 ## Project Background
 
 This was an in-house project developed to solve real warehouse management challenges. Just like POS (Point of Sale) systems revolutionized retail operations, POW (Point of Work) transforms warehouse operations with a touch-friendly, mobile-first approach.

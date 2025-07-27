@@ -1,21 +1,67 @@
-MIT License
+Commercial License
 
-Copyright (c) [year] [fullname]
+Copyright (c) 2025 Sagar Ratan Garg
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+All rights reserved.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This software and associated documentation files (the "Software") are the 
+proprietary and confidential information of Sagar Ratan Garg ("Licensor").
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+TERMS AND CONDITIONS:
+
+1. LICENSE GRANT
+   Subject to the terms and conditions of this License, Licensor hereby grants 
+   you a limited, non-exclusive, non-transferable, non-sublicensable license to 
+   use the Software solely for your internal business operations.
+
+2. RESTRICTIONS
+   You may not:
+   - Copy, modify, adapt, alter, translate, or create derivative works of the Software
+   - Reverse engineer, decompile, disassemble, or otherwise attempt to derive the 
+     source code of the Software
+   - Distribute, sublicense, lease, rent, loan, or otherwise make the Software 
+     available to any third party
+   - Remove or alter any proprietary notices or labels on the Software
+   - Use the Software for any purpose other than as expressly permitted herein
+
+3. OWNERSHIP
+   The Software is licensed, not sold. Licensor retains all right, title, and 
+   interest in and to the Software, including all intellectual property rights 
+   therein. This License does not grant you any rights to trademarks or service 
+   marks of Licensor.
+
+4. CONFIDENTIALITY
+   The Software contains confidential and proprietary information of Licensor. 
+   You agree to maintain the confidentiality of the Software and not to disclose 
+   any part of the Software to any third party without the prior written consent 
+   of Licensor.
+
+5. TERM AND TERMINATION
+   This License is effective until terminated. You may terminate this License at 
+   any time by destroying all copies of the Software. This License will terminate 
+   immediately without notice if you fail to comply with any of its terms and 
+   conditions.
+
+6. DISCLAIMER OF WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS 
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF 
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+7. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, 
+   CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF 
+   PROFITS, DATA, OR USE, INCURRED BY YOU OR ANY THIRD PARTY, WHETHER IN AN 
+   ACTION IN CONTRACT OR TORT, EVEN IF LICENSOR HAS BEEN ADVISED OF THE 
+   POSSIBILITY OF SUCH DAMAGES.
+
+8. GOVERNING LAW
+   This License shall be governed by and construed in accordance with the laws 
+   of India, without regard to its conflict of laws principles.
+
+9. CONTACT INFORMATION
+   For licensing inquiries, please contact:
+   Email: sagar1ratan1garg1@gmail.com
+
+This License constitutes the entire agreement between you and Licensor regarding 
+the use of the Software and supersedes all prior or contemporaneous agreements, 
+whether written or oral, relating to the subject matter hereof.

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, Streamline receiving, picking, packing, stock counts, and more with a touch-friendly interface. and Contributors
+# Copyright (c) 2025, Sagar Ratan Garg and Contributors
 # See license.txt
 
 # import frappe

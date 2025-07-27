@@ -540,5 +540,4 @@ This comprehensive user guide provides detailed instructions for using all featu
 **Support Resources**:
 - [Feature Documentation](features/)
 - [Configuration Guide](configuration/)
-- [Technical Documentation](technical/)
 - Email: sagar1ratan1garg1@gmail.com 

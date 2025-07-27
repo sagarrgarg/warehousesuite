@@ -400,7 +400,6 @@ print(f"Stock for {item_code} in {warehouse}: {stock}")
 ### Documentation
 - [Feature Documentation](features/)
 - [Configuration Guide](configuration/)
-- [Technical Documentation](technical/)
 
 ### Support Channels
 - **Email**: sagar1ratan1garg1@gmail.com

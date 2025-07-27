@@ -100,6 +100,11 @@ For technical support and questions:
 - **GitHub Issues**: [Create an issue](https://github.com/sagarrgarg/warehousesuite/issues)
 - **Documentation Issues**: [Report documentation problems](https://github.com/sagarrgarg/warehousesuite/issues)
 
+## ⚖️ Legal Information
+
+- **[License](https://github.com/sagarrgarg/warehousesuite/blob/main/LICENSE)** - Commercial License
+- **[Privacy Policy](https://github.com/sagarrgarg/warehousesuite/blob/main/PRIVACY.md)** - Data protection and privacy information
+
 ## 📝 Contributing
 
 We welcome contributions to improve this documentation:
@@ -110,7 +115,7 @@ We welcome contributions to improve this documentation:
 
 ## 📄 License
 
-This documentation is part of the WarehouseSuite project and follows the same MIT license as the main application.
+This documentation is part of the WarehouseSuite project and follows the same Commercial license as the main application.
 
 ---
 

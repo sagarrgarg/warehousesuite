@@ -1,9 +1,9 @@
 app_name = "warehousesuite"
 app_title = "Warehousesuite"
-app_publisher = "Streamline receiving, picking, packing, stock counts, and more with a touch-friendly interface."
-app_description = "WMSuitePro is a mobile-first warehouse management solution for ERPNext."
+app_publisher = "Sagar Ratan Garg"
+app_description = "WarehouseSuite is a mobile-first warehouse management solution for ERPNext."
 app_email = "sagar1ratan1garg1@gmail.com"
-app_license = "mit"
+app_license = "Commercial"
 
 # Apps
 # ------------------

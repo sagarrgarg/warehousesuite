@@ -394,4 +394,4 @@ performance.measure('dashboard-load', 'dashboard-start', 'dashboard-end');
 - [Stock Counting](stock-counting.md)
 - [Item Inquiry](item-inquiry.md)
 - [POW Profiles](../configuration/pow-profiles.md)
-- [POW Sessions](../configuration/pow-sessions.md) 
+ 

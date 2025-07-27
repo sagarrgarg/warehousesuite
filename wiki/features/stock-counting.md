@@ -498,6 +498,4 @@ performance.measure('counting-time', 'counting-start', 'counting-end');
 
 **Related Documentation**:
 - [POW Dashboard](pow-dashboard.md)
-- [Concern Management](concern-management.md)
-- [POW Sessions](../configuration/pow-sessions.md)
-- [WMSuite Settings](../configuration/wmsuite-settings.md) 
+- [POW Dashboard](pow-dashboard.md) 

@@ -605,7 +605,5 @@ def debug_user_access(user_email):
 ---
 
 **Related Documentation**:
-- [POW Sessions](pow-sessions.md)
-- [WMSuite Settings](wmsuite-settings.md)
-- [Permissions & Roles](permissions.md)
+
 - [POW Dashboard](../features/pow-dashboard.md) 
