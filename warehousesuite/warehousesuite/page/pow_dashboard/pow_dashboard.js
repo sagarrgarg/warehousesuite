@@ -3253,6 +3253,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     };
 
     window.closeTransferModal = function() {
+        // Clean up all warnings before closing
+        cleanupQuantityWarnings();
+        hideError();
+        
         $('#transferModal').remove();
         window.transferModalData = null;
     };
@@ -3531,19 +3535,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                     <div class="qty-cell total-qty" data-label="Total:">
                                                         ${item.qty} ${item.uom}
                                                         ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
-                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(item.conversion_factor) : item.conversion_factor.toFixed(3)) : '1.000'} ${item.stock_uom}
                                                         </div>` : ''}
                                                     </div>
                                                     <div class="qty-cell received-qty" data-label="Received:">
                                                         ${item.transferred_qty} ${item.uom}
                                                         ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
-                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(item.conversion_factor) : item.conversion_factor.toFixed(3)) : '1.000'} ${item.stock_uom}
                                                         </div>` : ''}
                                                     </div>
                                                     <div class="qty-cell remaining-qty" data-label="Remaining:">
                                                         ${item.remaining_qty} ${item.uom}
                                                         ${item.uom !== item.stock_uom ? `<div class="uom-conversion-hint" style="font-size: 10px; color: #666; margin-top: 2px;">
-                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(1/item.conversion_factor) : (1/item.conversion_factor).toFixed(3)) : '1.000'} ${item.stock_uom}
+                                                            <i class="fa fa-info-circle"></i> 1 ${item.uom} = ${item.conversion_factor ? (item.stock_uom_must_be_whole_number ? Math.round(item.conversion_factor) : item.conversion_factor.toFixed(3)) : '1.000'} ${item.stock_uom}
                                                         </div>` : ''}
                                                     </div>
                                                     <div class="receive-cell" data-label="Receive:">
@@ -3985,6 +3989,107 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         setupItemDropdowns(rowId);
     };
     
+    function setupQuantityValidation(rowId) {
+        // Add CSS styles for quantity validation
+        if (!$('#quantity-validation-styles').length) {
+            $('head').append(`
+                <style id="quantity-validation-styles">
+                    .quantity-exceeds-stock {
+                        border-color: #dc3545 !important;
+                        background-color: #fff5f5 !important;
+                        color: #dc3545 !important;
+                    }
+                    .stock-warning {
+                        color: #dc3545 !important;
+                        font-weight: bold !important;
+                    }
+                    .quantity-warning {
+                        color: #dc3545;
+                        font-size: 11px;
+                        margin-top: 2px;
+                        padding: 2px 4px;
+                        background-color: #fff5f5;
+                        border: 1px solid #dc3545;
+                        border-radius: 3px;
+                        display: block;
+                        max-width: 100%;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        animation: pulse 1s infinite;
+                    }
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                    .col-qty {
+                        position: relative;
+                    }
+                    .quantity-warning i {
+                        margin-right: 4px;
+                    }
+                </style>
+            `);
+        }
+        
+        // Add real-time quantity validation
+        $(`#${rowId} .item-qty`).on('input', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            const itemCode = $(`#${rowId} .item-code`).val();
+            const stockText = $(`#${rowId} .stock-info`).text();
+            
+            // Clear original quantity tracking when user manually enters a new value
+            if (qty > 0) {
+                $(this).removeAttr('data-original-qty');
+            }
+            
+            // Always clean up any existing warnings first
+            $(`#${rowId} .quantity-warning`).remove();
+            $(this).removeClass('quantity-exceeds-stock');
+            $(`#${rowId} .stock-info`).removeClass('stock-warning');
+            
+            if (qty > maxQty && maxQty > 0) {
+                $(this).addClass('quantity-exceeds-stock');
+                $(`#${rowId} .stock-info`).addClass('stock-warning');
+                
+                // Show immediate warning - only one warning per row
+                $(`#${rowId} .col-qty`).append(`
+                    <div class="quantity-warning">
+                        <i class="fa fa-exclamation-triangle"></i> Exceeds available stock (${stockText})
+                    </div>
+                `);
+            }
+        });
+        
+        // Add blur event to auto-adjust quantity to max if exceeded
+        $(`#${rowId} .item-qty`).on('blur', function() {
+            const qty = parseFloat($(this).val()) || 0;
+            const maxQty = parseFloat($(this).attr('max')) || 0;
+            const itemCode = $(`#${rowId} .item-code`).val();
+            
+            if (qty > maxQty && maxQty > 0) {
+                // Store original quantity before adjustment
+                const originalQty = $(this).attr('data-original-qty') || qty;
+                $(this).attr('data-original-qty', originalQty);
+                
+                // Clean up all warnings and styling
+                $(`#${rowId} .quantity-warning`).remove();
+                $(this).removeClass('quantity-exceeds-stock');
+                $(`#${rowId} .stock-info`).removeClass('stock-warning');
+                
+                // Adjust quantity
+                $(this).val(maxQty);
+                
+                // Show non-blocking adjustment message
+                frappe.show_alert({
+                    message: `Quantity for ${itemCode} adjusted to ${maxQty} (max available)`,
+                    indicator: 'orange'
+                }, 3);
+            }
+        });
+    }
+
     function setupItemDropdowns(rowId) {
         const $row = $(`#${rowId}`);
         
@@ -4001,6 +4106,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             `#${rowId} .uom-dropdown-list`, 
             `#${rowId} .item-uom`
         );
+        
+        // Setup real-time quantity validation
+        setupQuantityValidation(rowId);
         
         // Handle item selection to populate UOM dropdown
         $(`#${rowId} .item-dropdown-list`).on('click', '.dropdown-item', async function() {
@@ -4019,7 +4127,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             $(`#${rowId} .item-code`).data('original-stock-qty', stockQty);
             
             // Update stock info immediately from dropdown data
-            $(`#${rowId} .stock-info`).text(`${Number.isInteger(stockQty) ? stockQty : stockQty.toFixed(2)} ${stockUom}`);
+            $(`#${rowId} .stock-info`).text(`${stockQty} ${stockUom}`);
             
             // Set max attribute for quantity input
             $(`#${rowId} .item-qty`).attr('max', stockQty);
@@ -4072,17 +4180,28 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     
                     const result = stockInfo.message;
                     
-                    // Update stock info display
-                    let displayQty = result.converted_qty;
-                    if (result.uom_must_be_whole_number) {
-                        displayQty = Math.round(displayQty);
-                    } else {
-                        displayQty = displayQty.toFixed(2);
-                    }
-                    $(`#${rowId} .stock-info`).text(`${displayQty} ${result.converted_uom}`);
+                    // Update stock info display using the backend-calculated display text
+                    $(`#${rowId} .stock-info`).text(result.display_text);
                     
                     // Update max attribute for quantity input
                     $(`#${rowId} .item-qty`).attr('max', result.converted_qty);
+                    
+                    // Validate current quantity against new stock limit
+                    if (currentQty && parseFloat(currentQty) > result.converted_qty) {
+                        $(`#${rowId} .item-qty`).val(result.converted_qty);
+                        $(`#${rowId} .item-qty`).addClass('quantity-exceeds-stock');
+                        $(`#${rowId} .stock-info`).addClass('stock-warning');
+                        
+                        // Show warning message
+                        frappe.msgprint({
+                            title: 'Quantity Adjusted',
+                            message: `Quantity for ${itemCode} has been adjusted to maximum available stock: ${displayQty} ${result.converted_uom}`,
+                            indicator: 'orange'
+                        });
+                    } else {
+                        $(`#${rowId} .item-qty`).removeClass('quantity-exceeds-stock');
+                        $(`#${rowId} .stock-info`).removeClass('stock-warning');
+                    }
                     
                     // Show UOM conversion info if different from stock UOM
                     const $conversionInfo = $(`#${rowId} .uom-conversion-info`);
@@ -4275,9 +4394,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         $('#errorDisplay').removeClass('show');
     };
     
+    // Cleanup function for quantity warnings
+    window.cleanupQuantityWarnings = function() {
+        $('.quantity-warning').remove();
+        $('.quantity-exceeds-stock').removeClass('quantity-exceeds-stock');
+        $('.stock-warning').removeClass('stock-warning');
+    };
+    
     async function refreshItemsForWarehouse(warehouse) {
         try {
             console.log('Starting item refresh for warehouse:', warehouse);
+            
+            // Clean up any existing warnings before refreshing
+            cleanupQuantityWarnings();
             
             // Get updated items for the warehouse
             const items = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown', {
@@ -4451,28 +4580,62 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             // Collect items and validate quantities
             const items = [];
             let hasQuantityErrors = false;
+            let adjustedItems = [];
             
             $('.item-row').each(function() {
                 const itemCode = $(this).find('.col-item .item-code').val();
-                const qty = parseFloat($(this).find('.col-qty input').val()) || 0;
+                let qty = parseFloat($(this).find('.col-qty input').val()) || 0;
                 const uom = $(this).find('.col-uom .item-uom').val();
                 const stockText = $(this).find('.stock-info').text();
-                const stockMatch = stockText.match(/(\d+\.?\d*)\s+(.+)/);
                 
                 if (itemCode && qty > 0 && uom) {
-                    // Validate quantity against available stock
-                    if (stockMatch) {
-                        const stockQty = parseFloat(stockMatch[1]);
-                        const stockUom = stockMatch[2];
-                        
-                        if (qty > stockQty) {
-                            validationErrors.push(`Quantity ${qty} ${uom} exceeds available stock ${stockQty} ${stockUom} for item ${itemCode}`);
-                            hasQuantityErrors = true;
-                            $(this).find('.col-qty input').addClass('quantity-exceeds-stock');
-                            $(this).find('.stock-info').addClass('stock-warning');
+                    // Parse stock text to get available quantity
+                    let availableQty = 0;
+                    let availableUom = uom;
+                    
+                    // Handle different display formats
+                    if (stockText.includes(' ')) {
+                        const parts = stockText.split(' ');
+                        if (parts.length >= 2) {
+                            // Check if it's a combined format like "15 Carton 5 Pcs"
+                            if (parts.length >= 4 && parts[2] && !isNaN(parts[2])) {
+                                // Format: "15 Carton 5 Pcs" - use the first quantity
+                                availableQty = parseFloat(parts[0]);
+                                availableUom = parts[1];
+                            } else {
+                                // Format: "155 Pcs" - simple format
+                                availableQty = parseFloat(parts[0]);
+                                availableUom = parts[1];
+                            }
                         }
                     }
                     
+                    // Validate quantity against available stock
+                    if (availableQty > 0) {
+                        if (qty > availableQty) {
+                            hasQuantityErrors = true;
+                            $(this).find('.col-qty input').addClass('quantity-exceeds-stock');
+                            $(this).find('.stock-info').addClass('stock-warning');
+                            
+                            // Auto-adjust quantity to max available
+                            $(this).find('.col-qty input').val(availableQty);
+                            qty = availableQty; // Use adjusted quantity for submission
+                            
+                            // Track adjusted items for user feedback
+                            adjustedItems.push({
+                                itemCode: itemCode,
+                                originalQty: parseFloat($(this).find('.col-qty input').attr('data-original-qty')) || qty,
+                                adjustedQty: availableQty,
+                                stockText: stockText
+                            });
+                        } else {
+                            // Remove error styling if quantity is now valid
+                            $(this).find('.col-qty input').removeClass('quantity-exceeds-stock');
+                            $(this).find('.stock-info').removeClass('stock-warning');
+                        }
+                    }
+                    
+                    // Add item to submission list (with potentially adjusted quantity)
                     items.push({
                         item_code: itemCode,
                         qty: qty,
@@ -4485,19 +4648,46 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 validationErrors.push('Please add at least one item to transfer');
             }
             
-            if (hasQuantityErrors) {
-                validationErrors.unshift('One or more items have quantities exceeding available stock');
-            }
-            
             // Show validation errors if any
             if (validationErrors.length > 0) {
                 showError('Please fix the following errors:', validationErrors);
                 return;
             }
             
+            // Show adjustment feedback if any quantities were adjusted
+            if (adjustedItems.length > 0) {
+                const adjustmentMessage = adjustedItems.map(item => 
+                    `${item.itemCode}: ${item.adjustedQty} (adjusted from ${item.originalQty})`
+                ).join('\n');
+                
+                // Use a non-blocking notification instead of msgprint
+                frappe.show_alert({
+                    message: `Quantities adjusted for ${adjustedItems.length} item(s). Please review before proceeding.`,
+                    indicator: 'orange'
+                }, 5);
+                
+                // Give user a chance to review adjustments
+                const proceed = await new Promise((resolve) => {
+                    frappe.confirm(
+                        `The following quantities have been adjusted to match available stock:\n\n${adjustmentMessage}\n\nDo you want to proceed with the adjusted quantities?`,
+                        () => resolve(true), // User clicked OK
+                        () => resolve(false)  // User clicked Cancel
+                    );
+                });
+                
+                if (!proceed) {
+                    return; // User cancelled, don't proceed with submission
+                }
+            }
+            
             console.log('Items being sent to backend:', items);
             
             try {
+                // Show loading state
+                const submitBtn = $('#transferForm button[type="submit"]');
+                const originalText = submitBtn.text();
+                submitBtn.text('Creating Transfer...').prop('disabled', true);
+                
                 // Create stock entry
                 const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_transfer_stock_entry', {
                     source_warehouse: sourceWarehouse,
@@ -4511,11 +4701,14 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 const response = result.message;
                 
                 if (response.status === 'success') {
-                    frappe.msgprint({
-                        title: 'Success',
+                    // Clean up warnings before showing success
+                    cleanupQuantityWarnings();
+                    
+                    // Show success message and close modal
+                    frappe.show_alert({
                         message: response.message,
                         indicator: 'green'
-                    });
+                    }, 5);
                     closeTransferModal();
                 } else {
                     // Parse error message for better display
@@ -4553,6 +4746,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     'An unexpected error occurred while creating the transfer.',
                     'Please try again or contact your administrator.'
                 ]);
+            } finally {
+                // Restore button state
+                const submitBtn = $('#transferForm button[type="submit"]');
+                submitBtn.text(originalText).prop('disabled', false);
             }
         });
     }

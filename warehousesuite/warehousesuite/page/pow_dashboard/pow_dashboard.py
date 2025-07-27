@@ -341,7 +341,8 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
                 "converted_qty": stock_qty,
                 "converted_uom": uom,
                 "uom_must_be_whole_number": uom_must_be_whole_number,
-                "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number
+                "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
+                "display_text": f"{stock_qty} {stock_uom}"
             }
         
         # Get conversion factor
@@ -351,6 +352,23 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
         # Convert quantity (stock_qty is in stock UOM, convert to target UOM)
         converted_qty = stock_qty * conversion_factor
         
+        # Handle display format for whole number UOMs
+        display_text = ""
+        if uom_must_be_whole_number:
+            # Calculate whole units and remaining stock units
+            whole_units = int(converted_qty)
+            remaining_stock_units = stock_qty - (whole_units / conversion_factor)
+            
+            if whole_units > 0 and remaining_stock_units > 0:
+                display_text = f"{whole_units} {uom} {remaining_stock_units} {stock_uom}"
+            elif whole_units > 0:
+                display_text = f"{whole_units} {uom}"
+            else:
+                display_text = f"{stock_qty} {stock_uom}"
+        else:
+            # For non-whole number UOMs, show decimal
+            display_text = f"{converted_qty:.2f} {uom}"
+        
         return {
             "stock_qty": stock_qty,
             "stock_uom": stock_uom,
@@ -358,7 +376,8 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
             "converted_uom": uom,
             "conversion_factor": conversion_factor,
             "uom_must_be_whole_number": uom_must_be_whole_number,
-            "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number
+            "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
+            "display_text": display_text
         }
         
     except Exception as e:
@@ -370,7 +389,8 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
             "converted_uom": uom,
             "conversion_factor": 1.0,
             "uom_must_be_whole_number": False,
-            "stock_uom_must_be_whole_number": False
+            "stock_uom_must_be_whole_number": False,
+            "display_text": f"0 {uom}"
         }
 
 @frappe.whitelist()
@@ -510,15 +530,10 @@ def get_transfer_receive_data(default_warehouse=None):
             
             # Get stock UOM and conversion factor for the item
             stock_uom = frappe.db.get_value("Item", row['item_code'], "stock_uom") or row['uom']
-            conversion_factor = 1.0
             
-            if row['uom'] != stock_uom:
-                try:
-                    # Get conversion factor from UOM Conversion Detail
-                    conversion_factor = frappe.db.get_value("UOM Conversion Detail", 
-                        {"parent": row['item_code'], "uom": row['uom']}, "conversion_factor") or 1.0
-                except:
-                    conversion_factor = 1.0
+            # Get conversion factor using the same logic as transfer send
+            conversion_result = get_uom_conversion_factor(row['item_code'], row['uom'], stock_uom)
+            conversion_factor = conversion_result.get("conversion_factor", 1.0)
             
             # Get UOM information for display formatting
             uom_must_be_whole_number = frappe.db.get_value("UOM", row['uom'], "must_be_whole_number") or False
