@@ -2486,6 +2486,504 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 }
             }
             
+            /* Item Inquiry Modal Styles */
+            .item-inquiry-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: none;
+                z-index: 1080;
+                overflow-y: auto;
+                padding: 20px;
+            }
+            
+            .item-inquiry-content {
+                background: white;
+                max-width: 900px;
+                margin: 20px auto;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .item-inquiry-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .item-inquiry-header h3 {
+                margin: 0;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }
+            
+            .item-inquiry-body {
+                padding: 20px;
+                overflow-y: auto;
+                flex: 1;
+            }
+            
+            .item-selector-section {
+                margin-bottom: 25px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #f0f0f0;
+            }
+            
+            .item-inquiry-warehouse-group {
+                display: flex;
+                gap: 15px;
+                align-items: flex-end;
+                flex-wrap: wrap;
+            }
+            
+            .item-inquiry-form-group {
+                flex: 1;
+                min-width: 250px;
+            }
+            
+            .item-inquiry-form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #333;
+            }
+            
+            .item-inquiry-dropdown-container {
+                position: relative;
+            }
+            
+            .item-inquiry-input {
+                width: 100%;
+                padding: 10px 15px;
+                border: 2px solid #e0e0e0;
+                border-radius: 8px;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+            }
+            
+            .item-inquiry-input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            /* Custom dropdown styles for item inquiry */
+            .custom-dropdown-list {
+                position: fixed;
+                background: white;
+                border: 2px solid #667eea;
+                border-radius: 8px;
+                max-height: 250px;
+                overflow-y: auto;
+                z-index: 9999;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                min-width: 300px;
+                max-width: 500px;
+            }
+            
+            .custom-dropdown-item {
+                padding: 12px 15px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+                transition: background-color 0.2s ease;
+                line-height: 1.4;
+            }
+            
+            .custom-dropdown-item:hover {
+                background-color: #f8f9fa;
+            }
+            
+            .custom-dropdown-item:last-child {
+                border-bottom: none;
+            }
+            
+            .custom-dropdown-item strong {
+                color: #2d3748;
+                font-size: 14px;
+                display: block;
+                margin-bottom: 2px;
+            }
+            
+            .custom-dropdown-item small {
+                color: #718096;
+                font-size: 12px;
+                display: block;
+            }
+            
+            .custom-dropdown-item {
+                padding: 10px 15px;
+                cursor: pointer;
+                border-bottom: 1px solid #f0f0f0;
+                transition: background-color 0.2s ease;
+            }
+            
+            .custom-dropdown-item:hover {
+                background-color: #f8f9fa;
+            }
+            
+            .custom-dropdown-item:last-child {
+                border-bottom: none;
+            }
+            
+            .btn-search-item {
+                padding: 10px 20px;
+                background: #667eea;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                height: 44px;
+            }
+            
+            .btn-search-item:hover {
+                background: #5a67d8;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+            
+            .item-details-section {
+                display: none;
+            }
+            
+            .item-details-section.active {
+                display: block;
+            }
+            
+            .item-info-header {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 25px;
+                align-items: flex-start;
+            }
+            
+            .item-image-container {
+                width: 150px;
+                height: 150px;
+                border: 2px solid #e0e0e0;
+                border-radius: 12px;
+                overflow: hidden;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f8f8f8;
+            }
+            
+            .item-image-container img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
+            
+            .item-image-container .no-image {
+                color: #999;
+                font-size: 3rem;
+            }
+            
+            .item-basic-info {
+                flex: 1;
+            }
+            
+            .item-basic-info h4 {
+                margin: 0 0 10px 0;
+                color: #333;
+                font-size: 1.2rem;
+            }
+            
+            .item-basic-info .item-code {
+                color: #666;
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+            }
+            
+            .item-basic-info .description {
+                color: #555;
+                margin-bottom: 10px;
+                line-height: 1.5;
+            }
+            
+            .item-badges {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .badge {
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+            
+            .badge-primary {
+                background: #e3f2fd;
+                color: #1976d2;
+            }
+            
+            .badge-success {
+                background: #e8f5e9;
+                color: #388e3c;
+            }
+            
+            .badge-warning {
+                background: #fff3e0;
+                color: #f57c00;
+            }
+            
+            .info-tabs {
+                margin-top: 25px;
+                border-bottom: 2px solid #e0e0e0;
+                display: flex;
+                gap: 20px;
+            }
+            
+            .info-tab {
+                padding: 10px 15px;
+                background: none;
+                border: none;
+                color: #666;
+                font-weight: 600;
+                cursor: pointer;
+                position: relative;
+                transition: all 0.3s ease;
+            }
+            
+            .info-tab:hover {
+                color: #667eea;
+            }
+            
+            .info-tab.active {
+                color: #667eea;
+            }
+            
+            .info-tab.active::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: #667eea;
+            }
+            
+            .tab-content {
+                margin-top: 20px;
+            }
+            
+            .tab-pane {
+                display: none;
+            }
+            
+            .tab-pane.active {
+                display: block;
+            }
+            
+            .barcode-list {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 15px;
+            }
+            
+            .barcode-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                cursor: pointer;
+                user-select: none;
+            }
+            
+            .barcode-header h5 {
+                margin: 0;
+                color: #333;
+                font-size: 1rem;
+            }
+            
+            .barcode-toggle {
+                color: #667eea;
+                transition: transform 0.3s ease;
+            }
+            
+            .barcode-list.collapsed .barcode-toggle {
+                transform: rotate(-90deg);
+            }
+            
+            .barcode-items {
+                margin-top: 15px;
+                display: block;
+            }
+            
+            .barcode-list.collapsed .barcode-items {
+                display: none;
+            }
+            
+            .barcode-item {
+                background: white;
+                padding: 10px 15px;
+                border-radius: 6px;
+                margin-bottom: 8px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border: 1px solid #e0e0e0;
+            }
+            
+            .barcode-item:last-child {
+                margin-bottom: 0;
+            }
+            
+            .barcode-value {
+                font-family: 'Courier New', monospace;
+                font-weight: 600;
+                color: #333;
+            }
+            
+            .barcode-type {
+                font-size: 0.85rem;
+                color: #666;
+            }
+            
+            .uom-table,
+            .stock-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
+            
+            .uom-table th,
+            .stock-table th {
+                background: #f5f5f5;
+                padding: 12px 15px;
+                text-align: left;
+                font-weight: 600;
+                color: #333;
+                border-bottom: 2px solid #e0e0e0;
+            }
+            
+            .uom-table td,
+            .stock-table td {
+                padding: 12px 15px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            
+            .uom-table tr:hover,
+            .stock-table tr:hover {
+                background: #f8f9fa;
+            }
+            
+            .stock-badge {
+                padding: 4px 10px;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                display: inline-block;
+            }
+            
+            .stock-badge.in-stock {
+                background: #e8f5e9;
+                color: #2e7d32;
+            }
+            
+            .stock-badge.low-stock {
+                background: #fff3e0;
+                color: #f57c00;
+            }
+            
+            .stock-badge.out-of-stock {
+                background: #ffebee;
+                color: #c62828;
+            }
+            
+            .no-data-message {
+                text-align: center;
+                padding: 30px;
+                color: #999;
+                font-style: italic;
+            }
+            
+            .item-inquiry-footer {
+                padding: 15px 20px;
+                background: #f8f9fa;
+                border-top: 1px solid #e0e0e0;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+            
+            .btn-close-inquiry {
+                padding: 10px 20px;
+                background: #e0e0e0;
+                color: #333;
+                border: none;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .btn-close-inquiry:hover {
+                background: #d0d0d0;
+            }
+            
+            /* Mobile responsive for Item Inquiry */
+            @media (max-width: 768px) {
+                .item-inquiry-content {
+                    max-width: 100%;
+                    margin: 10px;
+                    max-height: 95vh;
+                }
+                
+                .item-info-header {
+                    flex-direction: column;
+                }
+                
+                .item-image-container {
+                    width: 100px;
+                    height: 100px;
+                    margin: 0 auto 15px;
+                }
+                
+                .info-tabs {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+                
+                .info-tab {
+                    white-space: nowrap;
+                }
+                
+                .item-inquiry-warehouse-group {
+                    flex-direction: column;
+                }
+                
+                .item-inquiry-form-group {
+                    min-width: 100%;
+                }
+                
+                .uom-table,
+                .stock-table {
+                    font-size: 0.85rem;
+                }
+                
+                .uom-table th,
+                .stock-table th,
+                .uom-table td,
+                .stock-table td {
+                    padding: 8px 10px;
+                }
+            }
+            
             /* Confirmation Modal Styles */
             .table-success {
                 background-color: #d4edda !important;
@@ -3036,7 +3534,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         
         // Always show inquiry buttons (not controlled by permissions)
         actionButtonsHTML += `
-                    <button class="pow-action-btn btn-item-inquiry" onclick="frappe.set_route('item')">
+                    <button class="pow-action-btn btn-item-inquiry" onclick="openItemInquiryModal('${session_name}', '${profile_name}', '${default_warehouse}')">
                         <i class="fa fa-search"></i>
                         <span class="btn-text">Item<br>Inquiry</span>
                     </button>
@@ -5298,6 +5796,550 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         
         // Initialize mobile-specific handlers for inputs
         setupPhysicalQtyInputHandlers();
+    }
+    
+    // Item Inquiry Modal Functions
+    window.openItemInquiryModal = async function(session_name, profile_name, default_warehouse) {
+        try {
+            // Get POW profile warehouses
+            const warehousesResponse = await frappe.call({
+                method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_warehouses',
+                args: { pow_profile: profile_name }
+            });
+            
+            const warehouses = warehousesResponse.message;
+            
+            // For Item Inquiry, only use source warehouses (warehouses allowed for the user)
+            // Target warehouses are for transfer destinations, not for inquiry access
+            const allowedWarehouses = warehouses.source_warehouses || [];
+            
+            // Store allowed warehouses globally for backend filtering
+            window.itemInquiryAllowedWarehouses = allowedWarehouses.map(w => w.warehouse);
+            
+            // Create modal HTML
+            const modalHTML = `
+            <div class="item-inquiry-modal" id="itemInquiryModal">
+                <div class="item-inquiry-content">
+                    <div class="item-inquiry-header">
+                        <h3>Item Inquiry</h3>
+                        <button class="close-btn" onclick="closeItemInquiryModal()">&times;</button>
+                    </div>
+                    
+                    <div class="item-inquiry-body">
+                        <div class="item-selector-section">
+                            <div class="item-inquiry-warehouse-group">
+                                <div class="item-inquiry-form-group">
+                                    <label>Select Item *</label>
+                                    <div class="item-inquiry-dropdown-container">
+                                        <input type="text" class="item-inquiry-input" id="itemInquiryInput" 
+                                               placeholder="Search or select item..." autocomplete="off">
+                                        <div class="custom-dropdown-list" id="itemInquiryDropdownList" style="display: none;"></div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn-search-item" onclick="searchItemInquiry()">
+                                    <i class="fa fa-search"></i> Search
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="item-details-section" id="itemDetailsSection">
+                            <!-- Item details will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="item-inquiry-footer">
+                        <button class="btn-close-inquiry" onclick="closeItemInquiryModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+            `;
+            
+            // Add modal to page
+            $('body').append(modalHTML);
+            
+            // Show modal
+            $('#itemInquiryModal').fadeIn(300);
+            
+            // Setup item dropdown
+            setupItemInquiryDropdown();
+            
+            // Focus on item input
+            $('#itemInquiryInput').focus();
+            
+            // Setup event handlers
+            setupItemInquiryEvents();
+            
+        } catch (error) {
+            console.error('Error opening item inquiry modal:', error);
+            frappe.msgprint({
+                title: 'Error',
+                message: 'Failed to open item inquiry modal',
+                indicator: 'red'
+            });
+        }
+    };
+    
+    window.closeItemInquiryModal = function() {
+        $('#itemInquiryModal').fadeOut(300, function() {
+            $(this).remove();
+        });
+    };
+    
+    window.searchItemInquiry = async function() {
+        const itemCode = $('#itemInquiryInput').val();
+        
+        if (!itemCode) {
+            frappe.show_alert({
+                message: 'Please select an item',
+                indicator: 'orange'
+            });
+            return;
+        }
+        
+        try {
+            // Show loading state
+            $('#itemDetailsSection').html('<div class="text-center p-4"><i class="fa fa-spinner fa-spin"></i> Loading item details...</div>');
+            $('#itemDetailsSection').addClass('active');
+            
+            // Fetch item inquiry data
+            const response = await frappe.call({
+                method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_inquiry_data',
+                args: {
+                    item_code: itemCode,
+                    allowed_warehouses: window.itemInquiryAllowedWarehouses || []
+                }
+            });
+            
+            if (response.message.status === 'success') {
+                displayItemDetails(response.message.data);
+            } else {
+                $('#itemDetailsSection').html(`<div class="no-data-message">Error loading item details: ${response.message.message}</div>`);
+            }
+            
+        } catch (error) {
+            console.error('Error fetching item details:', error);
+            $('#itemDetailsSection').html('<div class="no-data-message">Failed to load item details</div>');
+        }
+    };
+    
+    function displayItemDetails(itemData) {
+        const detailsHTML = `
+            <div class="item-info-header">
+                <div class="item-image-container">
+                    ${itemData.image ? 
+                        `<img src="${itemData.image}" alt="${itemData.item_name}">` : 
+                        '<i class="fa fa-cube no-image"></i>'
+                    }
+                </div>
+                
+                <div class="item-basic-info">
+                    <h4>${itemData.item_name || itemData.item_code}</h4>
+                    <div class="item-code">Code: ${itemData.item_code}</div>
+                    ${itemData.description ? `<div class="description">${itemData.description}</div>` : ''}
+                    
+                    <div class="item-badges">
+                        <span class="badge badge-primary">${itemData.item_group || 'N/A'}</span>
+                        ${itemData.brand ? `<span class="badge badge-primary">${itemData.brand}</span>` : ''}
+                        <span class="badge ${itemData.is_stock_item ? 'badge-success' : 'badge-warning'}">
+                            ${itemData.is_stock_item ? 'Stock Item' : 'Non-Stock'}
+                        </span>
+                        ${itemData.disabled ? '<span class="badge badge-warning">Disabled</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-tabs">
+                <button class="info-tab active" onclick="switchInfoTab('barcodes', this)">
+                    Barcodes (${itemData.barcodes ? itemData.barcodes.length : 0})
+                </button>
+                <button class="info-tab" onclick="switchInfoTab('uom', this)">
+                    UOM & Conversions
+                </button>
+                <button class="info-tab" onclick="switchInfoTab('stock', this)">
+                    Stock Information
+                </button>
+                ${itemData.attributes && itemData.attributes.length > 0 ? 
+                    '<button class="info-tab" onclick="switchInfoTab(\'attributes\', this)">Attributes</button>' : ''
+                }
+                ${itemData.suppliers && itemData.suppliers.length > 0 ? 
+                    '<button class="info-tab" onclick="switchInfoTab(\'suppliers\', this)">Suppliers</button>' : ''
+                }
+            </div>
+            
+            <div class="tab-content">
+                <!-- Barcodes Tab -->
+                <div class="tab-pane active" id="barcodesTab">
+                    ${displayBarcodesTab(itemData.barcodes)}
+                </div>
+                
+                <!-- UOM Tab -->
+                <div class="tab-pane" id="uomTab">
+                    ${displayUOMTab(itemData)}
+                </div>
+                
+                <!-- Stock Tab -->
+                <div class="tab-pane" id="stockTab">
+                    ${displayStockTab(itemData)}
+                </div>
+                
+                <!-- Attributes Tab -->
+                ${itemData.attributes && itemData.attributes.length > 0 ? `
+                    <div class="tab-pane" id="attributesTab">
+                        ${displayAttributesTab(itemData.attributes)}
+                    </div>
+                ` : ''}
+                
+                <!-- Suppliers Tab -->
+                ${itemData.suppliers && itemData.suppliers.length > 0 ? `
+                    <div class="tab-pane" id="suppliersTab">
+                        ${displaySuppliersTab(itemData.suppliers)}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        $('#itemDetailsSection').html(detailsHTML);
+    }
+    
+    function displayBarcodesTab(barcodes) {
+        if (!barcodes || barcodes.length === 0) {
+            return '<div class="no-data-message">No barcodes found for this item</div>';
+        }
+        
+        const isCollapsible = barcodes.length > 3;
+        
+        return `
+            <div class="barcode-list ${isCollapsible ? 'collapsed' : ''}">
+                ${isCollapsible ? `
+                    <div class="barcode-header" onclick="toggleBarcodeList(this)">
+                        <h5>Barcodes (${barcodes.length})</h5>
+                        <i class="fa fa-chevron-down barcode-toggle"></i>
+                    </div>
+                ` : ''}
+                
+                <div class="barcode-items">
+                    ${barcodes.map(barcode => `
+                        <div class="barcode-item">
+                            <div>
+                                <div class="barcode-value">${barcode.barcode}</div>
+                                <div class="barcode-type">Type: ${barcode.barcode_type || 'Standard'} 
+                                    ${barcode.uom ? `| UOM: ${barcode.uom}` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    function displayUOMTab(itemData) {
+        const uomConversions = itemData.uom_conversions || [];
+        
+        return `
+            <div>
+                <div class="mb-3">
+                    <strong>Stock UOM:</strong> ${itemData.stock_uom}
+                </div>
+                
+                ${uomConversions.length > 0 ? `
+                    <h5>UOM Conversions</h5>
+                    <table class="uom-table">
+                        <thead>
+                            <tr>
+                                <th>UOM</th>
+                                <th>Conversion Factor</th>
+                                <th>Conversion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${uomConversions.map(uom => `
+                                <tr>
+                                    <td>${uom.uom}</td>
+                                    <td>${uom.conversion_factor}</td>
+                                    <td>1 ${uom.uom} = ${uom.conversion_factor} ${itemData.stock_uom}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : '<div class="no-data-message">No additional UOM conversions defined</div>'}
+            </div>
+        `;
+    }
+    
+    function displayStockTab(itemData) {
+        const stockInfo = itemData.stock_info || [];
+        const totalStock = itemData.total_stock || 0;
+        const totalAvailable = itemData.total_available || 0;
+        
+        return `
+            <div>
+                <div class="mb-3">
+                    <strong>Total Stock:</strong> ${totalStock} ${itemData.stock_uom}
+                    <br>
+                    <strong>Total Available:</strong> ${totalAvailable} ${itemData.stock_uom}
+                </div>
+                
+                ${stockInfo.length > 0 ? `
+                    <h5>Warehouse-wise Stock</h5>
+                    <table class="stock-table">
+                        <thead>
+                            <tr>
+                                <th>Warehouse</th>
+                                <th>UOM</th>
+                                <th>Actual Qty</th>
+                                <th>Reserved</th>
+                                <th>Available</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${stockInfo.map(stock => {
+                                const stockStatus = stock.actual_qty > 10 ? 'in-stock' : 
+                                                   stock.actual_qty > 0 ? 'low-stock' : 'out-of-stock';
+                                const statusText = stock.actual_qty > 10 ? 'In Stock' : 
+                                                  stock.actual_qty > 0 ? 'Low Stock' : 'Out of Stock';
+                                
+                                return `
+                                    <tr>
+                                        <td>${stock.warehouse}</td>
+                                        <td>${itemData.stock_uom}</td>
+                                        <td>${stock.actual_qty}</td>
+                                        <td>${stock.reserved_qty}</td>
+                                        <td>${stock.available_qty}</td>
+                                        <td><span class="stock-badge ${stockStatus}">${statusText}</span></td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                ` : '<div class="no-data-message">No stock information available for this item</div>'}
+                
+
+            </div>
+        `;
+    }
+    
+    function displayAttributesTab(attributes) {
+        return `
+            <table class="uom-table">
+                <thead>
+                    <tr>
+                        <th>Attribute</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${attributes.map(attr => `
+                        <tr>
+                            <td>${attr.attribute}</td>
+                            <td>${attr.attribute_value}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+    
+    function displaySuppliersTab(suppliers) {
+        return `
+            <table class="uom-table">
+                <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Supplier Part No</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${suppliers.map(supplier => `
+                        <tr>
+                            <td>${supplier.supplier}</td>
+                            <td>${supplier.supplier_part_no || '-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+    
+    window.switchInfoTab = function(tabName, tabElement) {
+        // Remove active class from all tabs and panes
+        $('.info-tab').removeClass('active');
+        $('.tab-pane').removeClass('active');
+        
+        // Add active class to clicked tab
+        $(tabElement).addClass('active');
+        
+        // Show corresponding pane
+        $(`#${tabName}Tab`).addClass('active');
+    };
+    
+    window.toggleBarcodeList = function(element) {
+        $(element).closest('.barcode-list').toggleClass('collapsed');
+    };
+    
+    function setupItemInquiryDropdown() {
+        const $input = $('#itemInquiryInput');
+        const $list = $('#itemInquiryDropdownList');
+        let allItems = [];
+        
+        // Fetch items on focus
+        $input.on('focus', async function() {
+            if (allItems.length === 0) {
+                try {
+                    const response = await frappe.call({
+                        method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown',
+                        args: { show_only_stock_items: false }
+                    });
+                    allItems = response.message || [];
+                    renderItemDropdown(allItems.slice(0, 50)); // Show first 50 items
+                } catch (error) {
+                    console.error('Error fetching items:', error);
+                }
+            } else {
+                renderItemDropdown(allItems.slice(0, 50));
+            }
+        });
+        
+        // Filter on input
+        $input.on('input', function() {
+            const searchTerm = $(this).val().toLowerCase();
+            if (searchTerm) {
+                const filtered = allItems.filter(item => 
+                    item.item_code.toLowerCase().includes(searchTerm) ||
+                    item.item_name.toLowerCase().includes(searchTerm)
+                ).slice(0, 50);
+                renderItemDropdown(filtered);
+            } else {
+                renderItemDropdown(allItems.slice(0, 50));
+            }
+        });
+        
+        // Hide dropdown on blur
+        $input.on('blur', function() {
+            setTimeout(() => $list.hide(), 200);
+        });
+        
+        // Prevent dropdown from hiding when clicking inside it
+        $list.on('mousedown', function(e) {
+            e.preventDefault();
+        });
+        
+        // Hide dropdown when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.item-inquiry-dropdown-container').length) {
+                $list.hide();
+            }
+        });
+        
+        // Reposition dropdown on window resize
+        $(window).on('resize', function() {
+            if ($list.is(':visible')) {
+                positionDropdown();
+            }
+        });
+        
+        function renderItemDropdown(items) {
+            if (items.length === 0) {
+                $list.html('<div class="custom-dropdown-item">No items found</div>');
+                positionDropdown();
+                $list.show();
+                return;
+            }
+            
+            const html = items.map(item => `
+                <div class="custom-dropdown-item" data-value="${item.item_code}">
+                    <strong>${item.item_code}</strong>
+                    <small>${item.item_name}</small>
+                </div>
+            `).join('');
+            
+            $list.html(html);
+            
+            // Position the dropdown
+            positionDropdown();
+            
+            $list.show();
+            
+            // Add click handlers
+            $list.find('.custom-dropdown-item').on('click', function() {
+                const itemCode = $(this).data('value');
+                $input.val(itemCode);
+                $list.hide();
+            });
+        }
+        
+        function positionDropdown() {
+            const inputRect = $input[0].getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const windowWidth = window.innerWidth;
+            
+            // Calculate dropdown dimensions
+            const dropdownHeight = Math.min(250, 250);
+            const dropdownWidth = Math.min(Math.max(300, inputRect.width), 500);
+            
+            // Calculate available space
+            const spaceBelow = windowHeight - inputRect.bottom;
+            const spaceAbove = inputRect.top;
+            
+            // Determine vertical position
+            let top;
+            if (spaceBelow >= dropdownHeight || spaceBelow > spaceAbove) {
+                // Position below input
+                top = inputRect.bottom + 5;
+            } else {
+                // Position above input
+                top = inputRect.top - dropdownHeight - 5;
+            }
+            
+            // Ensure dropdown doesn't go off-screen vertically
+            if (top < 10) top = 10;
+            if (top + dropdownHeight > windowHeight - 10) {
+                top = windowHeight - dropdownHeight - 10;
+            }
+            
+            // Calculate horizontal position
+            let left = inputRect.left;
+            
+            // Ensure dropdown doesn't go off-screen horizontally
+            if (left + dropdownWidth > windowWidth - 10) {
+                left = windowWidth - dropdownWidth - 10;
+            }
+            if (left < 10) left = 10;
+            
+            // Apply positioning
+            $list.css({
+                position: 'fixed',
+                top: top + 'px',
+                left: left + 'px',
+                width: dropdownWidth + 'px',
+                maxHeight: dropdownHeight + 'px'
+            });
+        }
+    }
+    
+    function setupItemInquiryEvents() {
+        // Enter key in item input
+        $('#itemInquiryInput').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchItemInquiry();
+            }
+        });
+        
+        // Click outside modal to close
+        $('#itemInquiryModal').on('click', function(e) {
+            if (e.target === this) {
+                closeItemInquiryModal();
+            }
+        });
+        
+        // ESC key to close
+        $(document).on('keyup.itemInquiry', function(e) {
+            if (e.key === 'Escape') {
+                closeItemInquiryModal();
+            }
+        });
     }
     
     function showStockCountConfirmation(warehouse, allItems, itemsWithDifferences) {

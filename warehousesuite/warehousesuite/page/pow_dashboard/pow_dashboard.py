@@ -1158,3 +1158,123 @@ def test_pow_stock_concern_creation():
             "status": "error",
             "message": str(e)
         } 
+
+@frappe.whitelist()
+def get_item_inquiry_data(item_code, allowed_warehouses=None):
+    """Get comprehensive item information for inquiry modal"""
+    try:
+        # Get item master data
+        item = frappe.get_doc("Item", item_code)
+        
+        # Basic item information
+        item_data = {
+            "item_code": item.name,
+            "item_name": item.item_name,
+            "item_group": item.item_group,
+            "description": item.description,
+            "image": item.image,
+            "brand": item.brand,
+            "stock_uom": item.stock_uom,
+            "disabled": item.disabled,
+            "has_variants": item.has_variants,
+            "variant_of": item.variant_of,
+            "is_stock_item": item.is_stock_item
+        }
+        
+        # Get barcodes
+        barcodes = frappe.get_all("Item Barcode",
+            filters={"parent": item_code},
+            fields=["barcode", "barcode_type", "uom"],
+            order_by="idx"
+        )
+        item_data["barcodes"] = barcodes
+        
+        # Get UOM conversions
+        uom_conversions = []
+        if item.uoms:
+            for uom_entry in item.uoms:
+                uom_conversions.append({
+                    "uom": uom_entry.uom,
+                    "conversion_factor": uom_entry.conversion_factor
+                })
+        item_data["uom_conversions"] = uom_conversions
+        
+        # Get stock information for allowed warehouses only
+        stock_info = []
+        warehouse_filter = {"item_code": item_code}
+        
+        # Filter by allowed warehouses if provided
+        if allowed_warehouses:
+            if isinstance(allowed_warehouses, str):
+                allowed_warehouses = frappe.parse_json(allowed_warehouses)
+            warehouse_filter["warehouse"] = ["in", allowed_warehouses]
+            
+            # Log for debugging
+            frappe.logger().info(f"Item Inquiry - Allowed warehouses: {allowed_warehouses}")
+            frappe.logger().info(f"Item Inquiry - Warehouse filter: {warehouse_filter}")
+            
+        bins = frappe.get_all("Bin",
+            filters=warehouse_filter,
+            fields=["warehouse", "actual_qty", "ordered_qty", "planned_qty", 
+                   "reserved_qty", "projected_qty", "valuation_rate"],
+            order_by="warehouse"
+        )
+        
+        # Log for debugging
+        frappe.logger().info(f"Item Inquiry - Found {len(bins)} bins for item {item_code}")
+        for bin_data in bins:
+            frappe.logger().info(f"Item Inquiry - Bin: {bin_data.warehouse}, Qty: {bin_data.actual_qty}")
+        
+        for bin_data in bins:
+            # Get warehouse type
+            warehouse_type = frappe.db.get_value("Warehouse", bin_data.warehouse, "warehouse_type") or "Standard"
+            
+            stock_info.append({
+                "warehouse": bin_data.warehouse,
+                "warehouse_type": warehouse_type,
+                "actual_qty": bin_data.actual_qty or 0,
+                "ordered_qty": bin_data.ordered_qty or 0,
+                "planned_qty": bin_data.planned_qty or 0,
+                "reserved_qty": bin_data.reserved_qty or 0,
+                "projected_qty": bin_data.projected_qty or 0,
+                "available_qty": (bin_data.actual_qty or 0) - (bin_data.reserved_qty or 0)
+            })
+            
+        item_data["stock_info"] = stock_info
+        
+        # Calculate total stock across allowed warehouses only
+        total_stock = sum(s["actual_qty"] for s in stock_info)
+        total_available = sum(s["available_qty"] for s in stock_info)
+        item_data["total_stock"] = total_stock
+        item_data["total_available"] = total_available
+        
+        # Get item attributes if any
+        attributes = []
+        if hasattr(item, 'attributes') and item.attributes:
+            for attr in item.attributes:
+                attributes.append({
+                    "attribute": attr.attribute,
+                    "attribute_value": attr.attribute_value
+                })
+        item_data["attributes"] = attributes
+        
+        # Get supplier information
+        suppliers = frappe.get_all("Item Supplier",
+            filters={"parent": item_code},
+            fields=["supplier", "supplier_part_no"],
+            order_by="idx",
+            limit=5
+        )
+        item_data["suppliers"] = suppliers
+        
+        return {
+            "status": "success",
+            "data": item_data
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting item inquiry data: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 
