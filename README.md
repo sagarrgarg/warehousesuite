@@ -174,6 +174,21 @@ WarehouseSuite is a comprehensive, mobile-first warehouse management solution de
 - **Auto Transit Management**: Automatic transit warehouse handling
 - **Role-Based Overrides**: Flexible permission system
 
+## 📚 Documentation
+
+### Comprehensive Guides
+- **[📖 Installation Guide](wiki/installation.md)** - Detailed installation for ERPNext 14+ and 15+
+- **[🚀 Getting Started](wiki/getting-started.md)** - Quick start guide for new users
+- **[👥 User Guide](wiki/user-guide.md)** - Complete user manual for all features
+- **[📋 Wiki Home](wiki/README.md)** - Complete documentation index
+
+### Feature-Specific Documentation
+- **[🎯 POW Dashboard](wiki/features/pow-dashboard.md)** - Dashboard operations and configuration
+- **[📦 Transfer Management](wiki/features/transfer-management.md)** - Transfer send/receive workflows
+- **[📊 Stock Counting](wiki/features/stock-counting.md)** - Stock counting and reconciliation
+- **[🔍 Item Inquiry](wiki/features/item-inquiry.md)** - Item lookup and stock inquiry
+- **[⚙️ POW Profiles](wiki/configuration/pow-profiles.md)** - Profile configuration and management
+
 ## 🚀 Getting Started
 
 ### Installation
@@ -189,6 +204,8 @@ WarehouseSuite is a comprehensive, mobile-first warehouse management solution de
 3. Create work sessions for warehouse operations
 4. Start using transfer, counting, and inquiry features
 5. Monitor operations through the dashboard
+
+**📖 For detailed installation and setup instructions, see our [Installation Guide](wiki/installation.md)**
 
 ## 📈 Roadmap & Vision
 
@@ -218,7 +235,7 @@ WarehouseSuite is a comprehensive, mobile-first warehouse management solution de
 ### Join the Community
 - **GitHub**: [https://github.com/sagarrgarg/warehousesuite](https://github.com/sagarrgarg/warehousesuite)
 - **Email**: sagar1ratan1garg1@gmail.com
-- **Documentation**: Comprehensive guides available
+- **Documentation**: [Comprehensive guides available](wiki/README.md)
 - **Support**: Active support for all users
 
 ### Contribute
