@@ -2714,6 +2714,13 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 line-height: 1.5;
             }
             
+            .item-basic-info .item-weight {
+                color: #555;
+                margin-bottom: 10px;
+                line-height: 1.5;
+                font-weight: 500;
+            }
+            
             .item-badges {
                 display: flex;
                 gap: 10px;
@@ -5937,6 +5944,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     <h4>${itemData.item_name || itemData.item_code}</h4>
                     <div class="item-code">Code: ${itemData.item_code}</div>
                     ${itemData.description ? `<div class="description">${itemData.description}</div>` : ''}
+                    ${itemData.weight > 0 ? `<div class="item-weight">Weight: ${itemData.weight} ${itemData.weight_uom || 'kg'}</div>` : ''}
                     
                     <div class="item-badges">
                         <span class="badge badge-primary">${itemData.item_group || 'N/A'}</span>

@@ -1175,6 +1175,8 @@ def get_item_inquiry_data(item_code, allowed_warehouses=None):
             "image": item.image,
             "brand": item.brand,
             "stock_uom": item.stock_uom,
+            "weight": item.weight_per_unit or 0,
+            "weight_uom": item.weight_uom or "",
             "disabled": item.disabled,
             "has_variants": item.has_variants,
             "variant_of": item.variant_of,
