@@ -3702,7 +3702,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                         </button>`
                                         :
                                         `<button type="button" class="add-item-btn compact" onclick="addItemRow()">
-                                            <i class="fa fa-plus"></i> Add
+                                        <i class="fa fa-plus"></i> Add
                                         </button>`
                                     }
                                 </div>
@@ -4104,19 +4104,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                     <i class="fa fa-exclamation-triangle"></i> Raise Concern
                                                 </button>
                                             ` : `
-                                                <div class="bulk-operations-panel">
-                                                    <div class="bulk-buttons">
-                                                        <button class="btn-set-max" onclick="setAllToMax('${transfer.stock_entry}')" title="Set all quantities to maximum available">
-                                                            <i class="fa fa-arrow-up"></i> Set Max
-                                                        </button>
-                                                        <button class="btn-clear-all" onclick="clearAllQuantities('${transfer.stock_entry}')" title="Clear all quantities">
-                                                            <i class="fa fa-times"></i> Clear All
-                                                        </button>
-                                                    </div>
+                                            <div class="bulk-operations-panel">
+                                                <div class="bulk-buttons">
+                                                    <button class="btn-set-max" onclick="setAllToMax('${transfer.stock_entry}')" title="Set all quantities to maximum available">
+                                                        <i class="fa fa-arrow-up"></i> Set Max
+                                                    </button>
+                                                    <button class="btn-clear-all" onclick="clearAllQuantities('${transfer.stock_entry}')" title="Clear all quantities">
+                                                        <i class="fa fa-times"></i> Clear All
+                                                    </button>
                                                 </div>
-                                                <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
-                                                    <i class="fa fa-check"></i> Receive All
-                                                </button>
+                                            </div>
+                                            <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
+                                                <i class="fa fa-check"></i> Receive All
+                                            </button>
                                                 <button class="btn-raise-concern" onclick="raiseStockConcern('${transfer.stock_entry}')">
                                                     <i class="fa fa-exclamation-triangle"></i> Raise Concern
                                                 </button>
@@ -4594,7 +4594,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
         });
     }
-
+    
     function setupItemDropdowns(rowId) {
         const $row = $(`#${rowId}`);
         
