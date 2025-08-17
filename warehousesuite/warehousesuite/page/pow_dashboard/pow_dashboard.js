@@ -4305,7 +4305,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                     </button>
                                                 </div>
                                             </div>
-                                            <button class="btn-receive-all" onclick="receiveAllItems('${transfer.stock_entry}')">
+                                            <button class="btn-receive-all receive-btn" onclick="receiveAllItems('${transfer.stock_entry}')">
                                                 <i class="fa fa-check"></i> Receive All
                                             </button>
                                                 <button class="btn-raise-concern" onclick="raiseStockConcern('${transfer.stock_entry}')">
@@ -4504,6 +4504,17 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 
     window.receiveAllItems = async function(stockEntryName) {
         try {
+            // Prevent duplicate submissions
+            const submitButton = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"] .receive-btn`);
+            if (submitButton.hasClass('processing')) {
+                frappe.show_alert('Transfer receive is already in progress. Please wait...', 3);
+                return;
+            }
+            
+            // Mark as processing
+            submitButton.addClass('processing').prop('disabled', true);
+            submitButton.text('Processing...');
+            
             const card = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"]`);
             const items = [];
             
@@ -4522,6 +4533,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             if (items.length === 0) {
                 frappe.msgprint('Please enter quantities to receive');
+                // Reset button state
+                submitButton.removeClass('processing').prop('disabled', false);
+                submitButton.text('Receive');
                 return;
             }
             
@@ -4535,13 +4549,22 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 const errors = validationResult.message.errors;
                 let errorMessage = 'Quantity validation failed:\n';
                 errors.forEach(error => {
-                    errorMessage += `• ${error.item_code}: Requested ${error.requested_qty} ${error.uom}, but only ${error.remaining_qty} ${error.uom} remaining\n`;
+                    if (error.error_type === 'exceeds_remaining') {
+                        errorMessage += `• ${error.item_code}: Requested ${error.requested_qty} ${error.uom}, but only ${error.remaining_qty} ${error.uom} remaining\n`;
+                    } else if (error.error_type === 'insufficient_stock') {
+                        errorMessage += `• ${error.item_code}: Insufficient stock in transit warehouse. Requested ${error.requested_qty} ${error.uom}, but only ${error.available_stock} ${error.uom} available in ${error.warehouse}\n`;
+                    } else {
+                        errorMessage += `• ${error.item_code}: ${error.message || 'Validation error'}\n`;
+                    }
                 });
                 frappe.msgprint({
                     title: 'Validation Error',
                     message: errorMessage,
                     indicator: 'red'
                 });
+                // Reset button state
+                submitButton.removeClass('processing').prop('disabled', false);
+                submitButton.text('Receive');
                 return;
             }
             
@@ -4562,6 +4585,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         company: frappe.defaults.get_global_default('company'),
                         session_name: window.transferReceiveSessionName
                     }).then(result => {
+                        // Reset button state
+                        submitButton.removeClass('processing').prop('disabled', false);
+                        submitButton.text('Receive');
+                        
                         if (result.message.status === 'success') {
                             frappe.msgprint({
                                 title: 'Success',
@@ -4586,6 +4613,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             });
                         }
                     }).catch(error => {
+                        // Reset button state
+                        submitButton.removeClass('processing').prop('disabled', false);
+                        submitButton.text('Receive');
+                        
                         console.error('Error receiving transfer:', error);
                         frappe.msgprint({
                             title: 'Error',
@@ -4598,10 +4629,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     // User cancelled - show modal again
                     modal.show();
                     frappe.show_alert('Transfer receive cancelled', 3);
+                    
+                    // Reset button state
+                    submitButton.removeClass('processing').prop('disabled', false);
+                    submitButton.text('Receive');
                 }
             );
             
         } catch (error) {
+            // Reset button state in case of any error
+            const submitButton = $(`.transfer-grid-item[data-stock-entry="${stockEntryName}"] .receive-btn`);
+            submitButton.removeClass('processing').prop('disabled', false);
+            submitButton.text('Receive');
+            
             console.error('Error in receiveAllItems:', error);
             frappe.msgprint('Error processing receive: ' + error.message);
         }
@@ -4723,6 +4763,21 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     }
                     .quantity-warning i {
                         margin-right: 4px;
+                    }
+                    .receive-btn.processing {
+                        background-color: #6c757d !important;
+                        border-color: #6c757d !important;
+                        color: #fff !important;
+                        cursor: not-allowed !important;
+                        opacity: 0.7 !important;
+                        pointer-events: none !important;
+                    }
+                    .receive-btn.processing i {
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
                     }
                 </style>
             `);

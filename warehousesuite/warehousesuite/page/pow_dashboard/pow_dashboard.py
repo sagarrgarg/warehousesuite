@@ -595,8 +595,36 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         # Validate transfer receive data
         validation_result = validate_transfer_receive_data(stock_entry_name, items_data)
         
+        # Log validation result for debugging
+        frappe.logger().info(f"Transfer receive validation result: {validation_result.is_valid}")
         if not validation_result.is_valid:
+            frappe.logger().warning(f"Transfer receive validation failed: {validation_result.errors}")
             return create_api_response(validation_result)
+        
+        # Additional database-level duplicate check
+        try:
+            # Check for any recent receive entries for this stock entry (last 2 minutes)
+            from datetime import datetime, timedelta
+            cutoff_time = datetime.now() - timedelta(minutes=2)
+            
+            existing_receives = frappe.db.sql("""
+                SELECT name, creation
+                FROM `tabStock Entry`
+                WHERE outgoing_stock_entry = %s
+                AND stock_entry_type = 'Material Transfer'
+                AND add_to_transit = 0
+                AND creation >= %s
+                AND docstatus = 1
+            """, (stock_entry_name, cutoff_time), as_dict=True)
+            
+            if existing_receives:
+                return {
+                    "status": "error",
+                    "message": f"Duplicate receive entry detected. A receive entry was already created for {stock_entry_name} at {existing_receives[0].creation}. Please refresh the page."
+                }
+        except Exception as e:
+            frappe.logger().warning(f"Error in duplicate check: {str(e)}")
+            # Continue with the process even if duplicate check fails
         
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
@@ -1018,7 +1046,24 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                         'item_name': original_item.item_name,
                         'requested_qty': qty,
                         'remaining_qty': remaining_qty,
-                        'uom': original_item.uom
+                        'uom': original_item.uom,
+                        'error_type': 'exceeds_remaining'
+                    })
+                
+                # Check actual stock in in-transit warehouse
+                from erpnext.stock.utils import get_stock_balance
+                in_transit_warehouse = original_se.to_warehouse
+                actual_stock_qty = get_stock_balance(item_code, in_transit_warehouse) or 0
+                
+                if qty > actual_stock_qty:
+                    validation_errors.append({
+                        'item_code': item_code,
+                        'item_name': original_item.item_name,
+                        'requested_qty': qty,
+                        'available_stock': actual_stock_qty,
+                        'uom': original_item.uom,
+                        'warehouse': in_transit_warehouse,
+                        'error_type': 'insufficient_stock'
                     })
                 
                 # Check for discrepancies (expected vs actual)

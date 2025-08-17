@@ -229,6 +229,13 @@ def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]
         result.add_error(f"Stock entry {stock_entry_name} is not submitted", 
                         "stock_entry", "NOT_SUBMITTED")
     
+    # Check for duplicate receive entries
+    duplicate_check = check_duplicate_transfer_receive(stock_entry_name, items_data)
+    if not duplicate_check.is_valid:
+        for error in duplicate_check.errors:
+            result.add_error(error["message"], error["field"], error["code"])
+        return result
+    
     # Validate items
     if not items_data or len(items_data) == 0:
         result.add_error("At least one item is required", "items", "REQUIRED_FIELD")
@@ -240,6 +247,66 @@ def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]
         if not item_result.is_valid:
             for error in item_result.errors:
                 result.add_error(error["message"], f"items[{i}].{error['field']}", error["code"])
+    
+    return result
+
+
+def check_duplicate_transfer_receive(stock_entry_name: str, items_data: List[Dict]) -> ValidationResult:
+    """
+    Check for duplicate transfer receive entries
+    
+    Args:
+        stock_entry_name: Stock entry name
+        items_data: List of items to receive
+    
+    Returns:
+        ValidationResult object
+    """
+    result = ValidationResult()
+    
+    # Check if there are any recent receive entries for this stock entry
+    # Look for entries created in the last 5 minutes to prevent duplicate submissions
+    from datetime import datetime, timedelta
+    
+    cutoff_time = datetime.now() - timedelta(minutes=5)
+    
+    # Get existing receive entries for this stock entry
+    existing_receives = frappe.db.sql("""
+        SELECT name, creation, docstatus
+        FROM `tabStock Entry`
+        WHERE outgoing_stock_entry = %s
+        AND stock_entry_type = 'Material Transfer'
+        AND add_to_transit = 0
+        AND creation >= %s
+        ORDER BY creation DESC
+    """, (stock_entry_name, cutoff_time), as_dict=True)
+    
+    if existing_receives:
+        # Check if any of the recent entries contain the same items
+        for receive_entry in existing_receives:
+            if receive_entry.docstatus == 1:  # Submitted entry
+                # Get items from this receive entry
+                receive_items = frappe.db.sql("""
+                    SELECT item_code, qty, uom
+                    FROM `tabStock Entry Detail`
+                    WHERE parent = %s
+                """, receive_entry.name, as_dict=True)
+                
+                # Check for overlapping items
+                overlapping_items = []
+                for new_item in items_data:
+                    for existing_item in receive_items:
+                        if (new_item['item_code'] == existing_item['item_code'] and 
+                            new_item['uom'] == existing_item['uom']):
+                            overlapping_items.append(new_item['item_code'])
+                
+                if overlapping_items:
+                    result.add_error(
+                        f"Duplicate receive entry detected. Items {', '.join(overlapping_items)} "
+                        f"were already received in {receive_entry.name} created at {receive_entry.creation}",
+                        "duplicate_receive", "DUPLICATE_RECEIVE_ENTRY"
+                    )
+                    return result
     
     return result
 
@@ -287,8 +354,43 @@ def validate_receive_item(item: Dict, stock_entry: Any, index: int = 0) -> Valid
                     f"Receive quantity {item['qty']} exceeds remaining quantity {remaining_qty}",
                     "qty", "EXCEEDS_REMAINING_QTY"
                 )
+            
+            # Validate actual stock availability in in-transit warehouse
+            # The in-transit warehouse is the to_warehouse of the original stock entry
+            in_transit_warehouse = stock_entry.to_warehouse
+            actual_stock_qty = get_stock_quantity(item["item_code"], in_transit_warehouse)
+            
+            # Log for debugging
+            frappe.logger().info(f"Stock validation for {item['item_code']}: requested={item.get('qty', 0)}, available={actual_stock_qty}, warehouse={in_transit_warehouse}")
+            
+            if item.get("qty", 0) > actual_stock_qty:
+                error_msg = f"Insufficient stock in transit warehouse. Requested: {item['qty']} {item['uom']}, Available in {in_transit_warehouse}: {actual_stock_qty} {item['uom']}"
+                frappe.logger().warning(f"Stock validation failed: {error_msg}")
+                result.add_error(error_msg, "qty", "INSUFFICIENT_STOCK_IN_TRANSIT")
     
     return result
+
+
+def get_stock_quantity(item_code: str, warehouse: str) -> float:
+    """
+    Get actual stock quantity for an item in a warehouse
+    
+    Args:
+        item_code: Item code
+        warehouse: Warehouse name
+    
+    Returns:
+        Available stock quantity
+    """
+    try:
+        # Use Frappe's built-in function to get actual stock quantity
+        from erpnext.stock.utils import get_stock_balance
+        stock_qty = get_stock_balance(item_code, warehouse)
+        return float(stock_qty) if stock_qty else 0.0
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting stock quantity for {item_code} in {warehouse}: {str(e)}")
+        return 0.0
 
 
 def get_uom_conversion_factor(item_code: str, from_uom: str, to_uom: str) -> float:
