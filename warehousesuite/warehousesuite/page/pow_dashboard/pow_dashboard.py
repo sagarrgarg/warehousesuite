@@ -592,7 +592,7 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         
         items_data = frappe.parse_json(items_data)
         
-        # Validate transfer receive data
+        # Validate transfer receive data with improved logic
         validation_result = validate_transfer_receive_data(stock_entry_name, items_data)
         
         # Log validation result for debugging
@@ -600,31 +600,6 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         if not validation_result.is_valid:
             frappe.logger().warning(f"Transfer receive validation failed: {validation_result.errors}")
             return create_api_response(validation_result)
-        
-        # Additional database-level duplicate check
-        try:
-            # Check for any recent receive entries for this stock entry (last 2 minutes)
-            from datetime import datetime, timedelta
-            cutoff_time = datetime.now() - timedelta(minutes=2)
-            
-            existing_receives = frappe.db.sql("""
-                SELECT name, creation
-                FROM `tabStock Entry`
-                WHERE outgoing_stock_entry = %s
-                AND stock_entry_type = 'Material Transfer'
-                AND add_to_transit = 0
-                AND creation >= %s
-                AND docstatus = 1
-            """, (stock_entry_name, cutoff_time), as_dict=True)
-            
-            if existing_receives:
-                return {
-                    "status": "error",
-                    "message": f"Duplicate receive entry detected. A receive entry was already created for {stock_entry_name} at {existing_receives[0].creation}. Please refresh the page."
-                }
-        except Exception as e:
-            frappe.logger().warning(f"Error in duplicate check: {str(e)}")
-            # Continue with the process even if duplicate check fails
         
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
@@ -1016,7 +991,7 @@ def create_stock_match_entry(warehouse, company, session_name, items_count):
 
 @frappe.whitelist()
 def validate_transfer_receive_quantities(stock_entry_name, items_data):
-    """Validate quantities for transfer receive"""
+    """Validate quantities for transfer receive with improved logic"""
     try:
         items_data = frappe.parse_json(items_data)
         validation_errors = []
@@ -1037,7 +1012,15 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                     break
             
             if original_item:
-                remaining_qty = original_item.qty - original_item.transferred_qty
+                # Get the total quantity that was sent to transit
+                total_sent_qty = original_item.qty
+                
+                # Get the quantity already received (from previous receive entries)
+                from warehousesuite.warehousesuite.utils.validation import get_already_received_quantity
+                already_received_qty = get_already_received_quantity(stock_entry_name, item_code)
+                
+                # Calculate remaining quantity that can be received
+                remaining_qty = total_sent_qty - already_received_qty
                 
                 # Check if quantity exceeds remaining
                 if qty > remaining_qty:
@@ -1046,6 +1029,8 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                         'item_name': original_item.item_name,
                         'requested_qty': qty,
                         'remaining_qty': remaining_qty,
+                        'total_sent_qty': total_sent_qty,
+                        'already_received_qty': already_received_qty,
                         'uom': original_item.uom,
                         'error_type': 'exceeds_remaining'
                     })
@@ -1066,8 +1051,12 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                         'error_type': 'insufficient_stock'
                     })
                 
-                # Check for discrepancies (expected vs actual)
-                if qty != remaining_qty:
+                # Check for discrepancies (expected vs actual) - only if receiving all remaining
+                if qty == remaining_qty:
+                    # This is a full receive, no discrepancy
+                    pass
+                elif qty < remaining_qty:
+                    # This is a partial receive, calculate variance
                     variance_qty = qty - remaining_qty
                     variance_percentage = (variance_qty / remaining_qty * 100) if remaining_qty != 0 else 0
                     
@@ -1079,7 +1068,8 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                         'variance_qty': variance_qty,
                         'variance_percentage': variance_percentage,
                         'uom': original_item.uom,
-                        'warehouse': original_se.to_warehouse
+                        'warehouse': original_se.to_warehouse,
+                        'is_partial_receive': True
                     })
         
         return {
@@ -1454,3 +1444,104 @@ def generate_zpl_label(item, barcode_data, uom_conversions, quantity):
     
     # Repeat for quantity
     return zpl_code * quantity 
+
+@frappe.whitelist()
+def get_available_boms():
+    """Get available BOMs for Material Request"""
+    try:
+        boms = frappe.get_all("BOM", 
+            filters={
+                "is_active": 1,
+                "is_default": 1
+            },
+            fields=["name", "item", "item_name"],
+            order_by="item_name"
+        )
+        
+        return boms
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting available BOMs: {str(e)}")
+        return []
+
+@frappe.whitelist()
+def get_bom_items(bom_name, qty_to_produce=1):
+    """Get BOM items for Material Request"""
+    try:
+        bom = frappe.get_doc("BOM", bom_name)
+        items = []
+        
+        for item in bom.items:
+            # Calculate required quantity based on BOM quantity and production quantity
+            required_qty = (item.qty / bom.quantity) * float(qty_to_produce)
+            
+            items.append({
+                "item_code": item.item_code,
+                "item_name": item.item_name,
+                "qty": required_qty,
+                "uom": item.uom,
+                "description": f"From BOM: {bom_name}"
+            })
+        
+        return items
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting BOM items: {str(e)}")
+        return []
+
+@frappe.whitelist()
+def create_material_request(warehouse, delivery_date, items, session_name=None):
+    """Create Material Request from POW Dashboard"""
+    try:
+        # Validate inputs
+        if not warehouse:
+            return {"status": "error", "message": "Warehouse is required"}
+        
+        if not items:
+            return {"status": "error", "message": "At least one item is required"}
+        
+        # Parse items if it's a string
+        if isinstance(items, str):
+            items = frappe.parse_json(items)
+        
+        # Get company
+        company = frappe.defaults.get_global_default('company')
+        if not company:
+            company = frappe.db.get_single_value('Global Defaults', 'default_company')
+        if not company:
+            company = frappe.get_all('Company', limit=1, pluck='name')[0] if frappe.get_all('Company') else None
+        
+        # Create Material Request
+        material_request = frappe.new_doc("Material Request")
+        material_request.material_request_type = "Purchase"
+        material_request.company = company
+        material_request.warehouse = warehouse
+        material_request.schedule_date = delivery_date
+        material_request.status = "Draft"
+        
+        # Add items
+        for item_data in items:
+            material_request.append("items", {
+                "item_code": item_data.get("item_code"),
+                "qty": item_data.get("qty", 0),
+                "uom": frappe.db.get_value("Item", item_data.get("item_code"), "stock_uom"),
+                "description": item_data.get("description", ""),
+                "warehouse": warehouse
+            })
+        
+        # Insert and submit
+        material_request.insert()
+        material_request.submit()
+        
+        return {
+            "status": "success",
+            "material_request": material_request.name,
+            "message": f"Material Request created successfully: {material_request.name}"
+        }
+        
+    except Exception as e:
+        frappe.logger().error(f"Error creating Material Request: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 

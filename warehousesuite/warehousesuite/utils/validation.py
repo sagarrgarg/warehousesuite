@@ -203,7 +203,11 @@ def validate_concern_data(concern_data: Dict) -> ValidationResult:
 
 def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]) -> ValidationResult:
     """
-    Validate transfer receive data
+    Validate transfer receive data with improved logic:
+    - Check if total balance exists in transit warehouse
+    - Allow partial receives
+    - Prevent receiving more than pending quantity
+    - Remove duplicate submission checks
     
     Args:
         stock_entry_name: Stock entry name
@@ -214,106 +218,56 @@ def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]
     """
     result = ValidationResult()
     
-    # Validate stock entry exists and is a transfer
-    if not frappe.db.exists("Stock Entry", stock_entry_name):
-        result.add_error(f"Stock entry {stock_entry_name} does not exist", "stock_entry", "STOCK_ENTRY_NOT_FOUND")
-        return result
-    
-    stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
-    
-    if not stock_entry.add_to_transit:
-        result.add_error(f"Stock entry {stock_entry_name} is not a transfer entry", 
-                        "stock_entry", "NOT_TRANSFER_ENTRY")
-    
-    if stock_entry.docstatus != 1:
-        result.add_error(f"Stock entry {stock_entry_name} is not submitted", 
-                        "stock_entry", "NOT_SUBMITTED")
-    
-    # Check for duplicate receive entries
-    duplicate_check = check_duplicate_transfer_receive(stock_entry_name, items_data)
-    if not duplicate_check.is_valid:
-        for error in duplicate_check.errors:
-            result.add_error(error["message"], error["field"], error["code"])
-        return result
-    
-    # Validate items
-    if not items_data or len(items_data) == 0:
-        result.add_error("At least one item is required", "items", "REQUIRED_FIELD")
-        return result
-    
-    # Validate each item
-    for i, item in enumerate(items_data):
-        item_result = validate_receive_item(item, stock_entry, i)
-        if not item_result.is_valid:
-            for error in item_result.errors:
-                result.add_error(error["message"], f"items[{i}].{error['field']}", error["code"])
-    
-    return result
-
-
-def check_duplicate_transfer_receive(stock_entry_name: str, items_data: List[Dict]) -> ValidationResult:
-    """
-    Check for duplicate transfer receive entries
-    
-    Args:
-        stock_entry_name: Stock entry name
-        items_data: List of items to receive
-    
-    Returns:
-        ValidationResult object
-    """
-    result = ValidationResult()
-    
-    # Check if there are any recent receive entries for this stock entry
-    # Look for entries created in the last 5 minutes to prevent duplicate submissions
-    from datetime import datetime, timedelta
-    
-    cutoff_time = datetime.now() - timedelta(minutes=5)
-    
-    # Get existing receive entries for this stock entry
-    existing_receives = frappe.db.sql("""
-        SELECT name, creation, docstatus
-        FROM `tabStock Entry`
-        WHERE outgoing_stock_entry = %s
-        AND stock_entry_type = 'Material Transfer'
-        AND add_to_transit = 0
-        AND creation >= %s
-        ORDER BY creation DESC
-    """, (stock_entry_name, cutoff_time), as_dict=True)
-    
-    if existing_receives:
-        # Check if any of the recent entries contain the same items
-        for receive_entry in existing_receives:
-            if receive_entry.docstatus == 1:  # Submitted entry
-                # Get items from this receive entry
-                receive_items = frappe.db.sql("""
-                    SELECT item_code, qty, uom
-                    FROM `tabStock Entry Detail`
-                    WHERE parent = %s
-                """, receive_entry.name, as_dict=True)
+    try:
+        # Get the original stock entry
+        stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+        
+        if not stock_entry:
+            result.add_error(f"Stock Entry {stock_entry_name} not found", "stock_entry", "NOT_FOUND")
+            return result
+        
+        # Validate each item
+        for index, item in enumerate(items_data):
+            item_result = validate_receive_item(item, stock_entry, index)
+            if not item_result.is_valid:
+                result.errors.extend(item_result.errors)
+        
+        # Check if any validation errors occurred
+        if result.errors:
+            return result
+        
+        # Additional validation: Check if items exist in transit warehouse
+        in_transit_warehouse = stock_entry.to_warehouse
+        
+        for item in items_data:
+            item_code = item.get("item_code")
+            qty = item.get("qty", 0)
+            
+            if item_code and qty > 0:
+                # Get actual stock in transit warehouse
+                actual_stock = get_stock_quantity(item_code, in_transit_warehouse)
                 
-                # Check for overlapping items
-                overlapping_items = []
-                for new_item in items_data:
-                    for existing_item in receive_items:
-                        if (new_item['item_code'] == existing_item['item_code'] and 
-                            new_item['uom'] == existing_item['uom']):
-                            overlapping_items.append(new_item['item_code'])
-                
-                if overlapping_items:
+                if actual_stock < qty:
                     result.add_error(
-                        f"Duplicate receive entry detected. Items {', '.join(overlapping_items)} "
-                        f"were already received in {receive_entry.name} created at {receive_entry.creation}",
-                        "duplicate_receive", "DUPLICATE_RECEIVE_ENTRY"
+                        f"Insufficient stock in transit warehouse. Item {item_code}: "
+                        f"Requested {qty}, Available {actual_stock}",
+                        "insufficient_stock", "INSUFFICIENT_STOCK"
                     )
-                    return result
-    
-    return result
+        
+        return result
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in validate_transfer_receive_data: {str(e)}")
+        result.add_error(f"Validation error: {str(e)}", "validation_error", "VALIDATION_ERROR")
+        return result
 
 
 def validate_receive_item(item: Dict, stock_entry: Any, index: int = 0) -> ValidationResult:
     """
-    Validate a single receive item
+    Validate a single receive item with improved logic:
+    - Allow partial receives
+    - Check against remaining quantity in transit
+    - Prevent receiving more than pending quantity
     
     Args:
         item: Item dictionary
@@ -347,28 +301,78 @@ def validate_receive_item(item: Dict, stock_entry: Any, index: int = 0) -> Valid
             result.add_error(f"Item {item['item_code']} not found in original stock entry", 
                            "item_code", "ITEM_NOT_IN_TRANSFER")
         else:
+            # Get the total quantity that was sent to transit
+            total_sent_qty = original_item.qty
+            
+            # Get the quantity already received (from previous receive entries)
+            already_received_qty = get_already_received_quantity(stock_entry.name, item["item_code"])
+            
+            # Calculate remaining quantity that can be received
+            remaining_qty = total_sent_qty - already_received_qty
+            
             # Validate quantity against remaining quantity
-            remaining_qty = original_item.qty - original_item.transferred_qty
-            if item.get("qty", 0) > remaining_qty:
+            requested_qty = item.get("qty", 0)
+            if requested_qty > remaining_qty:
                 result.add_error(
-                    f"Receive quantity {item['qty']} exceeds remaining quantity {remaining_qty}",
-                    "qty", "EXCEEDS_REMAINING_QTY"
+                    f"Quantity {requested_qty} exceeds remaining quantity {remaining_qty} for item {item['item_code']}",
+                    "qty", "EXCEEDS_REMAINING"
                 )
             
-            # Validate actual stock availability in in-transit warehouse
-            # The in-transit warehouse is the to_warehouse of the original stock entry
+            # Check if there's stock in transit warehouse
             in_transit_warehouse = stock_entry.to_warehouse
-            actual_stock_qty = get_stock_quantity(item["item_code"], in_transit_warehouse)
+            transit_stock = get_stock_quantity(item["item_code"], in_transit_warehouse)
             
-            # Log for debugging
-            frappe.logger().info(f"Stock validation for {item['item_code']}: requested={item.get('qty', 0)}, available={actual_stock_qty}, warehouse={in_transit_warehouse}")
-            
-            if item.get("qty", 0) > actual_stock_qty:
-                error_msg = f"Insufficient stock in transit warehouse. Requested: {item['qty']} {item['uom']}, Available in {in_transit_warehouse}: {actual_stock_qty} {item['uom']}"
-                frappe.logger().warning(f"Stock validation failed: {error_msg}")
-                result.add_error(error_msg, "qty", "INSUFFICIENT_STOCK_IN_TRANSIT")
+            if requested_qty > transit_stock:
+                result.add_error(
+                    f"Insufficient stock in transit warehouse. Item {item['item_code']}: "
+                    f"Requested {requested_qty}, Available in transit {transit_stock}",
+                    "qty", "INSUFFICIENT_TRANSIT_STOCK"
+                )
     
     return result
+
+
+def get_already_received_quantity(stock_entry_name: str, item_code: str) -> float:
+    """
+    Get the quantity already received for a specific item from a stock entry
+    
+    Args:
+        stock_entry_name: Original stock entry name
+        item_code: Item code to check
+    
+    Returns:
+        Total quantity already received
+    """
+    try:
+        # Get all receive entries for this stock entry
+        receive_entries = frappe.db.sql("""
+            SELECT name
+            FROM `tabStock Entry`
+            WHERE outgoing_stock_entry = %s
+            AND stock_entry_type = 'Material Transfer'
+            AND add_to_transit = 0
+            AND docstatus = 1
+        """, stock_entry_name, as_dict=True)
+        
+        total_received = 0.0
+        
+        for receive_entry in receive_entries:
+            # Get the quantity received for this specific item
+            received_qty = frappe.db.sql("""
+                SELECT SUM(qty) as total_qty
+                FROM `tabStock Entry Detail`
+                WHERE parent = %s
+                AND item_code = %s
+            """, (receive_entry.name, item_code), as_dict=True)
+            
+            if received_qty and received_qty[0].total_qty:
+                total_received += float(received_qty[0].total_qty)
+        
+        return total_received
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting already received quantity: {str(e)}")
+        return 0.0
 
 
 def get_stock_quantity(item_code: str, warehouse: str) -> float:
