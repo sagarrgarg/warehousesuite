@@ -627,14 +627,34 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
                 "message": "Destination warehouse not found. Please check the original transfer configuration."
             }
         
+        # Validate warehouses before creating stock entry
+        source_warehouse = original_se.to_warehouse  # in-transit warehouse
+        if not source_warehouse:
+            frappe.logger().error(f"Source warehouse (in-transit) not found in original stock entry {stock_entry_name}")
+            return {
+                "status": "error",
+                "message": "Source warehouse (in-transit) not found in original stock entry"
+            }
+        
+        if not dest_warehouse:
+            frappe.logger().error(f"Destination warehouse not found for stock entry {stock_entry_name}")
+            return {
+                "status": "error",
+                "message": "Destination warehouse not found. Please check the transfer configuration."
+            }
+        
         # Create new stock entry for receiving
         stock_entry = frappe.new_doc("Stock Entry")
         stock_entry.stock_entry_type = "Material Transfer"
         stock_entry.company = company
-        stock_entry.from_warehouse = original_se.to_warehouse  # in-transit warehouse
+        stock_entry.from_warehouse = source_warehouse  # in-transit warehouse
         stock_entry.to_warehouse = dest_warehouse  # final destination
         stock_entry.add_to_transit = 0
         stock_entry.outgoing_stock_entry = stock_entry_name  # Link to previous entry
+        
+        # Add additional validation flags
+        stock_entry.ignore_validate_update_after_submit = 1  # Allow receiving after submit
+        stock_entry.validate_source_warehouse = 1  # Enable source warehouse validation
         
         # Debug logging for new stock entry
         frappe.logger().info(f"Creating receive stock entry - from: {stock_entry.from_warehouse}, to: {stock_entry.to_warehouse}")
@@ -655,17 +675,36 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
                     "message": f"Item {item['item_code']} not found in original stock entry {stock_entry_name}"
                 }
             
+            # Validate and get warehouses
+            source_warehouse = original_se.to_warehouse  # in-transit warehouse
+            target_warehouse = dest_warehouse  # final destination
+            
+            if not source_warehouse:
+                frappe.logger().error(f"Source warehouse missing for item {item['item_code']} in {stock_entry_name}")
+                return {
+                    "status": "error",
+                    "message": f"Source warehouse (in-transit) not found for item {item['item_code']}"
+                }
+            
+            if not target_warehouse:
+                frappe.logger().error(f"Target warehouse missing for item {item['item_code']} in {stock_entry_name}")
+                return {
+                    "status": "error",
+                    "message": f"Target warehouse not found for item {item['item_code']}"
+                }
+            
             # Create the item row with explicit warehouse assignments
             item_row = stock_entry.append("items", {
                 "item_code": item['item_code'],
                 "qty": float(item['qty']),
                 "uom": item['uom'],
-                "s_warehouse": original_se.to_warehouse,  # Source: in-transit warehouse
-                "t_warehouse": dest_warehouse,  # Target: final destination
-                "basic_rate": 0,
-                "basic_amount": 0,
+                "s_warehouse": source_warehouse,
+                "t_warehouse": target_warehouse,
+                "basic_rate": original_item.basic_rate if original_item else 0,
+                "basic_amount": original_item.basic_amount if original_item else 0,
                 "serial_no": original_item.serial_no if original_item else "",
-                "batch_no": original_item.batch_no if original_item else ""
+                "batch_no": original_item.batch_no if original_item else "",
+                "allow_zero_valuation_rate": 1  # Allow zero valuation for transit moves
             })
             
             # Set against_stock_entry and ste_detail to link to the original stock entry detail
@@ -697,17 +736,58 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         else:
             frappe.logger().warning("No session name provided for transfer receive")
         
-        # Insert and submit (same pattern as transfer send)
-        stock_entry.insert(ignore_permissions=True)
-        stock_entry.submit()
-        
-        frappe.logger().info(f"Transfer receive completed: {stock_entry.name}")
-        
-        return {
-            "status": "success",
-            "stock_entry": stock_entry.name,
-            "message": f"Transfer received: {stock_entry.name}"
-        }
+        try:
+            # Final warehouse validation before insert
+            if not stock_entry.from_warehouse or not stock_entry.to_warehouse:
+                error_msg = "Warehouse validation failed:\n"
+                if not stock_entry.from_warehouse:
+                    error_msg += "- Source warehouse is missing\n"
+                if not stock_entry.to_warehouse:
+                    error_msg += "- Target warehouse is missing\n"
+                frappe.logger().error(error_msg)
+                return {
+                    "status": "error",
+                    "message": error_msg
+                }
+            
+            # Validate all item rows have warehouses
+            for idx, item in enumerate(stock_entry.items, 1):
+                if not item.s_warehouse or not item.t_warehouse:
+                    error_msg = f"Warehouse validation failed for item {item.item_code} (row {idx}):\n"
+                    if not item.s_warehouse:
+                        error_msg += "- Source warehouse is missing\n"
+                    if not item.t_warehouse:
+                        error_msg += "- Target warehouse is missing\n"
+                    frappe.logger().error(error_msg)
+                    return {
+                        "status": "error",
+                        "message": error_msg
+                    }
+            
+            # Insert and submit
+            stock_entry.insert(ignore_permissions=True)
+            stock_entry.submit()
+            
+            frappe.logger().info(f"Transfer receive completed: {stock_entry.name}")
+            
+            return {
+                "status": "success",
+                "stock_entry": stock_entry.name,
+                "message": f"Transfer received: {stock_entry.name}"
+            }
+            
+        except frappe.ValidationError as e:
+            frappe.logger().error(f"Validation error in transfer receive: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Validation failed: {str(e)}"
+            }
+        except Exception as e:
+            frappe.logger().error(f"Error in transfer receive: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"Error creating transfer receive: {str(e)}"
+            }
         
     except Exception as e:
         frappe.logger().error(f"Error in receive_transfer_stock_entry: {str(e)}")
