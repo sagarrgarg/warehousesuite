@@ -204,14 +204,15 @@ def validate_concern_data(concern_data: Dict) -> ValidationResult:
 def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]) -> ValidationResult:
     """
     Validate transfer receive data with improved logic:
+    - Aggregate quantities for same item+UOM combinations
     - Check if total balance exists in transit warehouse
     - Allow partial receives
     - Prevent receiving more than pending quantity
     - Remove duplicate submission checks
     
     Args:
-        stock_entry_name: Stock entry name
-        items_data: List of items to receive
+        stock_entry_name: str: Stock entry name
+        items_data: List[Dict]: List of items to receive
     
     Returns:
         ValidationResult object
@@ -225,49 +226,86 @@ def validate_transfer_receive_data(stock_entry_name: str, items_data: List[Dict]
         if not stock_entry:
             result.add_error(f"Stock Entry {stock_entry_name} not found", "stock_entry", "NOT_FOUND")
             return result
-        
-        # Validate each item
-        for index, item in enumerate(items_data):
-            item_result = validate_receive_item(item, stock_entry, index)
-            if not item_result.is_valid:
-                result.errors.extend(item_result.errors)
-        
-        # Check if any validation errors occurred
-        if result.errors:
-            return result
-        
-        # Additional validation: Check if items exist in transit warehouse
-        in_transit_warehouse = stock_entry.to_warehouse
-        
+            
+        # Aggregate quantities by item+UOM
+        aggregated_items = {}
         for item in items_data:
             item_code = item.get("item_code")
+            uom = item.get("uom")
             qty = item.get("qty", 0)
             
-            if item_code and qty > 0:
-                # Get actual stock in transit warehouse
-                actual_stock = get_stock_quantity(item_code, in_transit_warehouse)
+            if not item_code or not uom:
+                continue
                 
-                if actual_stock < qty:
-                    result.add_error(
-                        f"Insufficient stock in transit warehouse. Item {item_code}: "
-                        f"Requested {qty}, Available {actual_stock}",
-                        "insufficient_stock", "INSUFFICIENT_STOCK"
-                    )
+            key = f"{item_code}_{uom}"
+            if key not in aggregated_items:
+                aggregated_items[key] = {
+                    "item_code": item_code,
+                    "uom": uom,
+                    "qty": 0
+                }
+            aggregated_items[key]["qty"] += qty
+        
+        # Get total sent quantities by item from original stock entry
+        sent_quantities = {}
+        for item in stock_entry.items:
+            key = f"{item.item_code}_{item.uom}"
+            if key not in sent_quantities:
+                sent_quantities[key] = {
+                    "qty": 0,
+                    "uom": item.uom
+                }
+            sent_quantities[key]["qty"] += item.qty
+            
+        # Validate aggregated quantities
+        in_transit_warehouse = stock_entry.to_warehouse
+        
+        for key, agg_item in aggregated_items.items():
+            item_code = agg_item["item_code"]
+            requested_qty = agg_item["qty"]
+            uom = agg_item["uom"]
+            
+            # Get total sent quantity for this item+UOM
+            sent_qty = sent_quantities.get(key, {}).get("qty", 0)
+            
+            # Get already received quantity
+            already_received = get_already_received_quantity(stock_entry_name, item_code)
+            
+            # Calculate remaining quantity
+            remaining_qty = sent_qty - already_received
+            
+            # Validate against remaining quantity
+            if requested_qty > remaining_qty:
+                result.add_error(
+                    f"Quantity validation failed: {item_code} ({uom}): "
+                    f"Requested {requested_qty}, but only {remaining_qty} remaining",
+                    "qty", "EXCEEDS_REMAINING"
+                )
+                continue
+            
+            # Check stock in transit warehouse
+            transit_stock = get_stock_quantity(item_code, in_transit_warehouse)
+            if transit_stock < requested_qty:
+                result.add_error(
+                    f"Insufficient stock in transit: {item_code} ({uom}): "
+                    f"Requested {requested_qty}, but only {transit_stock} available",
+                    "qty", "INSUFFICIENT_TRANSIT_STOCK"
+                )
         
         return result
         
     except Exception as e:
-        frappe.logger().error(f"Error in validate_transfer_receive_data: {str(e)}")
+        frappe.logger().error(f"Error validating transfer receive data: {str(e)}")
+        result.add_error(f"Validation error: {str(e)}", "validation", "VALIDATION_ERROR")
+        return result(f"Error in validate_transfer_receive_data: {str(e)}")
         result.add_error(f"Validation error: {str(e)}", "validation_error", "VALIDATION_ERROR")
         return result
 
 
 def validate_receive_item(item: Dict, stock_entry: Any, index: int = 0) -> ValidationResult:
     """
-    Validate a single receive item with improved logic:
-    - Allow partial receives
-    - Check against remaining quantity in transit
-    - Prevent receiving more than pending quantity
+    Basic validation for a single receive item.
+    Note: Main quantity validation is now handled in validate_transfer_receive_data
     
     Args:
         item: Item dictionary
@@ -279,69 +317,45 @@ def validate_receive_item(item: Dict, stock_entry: Any, index: int = 0) -> Valid
     """
     result = ValidationResult()
     
-    # Required fields
+    # Required fields validation
     if not item.get("item_code"):
         result.add_error("Item code is required", "item_code", "REQUIRED_FIELD")
     
     if item.get("qty") is None or item.get("qty") < 0:
-        result.add_error("Quantity must be 0 or greater", "qty", "INVALID_QUANTITY")
+        result.add_error("Quantity must be greater than or equal to 0", "qty", "INVALID_QTY")
     
     if not item.get("uom"):
         result.add_error("UOM is required", "uom", "REQUIRED_FIELD")
     
     # Check if item exists in original stock entry
     if item.get("item_code"):
-        original_item = None
+        found = False
         for sei in stock_entry.items:
-            if sei.item_code == item["item_code"]:
-                original_item = sei
+            if sei.item_code == item["item_code"] and sei.uom == item.get("uom"):
+                found = True
                 break
         
-        if not original_item:
-            result.add_error(f"Item {item['item_code']} not found in original stock entry", 
-                           "item_code", "ITEM_NOT_IN_TRANSFER")
-        else:
-            # Get the total quantity that was sent to transit
-            total_sent_qty = original_item.qty
-            
-            # Get the quantity already received (from previous receive entries)
-            already_received_qty = get_already_received_quantity(stock_entry.name, item["item_code"])
-            
-            # Calculate remaining quantity that can be received
-            remaining_qty = total_sent_qty - already_received_qty
-            
-            # Validate quantity against remaining quantity
-            requested_qty = item.get("qty", 0)
-            if requested_qty > remaining_qty:
-                result.add_error(
-                    f"Quantity {requested_qty} exceeds remaining quantity {remaining_qty} for item {item['item_code']}",
-                    "qty", "EXCEEDS_REMAINING"
-                )
-            
-            # Check if there's stock in transit warehouse
-            in_transit_warehouse = stock_entry.to_warehouse
-            transit_stock = get_stock_quantity(item["item_code"], in_transit_warehouse)
-            
-            if requested_qty > transit_stock:
-                result.add_error(
-                    f"Insufficient stock in transit warehouse. Item {item['item_code']}: "
-                    f"Requested {requested_qty}, Available in transit {transit_stock}",
-                    "qty", "INSUFFICIENT_TRANSIT_STOCK"
-                )
+        if not found:
+            result.add_error(
+                f"Item {item['item_code']} with UOM {item.get('uom')} not found in original stock entry", 
+                "item_code", 
+                "ITEM_NOT_IN_TRANSFER"
+            )
     
     return result
 
 
-def get_already_received_quantity(stock_entry_name: str, item_code: str) -> float:
+def get_already_received_quantity(stock_entry_name: str, item_code: str, uom: str = None) -> float:
     """
     Get the quantity already received for a specific item from a stock entry
     
     Args:
         stock_entry_name: Original stock entry name
         item_code: Item code to check
+        uom: Unit of measure (optional)
     
     Returns:
-        Total quantity already received
+        Total quantity already received in specified UOM
     """
     try:
         # Get all receive entries for this stock entry
@@ -357,16 +371,38 @@ def get_already_received_quantity(stock_entry_name: str, item_code: str) -> floa
         total_received = 0.0
         
         for receive_entry in receive_entries:
-            # Get the quantity received for this specific item
-            received_qty = frappe.db.sql("""
-                SELECT SUM(qty) as total_qty
-                FROM `tabStock Entry Detail`
-                WHERE parent = %s
-                AND item_code = %s
-            """, (receive_entry.name, item_code), as_dict=True)
+            # Get the quantity received for this specific item with UOM
+            if uom:
+                received_qty = frappe.db.sql("""
+                    SELECT SUM(qty) as total_qty
+                    FROM `tabStock Entry Detail`
+                    WHERE parent = %s
+                    AND item_code = %s
+                    AND uom = %s
+                """, (receive_entry.name, item_code, uom), as_dict=True)
+            else:
+                received_qty = frappe.db.sql("""
+                    SELECT SUM(qty) as total_qty, uom
+                    FROM `tabStock Entry Detail`
+                    WHERE parent = %s
+                    AND item_code = %s
+                    GROUP BY uom
+                """, (receive_entry.name, item_code), as_dict=True)
             
-            if received_qty and received_qty[0].total_qty:
-                total_received += float(received_qty[0].total_qty)
+            if received_qty:
+                if uom:
+                    if received_qty[0].total_qty:
+                        total_received += float(received_qty[0].total_qty)
+                else:
+                    # Convert all quantities to stock UOM
+                    stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+                    for row in received_qty:
+                        if row.total_qty:
+                            qty = float(row.total_qty)
+                            if row.uom != stock_uom:
+                                conversion_factor = get_uom_conversion_factor(item_code, row.uom, stock_uom)
+                                qty = qty * conversion_factor
+                            total_received += qty
         
         return total_received
         
@@ -399,7 +435,7 @@ def get_stock_quantity(item_code: str, warehouse: str) -> float:
 
 def get_uom_conversion_factor(item_code: str, from_uom: str, to_uom: str) -> float:
     """
-    Get UOM conversion factor
+    Get UOM conversion factor with improved error handling
     
     Args:
         item_code: Item code
@@ -408,30 +444,91 @@ def get_uom_conversion_factor(item_code: str, from_uom: str, to_uom: str) -> flo
     
     Returns:
         Conversion factor
+    
+    Raises:
+        ValidationError: If conversion cannot be determined
     """
+    if not item_code or not from_uom or not to_uom:
+        raise ValidationError(
+            "Item code and UOMs are required for conversion",
+            "uom_conversion",
+            "MISSING_REQUIRED_FIELDS"
+        )
+    
     if from_uom == to_uom:
         return 1.0
     
     try:
-        # Get conversion factor from UOM Conversion
-        conversion = frappe.db.get_value("UOM Conversion Detail", 
-            {"parent": item_code, "uom": from_uom}, "conversion_factor")
+        # Get item's stock UOM
+        stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+        if not stock_uom:
+            raise ValidationError(
+                f"Stock UOM not found for item {item_code}",
+                "uom_conversion",
+                "STOCK_UOM_NOT_FOUND"
+            )
         
-        if conversion:
-            return conversion
+        # If converting to/from stock UOM, get direct conversion
+        if from_uom == stock_uom:
+            conversion = frappe.db.get_value(
+                "UOM Conversion Detail",
+                {"parent": item_code, "uom": to_uom},
+                "conversion_factor"
+            )
+            if not conversion:
+                raise ValidationError(
+                    f"No conversion found from {from_uom} to {to_uom} for item {item_code}",
+                    "uom_conversion",
+                    "CONVERSION_NOT_FOUND"
+                )
+            return float(conversion)
+            
+        if to_uom == stock_uom:
+            conversion = frappe.db.get_value(
+                "UOM Conversion Detail",
+                {"parent": item_code, "uom": from_uom},
+                "conversion_factor"
+            )
+            if not conversion:
+                raise ValidationError(
+                    f"No conversion found from {from_uom} to {to_uom} for item {item_code}",
+                    "uom_conversion",
+                    "CONVERSION_NOT_FOUND"
+                )
+            return 1.0 / float(conversion)
         
-        # Try reverse conversion
-        conversion = frappe.db.get_value("UOM Conversion Detail", 
-            {"parent": item_code, "uom": to_uom}, "conversion_factor")
+        # For conversion between two non-stock UOMs:
+        # First convert from_uom to stock_uom, then stock_uom to to_uom
+        from_conversion = frappe.db.get_value(
+            "UOM Conversion Detail",
+            {"parent": item_code, "uom": from_uom},
+            "conversion_factor"
+        )
+        to_conversion = frappe.db.get_value(
+            "UOM Conversion Detail",
+            {"parent": item_code, "uom": to_uom},
+            "conversion_factor"
+        )
         
-        if conversion:
-            return 1.0 / conversion
+        if not from_conversion or not to_conversion:
+            raise ValidationError(
+                f"Cannot convert between {from_uom} and {to_uom} for item {item_code}",
+                "uom_conversion",
+                "CONVERSION_NOT_FOUND"
+            )
         
-        # Default to 1.0 if no conversion found
-        return 1.0
-    
-    except Exception:
-        return 1.0
+        # Convert: from_uom -> stock_uom -> to_uom
+        return float(to_conversion) / float(from_conversion)
+        
+    except ValidationError:
+        raise
+    except Exception as e:
+        frappe.logger().error(f"UOM conversion error for {item_code}: {str(e)}")
+        raise ValidationError(
+            f"Error converting between {from_uom} and {to_uom} for item {item_code}",
+            "uom_conversion",
+            "CONVERSION_ERROR"
+        )
 
 
 def format_validation_errors(errors: List[Dict]) -> str:

@@ -604,14 +604,40 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
         
+        # Debug logging for warehouse information
+        frappe.logger().info(f"Original stock entry warehouses - from: {original_se.from_warehouse}, to: {original_se.to_warehouse}, custom_dest: {getattr(original_se, 'custom_for_which_warehouse_to_transfer', 'Not set')}")
+        
+        # Determine the destination warehouse with fallback logic
+        dest_warehouse = getattr(original_se, 'custom_for_which_warehouse_to_transfer', None)
+        if not dest_warehouse:
+            # Fallback: use the original source warehouse as destination
+            dest_warehouse = original_se.from_warehouse
+            frappe.logger().warning(f"custom_for_which_warehouse_to_transfer not set, using fallback: {dest_warehouse}")
+        
+        # Validate that we have both source and destination warehouses
+        if not original_se.to_warehouse:
+            return {
+                "status": "error",
+                "message": "Source warehouse (in-transit warehouse) not found in original stock entry"
+            }
+        
+        if not dest_warehouse:
+            return {
+                "status": "error", 
+                "message": "Destination warehouse not found. Please check the original transfer configuration."
+            }
+        
         # Create new stock entry for receiving
         stock_entry = frappe.new_doc("Stock Entry")
         stock_entry.stock_entry_type = "Material Transfer"
         stock_entry.company = company
         stock_entry.from_warehouse = original_se.to_warehouse  # in-transit warehouse
-        stock_entry.to_warehouse = original_se.custom_for_which_warehouse_to_transfer  # final destination
+        stock_entry.to_warehouse = dest_warehouse  # final destination
         stock_entry.add_to_transit = 0
         stock_entry.outgoing_stock_entry = stock_entry_name  # Link to previous entry
+        
+        # Debug logging for new stock entry
+        frappe.logger().info(f"Creating receive stock entry - from: {stock_entry.from_warehouse}, to: {stock_entry.to_warehouse}")
         
         # Add items with proper warehouse assignment and against_stock_entry linking
         for item in items_data:
@@ -622,12 +648,20 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
                     original_item = orig_item
                     break
             
+            # Validate that we have the original item
+            if not original_item:
+                return {
+                    "status": "error",
+                    "message": f"Item {item['item_code']} not found in original stock entry {stock_entry_name}"
+                }
+            
+            # Create the item row with explicit warehouse assignments
             item_row = stock_entry.append("items", {
                 "item_code": item['item_code'],
                 "qty": float(item['qty']),
                 "uom": item['uom'],
                 "s_warehouse": original_se.to_warehouse,  # Source: in-transit warehouse
-                "t_warehouse": original_se.custom_for_which_warehouse_to_transfer,  # Target: final destination
+                "t_warehouse": dest_warehouse,  # Target: final destination
                 "basic_rate": 0,
                 "basic_amount": 0,
                 "serial_no": original_item.serial_no if original_item else "",
@@ -639,11 +673,22 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
                 item_row.against_stock_entry = stock_entry_name  # Link to original Stock Entry
                 item_row.ste_detail = original_item.name  # Link to original Stock Entry Detail
                 frappe.logger().info(f"Set against_stock_entry: {stock_entry_name}, ste_detail: {original_item.name} for item: {item['item_code']}")
-            else:
-                frappe.logger().warning(f"Could not find original item for {item['item_code']} in {stock_entry_name}")
             
             # Log each item for debugging
             frappe.logger().info(f"Added item: {item['item_code']}, s_warehouse: {item_row.s_warehouse}, t_warehouse: {item_row.t_warehouse}, against_stock_entry: {getattr(item_row, 'against_stock_entry', 'Not set')}, ste_detail: {getattr(item_row, 'ste_detail', 'Not set')}")
+            
+            # Validate that warehouses are properly set
+            if not item_row.s_warehouse:
+                return {
+                    "status": "error",
+                    "message": f"Source warehouse not set for item {item['item_code']}"
+                }
+            
+            if not item_row.t_warehouse:
+                return {
+                    "status": "error", 
+                    "message": f"Target warehouse not set for item {item['item_code']}"
+                }
         
         # Set POW Session ID if provided (same pattern as transfer send)
         if session_name:
@@ -1541,6 +1586,72 @@ def create_material_request(warehouse, delivery_date, items, session_name=None):
         
     except Exception as e:
         frappe.logger().error(f"Error creating Material Request: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e)
+        } 
+
+@frappe.whitelist()
+def debug_stock_entry_warehouses(stock_entry_name):
+    """Debug function to check warehouse information in a stock entry"""
+    try:
+        stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+        
+        debug_info = {
+            "stock_entry": stock_entry_name,
+            "stock_entry_type": stock_entry.stock_entry_type,
+            "from_warehouse": stock_entry.from_warehouse,
+            "to_warehouse": stock_entry.to_warehouse,
+            "add_to_transit": stock_entry.add_to_transit,
+            "custom_for_which_warehouse_to_transfer": getattr(stock_entry, 'custom_for_which_warehouse_to_transfer', 'Not set'),
+            "items": []
+        }
+        
+        for i, item in enumerate(stock_entry.items):
+            debug_info["items"].append({
+                "index": i,
+                "item_code": item.item_code,
+                "s_warehouse": item.s_warehouse,
+                "t_warehouse": item.t_warehouse,
+                "qty": item.qty,
+                "transferred_qty": item.transferred_qty
+            })
+        
+        return {
+            "status": "success",
+            "debug_info": debug_info
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@frappe.whitelist()
+def fix_stock_entry_warehouses(stock_entry_name):
+    """Fix stock entry warehouse information if missing"""
+    try:
+        stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+        
+        # Check if custom_for_which_warehouse_to_transfer is missing
+        if not getattr(stock_entry, 'custom_for_which_warehouse_to_transfer', None):
+            # Set it to the original source warehouse as fallback
+            stock_entry.custom_for_which_warehouse_to_transfer = stock_entry.from_warehouse
+            stock_entry.save()
+            
+            return {
+                "status": "success",
+                "message": f"Fixed missing destination warehouse for {stock_entry_name}. Set to: {stock_entry.from_warehouse}"
+            }
+        else:
+            return {
+                "status": "success",
+                "message": f"Stock entry {stock_entry_name} already has proper warehouse configuration"
+            }
+        
+    except Exception as e:
         return {
             "status": "error",
             "message": str(e)
