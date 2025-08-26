@@ -467,11 +467,13 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
 def get_transfer_receive_data(default_warehouse=None):
     """Get transfer receive data for the given default warehouse"""
     try:
+        frappe.logger().info(f"get_transfer_receive_data called with warehouse: {default_warehouse}")
         # Build the SQL query
         sql_query = """
         SELECT 
             se.posting_date AS posting_date,
             se.name AS stock_entry,
+            sei.name AS ste_detail,
             sei.s_warehouse AS source_warehouse,
             sei.t_warehouse AS in_transit_warehouse,
             se.custom_for_which_warehouse_to_transfer AS dest_warehouse,
@@ -479,7 +481,7 @@ def get_transfer_receive_data(default_warehouse=None):
             sei.item_name,
             sei.qty,
             sei.uom,
-            sei.transferred_qty,
+            IFNULL(sei.transferred_qty, 0) AS transferred_qty,
             se.custom_sales_order AS ref_so,
             u.full_name AS created_by,
             se.custom_pow_session_id AS pow_session_id
@@ -493,18 +495,18 @@ def get_transfer_receive_data(default_warehouse=None):
         WHERE 
             se.add_to_transit = 1
             AND se.docstatus = 1
-            AND se.per_transferred < 100
-            AND sei.transferred_qty != sei.qty
+            AND (sei.qty > IFNULL(sei.transferred_qty, 0))
         """
         
         # Add warehouse filter if provided
         if default_warehouse:
-            sql_query += f" AND se.custom_for_which_warehouse_to_transfer = '{default_warehouse}'"
+            sql_query += " AND se.custom_for_which_warehouse_to_transfer = %s"
         
         sql_query += " ORDER BY se.posting_date DESC"
         
         # Execute the query
-        result = frappe.db.sql(sql_query, as_dict=True)
+        params = (default_warehouse,) if default_warehouse else ()
+        result = frappe.db.sql(sql_query, params, as_dict=True)
         
         # Log the results for debugging
         frappe.logger().info(f"Found {len(result)} transfer rows")
@@ -540,6 +542,7 @@ def get_transfer_receive_data(default_warehouse=None):
             stock_uom_must_be_whole_number = frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
             
             grouped_data[stock_entry]['items'].append({
+                'ste_detail': row['ste_detail'],  # Track specific child row
                 'item_code': row['item_code'],
                 'item_name': row['item_name'],
                 'qty': row['qty'],
@@ -580,214 +583,115 @@ def get_transfer_receive_data(default_warehouse=None):
         
     except Exception as e:
         frappe.logger().error(f"Error in get_transfer_receive_data: {str(e)}")
-        return []
+        import traceback
+        frappe.logger().error(f"Traceback: {traceback.format_exc()}")
+        frappe.throw(f"Error getting transfer receive data: {str(e)}")
 
 @frappe.whitelist()
 def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None):
     """Create stock entry for receiving transfer (in-transit -> destination)"""
     try:
-        from warehousesuite.warehousesuite.utils.validation import (
-            validate_transfer_receive_data, create_api_response
-        )
+        from erpnext.stock.doctype.stock_entry.stock_entry import make_stock_in_entry
         
         items_data = frappe.parse_json(items_data)
-        
-        # Validate transfer receive data with improved logic
-        validation_result = validate_transfer_receive_data(stock_entry_name, items_data)
-        
-        # Log validation result for debugging
-        frappe.logger().info(f"Transfer receive validation result: {validation_result.is_valid}")
-        if not validation_result.is_valid:
-            frappe.logger().warning(f"Transfer receive validation failed: {validation_result.errors}")
-            return create_api_response(validation_result)
         
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
         
-        # Debug logging for warehouse information
-        frappe.logger().info(f"Original stock entry warehouses - from: {original_se.from_warehouse}, to: {original_se.to_warehouse}, custom_dest: {getattr(original_se, 'custom_for_which_warehouse_to_transfer', 'Not set')}")
-        
-        # Determine the destination warehouse with fallback logic
-        dest_warehouse = getattr(original_se, 'custom_for_which_warehouse_to_transfer', None)
-        if not dest_warehouse:
-            # Fallback: use the original source warehouse as destination
-            dest_warehouse = original_se.from_warehouse
-            frappe.logger().warning(f"custom_for_which_warehouse_to_transfer not set, using fallback: {dest_warehouse}")
-        
-        # Validate that we have both source and destination warehouses
-        if not original_se.to_warehouse:
-            return {
-                "status": "error",
-                "message": "Source warehouse (in-transit warehouse) not found in original stock entry"
-            }
-        
-        if not dest_warehouse:
-            return {
-                "status": "error", 
-                "message": "Destination warehouse not found. Please check the original transfer configuration."
-            }
-        
-        # Validate warehouses before creating stock entry
-        source_warehouse = original_se.to_warehouse  # in-transit warehouse
-        if not source_warehouse:
-            frappe.logger().error(f"Source warehouse (in-transit) not found in original stock entry {stock_entry_name}")
-            return {
-                "status": "error",
-                "message": "Source warehouse (in-transit) not found in original stock entry"
-            }
-        
-        if not dest_warehouse:
-            frappe.logger().error(f"Destination warehouse not found for stock entry {stock_entry_name}")
-            return {
-                "status": "error",
-                "message": "Destination warehouse not found. Please check the transfer configuration."
-            }
-        
-        # Create new stock entry for receiving
-        stock_entry = frappe.new_doc("Stock Entry")
-        stock_entry.stock_entry_type = "Material Transfer"
-        stock_entry.company = company
-        stock_entry.from_warehouse = source_warehouse  # in-transit warehouse
-        stock_entry.to_warehouse = dest_warehouse  # final destination
-        stock_entry.add_to_transit = 0
-        stock_entry.outgoing_stock_entry = stock_entry_name  # Link to previous entry
-        
-        # Add additional validation flags
-        stock_entry.ignore_validate_update_after_submit = 1  # Allow receiving after submit
-        stock_entry.validate_source_warehouse = 1  # Enable source warehouse validation
-        
-        # Debug logging for new stock entry
-        frappe.logger().info(f"Creating receive stock entry - from: {stock_entry.from_warehouse}, to: {stock_entry.to_warehouse}")
-        
-        # Add items with proper warehouse assignment and against_stock_entry linking
+        # Create a map of item_code -> ste_detail -> qty to receive
+        items_to_receive = {}
         for item in items_data:
-            # Find the corresponding item in the original stock entry
-            original_item = None
-            for orig_item in original_se.items:
-                if orig_item.item_code == item['item_code']:
-                    original_item = orig_item
-                    break
-            
-            # Validate that we have the original item
-            if not original_item:
-                return {
-                    "status": "error",
-                    "message": f"Item {item['item_code']} not found in original stock entry {stock_entry_name}"
-                }
-            
-            # Validate and get warehouses
-            source_warehouse = original_se.to_warehouse  # in-transit warehouse
-            target_warehouse = dest_warehouse  # final destination
-            
-            if not source_warehouse:
-                frappe.logger().error(f"Source warehouse missing for item {item['item_code']} in {stock_entry_name}")
-                return {
-                    "status": "error",
-                    "message": f"Source warehouse (in-transit) not found for item {item['item_code']}"
-                }
-            
-            if not target_warehouse:
-                frappe.logger().error(f"Target warehouse missing for item {item['item_code']} in {stock_entry_name}")
-                return {
-                    "status": "error",
-                    "message": f"Target warehouse not found for item {item['item_code']}"
-                }
-            
-            # Create the item row with explicit warehouse assignments
-            item_row = stock_entry.append("items", {
-                "item_code": item['item_code'],
-                "qty": float(item['qty']),
-                "uom": item['uom'],
-                "s_warehouse": source_warehouse,
-                "t_warehouse": target_warehouse,
-                "basic_rate": original_item.basic_rate if original_item else 0,
-                "basic_amount": original_item.basic_amount if original_item else 0,
-                "serial_no": original_item.serial_no if original_item else "",
-                "batch_no": original_item.batch_no if original_item else "",
-                "allow_zero_valuation_rate": 1  # Allow zero valuation for transit moves
-            })
-            
-            # Set against_stock_entry and ste_detail to link to the original stock entry detail
-            if original_item:
-                item_row.against_stock_entry = stock_entry_name  # Link to original Stock Entry
-                item_row.ste_detail = original_item.name  # Link to original Stock Entry Detail
-                frappe.logger().info(f"Set against_stock_entry: {stock_entry_name}, ste_detail: {original_item.name} for item: {item['item_code']}")
-            
-            # Log each item for debugging
-            frappe.logger().info(f"Added item: {item['item_code']}, s_warehouse: {item_row.s_warehouse}, t_warehouse: {item_row.t_warehouse}, against_stock_entry: {getattr(item_row, 'against_stock_entry', 'Not set')}, ste_detail: {getattr(item_row, 'ste_detail', 'Not set')}")
-            
-            # Validate that warehouses are properly set
-            if not item_row.s_warehouse:
-                return {
-                    "status": "error",
-                    "message": f"Source warehouse not set for item {item['item_code']}"
-                }
-            
-            if not item_row.t_warehouse:
-                return {
-                    "status": "error", 
-                    "message": f"Target warehouse not set for item {item['item_code']}"
-                }
+            if item.get('qty', 0) > 0:
+                # Find the matching stock entry detail by both item code and ste_detail if provided
+                for se_item in original_se.items:
+                    if se_item.item_code == item['item_code']:
+                        # Use ste_detail if provided, otherwise use the first matching item
+                        ste_detail = item.get('ste_detail', se_item.name)
+                        if ste_detail == se_item.name:
+                            items_to_receive[ste_detail] = {
+                                'qty': float(item['qty']),
+                                'item_code': item['item_code'],
+                                'original_qty': se_item.qty,
+                                'transferred_qty': se_item.transferred_qty or 0
+                            }
+                            break
         
-        # Set POW Session ID if provided (same pattern as transfer send)
+        # Validate quantities
+        errors = []
+        for ste_detail, item_data in items_to_receive.items():
+            pending_qty = item_data['original_qty'] - item_data['transferred_qty']
+            if item_data['qty'] > pending_qty:
+                errors.append(f"Item {item_data['item_code']}: Requested qty {item_data['qty']} exceeds pending qty {pending_qty}")
+        
+        if errors:
+            return {
+                "status": "error",
+                "message": "Validation errors: " + ", ".join(errors)
+            }
+        
+        # Use ERPNext's standard make_stock_in_entry function
+        new_se = make_stock_in_entry(stock_entry_name)
+        
+        # Update quantities based on what user wants to receive
+        items_to_remove = []
+        for item in new_se.items:
+            if item.ste_detail in items_to_receive:
+                # Update the quantity to what user wants to receive
+                item.qty = items_to_receive[item.ste_detail]['qty']
+                item.transfer_qty = item.qty * item.conversion_factor
+            else:
+                # Mark items not in the receive list for removal
+                items_to_remove.append(item)
+        
+        # Remove items that are not being received
+        for item in items_to_remove:
+            new_se.items.remove(item)
+        
+        # Set custom fields
         if session_name:
-            stock_entry.custom_pow_session_id = session_name
-            frappe.logger().info(f"Set POW session ID to: {session_name}")
-        else:
-            frappe.logger().warning("No session name provided for transfer receive")
+            new_se.custom_pow_session_id = session_name
         
+        # Get destination warehouse from custom field
+        dest_warehouse = getattr(original_se, 'custom_for_which_warehouse_to_transfer', None)
+        if dest_warehouse:
+            new_se.to_warehouse = dest_warehouse
+            # Update all items' target warehouse
+            for item in new_se.items:
+                item.t_warehouse = dest_warehouse
+        
+        # Validate and submit
         try:
-            # Final warehouse validation before insert
-            if not stock_entry.from_warehouse or not stock_entry.to_warehouse:
-                error_msg = "Warehouse validation failed:\n"
-                if not stock_entry.from_warehouse:
-                    error_msg += "- Source warehouse is missing\n"
-                if not stock_entry.to_warehouse:
-                    error_msg += "- Target warehouse is missing\n"
-                frappe.logger().error(error_msg)
+            new_se.insert(ignore_permissions=True)
+            new_se.submit()
+            
+            frappe.logger().info(f"Transfer receive completed: {new_se.name}")
+            
+            return {
+                "status": "success",
+                "stock_entry": new_se.name,
+                "message": f"Transfer received: {new_se.name}"
+            }
+        except frappe.ValidationError as e:
+            # Handle validation errors from ERPNext
+            error_msg = str(e)
+            frappe.logger().warning(f"Validation error in transfer receive: {error_msg}")
+            
+            # Try to extract meaningful error details
+            if "exceeds pending quantity" in error_msg:
+                return {
+                    "status": "error",
+                    "message": f"Validation failed: {error_msg}"
+                }
+            elif "Insufficient Stock" in error_msg:
+                return {
+                    "status": "error",
+                    "message": f"Insufficient stock in transit warehouse: {error_msg}"
+                }
+            else:
                 return {
                     "status": "error",
                     "message": error_msg
                 }
-            
-            # Validate all item rows have warehouses
-            for idx, item in enumerate(stock_entry.items, 1):
-                if not item.s_warehouse or not item.t_warehouse:
-                    error_msg = f"Warehouse validation failed for item {item.item_code} (row {idx}):\n"
-                    if not item.s_warehouse:
-                        error_msg += "- Source warehouse is missing\n"
-                    if not item.t_warehouse:
-                        error_msg += "- Target warehouse is missing\n"
-                    frappe.logger().error(error_msg)
-                    return {
-                        "status": "error",
-                        "message": error_msg
-                    }
-            
-            # Insert and submit
-            stock_entry.insert(ignore_permissions=True)
-            stock_entry.submit()
-            
-            frappe.logger().info(f"Transfer receive completed: {stock_entry.name}")
-            
-            return {
-                "status": "success",
-                "stock_entry": stock_entry.name,
-                "message": f"Transfer received: {stock_entry.name}"
-            }
-            
-        except frappe.ValidationError as e:
-            frappe.logger().error(f"Validation error in transfer receive: {str(e)}")
-            return {
-                "status": "error",
-                "message": f"Validation failed: {str(e)}"
-            }
-        except Exception as e:
-            frappe.logger().error(f"Error in transfer receive: {str(e)}")
-            return {
-                "status": "error",
-                "message": f"Error creating transfer receive: {str(e)}"
-            }
         
     except Exception as e:
         frappe.logger().error(f"Error in receive_transfer_stock_entry: {str(e)}")
@@ -1116,7 +1020,7 @@ def create_stock_match_entry(warehouse, company, session_name, items_count):
 
 @frappe.whitelist()
 def validate_transfer_receive_quantities(stock_entry_name, items_data):
-    """Validate quantities for transfer receive with improved logic"""
+    """Validate quantities for transfer receive with improved logic using ste_detail"""
     try:
         items_data = frappe.parse_json(items_data)
         validation_errors = []
@@ -1125,29 +1029,34 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
         
+        # Group items by item_code to check total stock in transit warehouse
+        item_totals = {}
+        
         for item_data in items_data:
             item_code = item_data.get('item_code')
             qty = item_data.get('qty', 0)
+            ste_detail = item_data.get('ste_detail')
             
-            # Find the corresponding item in the original stock entry
+            # Find the corresponding item in the original stock entry by ste_detail
             original_item = None
             for item in original_se.items:
-                if item.item_code == item_code:
+                if ste_detail and item.name == ste_detail:
+                    original_item = item
+                    break
+                elif not ste_detail and item.item_code == item_code:
+                    # Fallback to item_code if ste_detail not provided
                     original_item = item
                     break
             
             if original_item:
-                # Get the total quantity that was sent to transit
+                # Get the quantity for this specific row
                 total_sent_qty = original_item.qty
+                transferred_qty = original_item.transferred_qty or 0
                 
-                # Get the quantity already received (from previous receive entries)
-                from warehousesuite.warehousesuite.utils.validation import get_already_received_quantity
-                already_received_qty = get_already_received_quantity(stock_entry_name, item_code)
+                # Calculate remaining quantity for this specific row
+                remaining_qty = total_sent_qty - transferred_qty
                 
-                # Calculate remaining quantity that can be received
-                remaining_qty = total_sent_qty - already_received_qty
-                
-                # Check if quantity exceeds remaining
+                # Check if quantity exceeds remaining for this specific row
                 if qty > remaining_qty:
                     validation_errors.append({
                         'item_code': item_code,
@@ -1155,47 +1064,37 @@ def validate_transfer_receive_quantities(stock_entry_name, items_data):
                         'requested_qty': qty,
                         'remaining_qty': remaining_qty,
                         'total_sent_qty': total_sent_qty,
-                        'already_received_qty': already_received_qty,
+                        'already_received_qty': transferred_qty,
                         'uom': original_item.uom,
                         'error_type': 'exceeds_remaining'
                     })
                 
-                # Check actual stock in in-transit warehouse
-                from erpnext.stock.utils import get_stock_balance
-                in_transit_warehouse = original_se.to_warehouse
-                actual_stock_qty = get_stock_balance(item_code, in_transit_warehouse) or 0
-                
-                if qty > actual_stock_qty:
-                    validation_errors.append({
-                        'item_code': item_code,
-                        'item_name': original_item.item_name,
-                        'requested_qty': qty,
-                        'available_stock': actual_stock_qty,
+                # Accumulate total requested qty per item for stock validation
+                if item_code not in item_totals:
+                    item_totals[item_code] = {
+                        'total_requested': 0,
                         'uom': original_item.uom,
-                        'warehouse': in_transit_warehouse,
-                        'error_type': 'insufficient_stock'
-                    })
-                
-                # Check for discrepancies (expected vs actual) - only if receiving all remaining
-                if qty == remaining_qty:
-                    # This is a full receive, no discrepancy
-                    pass
-                elif qty < remaining_qty:
-                    # This is a partial receive, calculate variance
-                    variance_qty = qty - remaining_qty
-                    variance_percentage = (variance_qty / remaining_qty * 100) if remaining_qty != 0 else 0
-                    
-                    discrepancies.append({
-                        'item_code': item_code,
-                        'item_name': original_item.item_name,
-                        'expected_qty': remaining_qty,
-                        'actual_qty': qty,
-                        'variance_qty': variance_qty,
-                        'variance_percentage': variance_percentage,
-                        'uom': original_item.uom,
-                        'warehouse': original_se.to_warehouse,
-                        'is_partial_receive': True
-                    })
+                        'item_name': original_item.item_name
+                    }
+                item_totals[item_code]['total_requested'] += qty
+        
+        # Check actual stock in in-transit warehouse for each item
+        from erpnext.stock.utils import get_stock_balance
+        in_transit_warehouse = original_se.to_warehouse
+        
+        for item_code, item_info in item_totals.items():
+            actual_stock_qty = get_stock_balance(item_code, in_transit_warehouse) or 0
+            
+            if item_info['total_requested'] > actual_stock_qty:
+                validation_errors.append({
+                    'item_code': item_code,
+                    'item_name': item_info['item_name'],
+                    'requested_qty': item_info['total_requested'],
+                    'available_stock': actual_stock_qty,
+                    'uom': item_info['uom'],
+                    'warehouse': in_transit_warehouse,
+                    'error_type': 'insufficient_stock'
+                })
         
         return {
             "status": "success",

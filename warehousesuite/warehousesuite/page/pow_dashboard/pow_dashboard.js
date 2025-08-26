@@ -4141,6 +4141,18 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             const transferData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_transfer_receive_data', {
                 default_warehouse: defaultWarehouse
             });
+            
+            console.log('Transfer data response:', transferData);
+            
+            if (!transferData || !transferData.message) {
+                frappe.msgprint({
+                    title: 'Error',
+                    message: 'Failed to get transfer receive data',
+                    indicator: 'red'
+                });
+                return;
+            }
+            
             const transfers = transferData.message;
             
             // Debug: Log the first transfer to see POW session data
@@ -4198,7 +4210,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                         <i class="fa fa-calendar"></i> ${new Date(transfer.posting_date).toLocaleDateString()}
                                                     </span>
                                                     <span class="user-badge">
-                                                        <i class="fa fa-user"></i> ${transfer.created_by}
+                                                        <i class="fa fa-user"></i> ${transfer.created_by || 'Unknown'}
                                                     </span>
                                                     ${transfer.pow_session_id ? `<span class="session-badge">
                                                         <i class="fa fa-play-circle"></i> ${transfer.pow_session_id}
@@ -4207,9 +4219,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                             </div>
                                             <div class="transfer-route">
                                                 <div class="route-info">
-                                                    <span class="from-warehouse">${transfer.source_warehouse}</span>
+                                                    <span class="from-warehouse">${transfer.source_warehouse || transfer.from_warehouse || 'Unknown'}</span>
                                                     <i class="fa fa-arrow-right"></i>
-                                                    <span class="to-warehouse">${transfer.dest_warehouse}</span>
+                                                    <span class="to-warehouse">${transfer.dest_warehouse || transfer.to_warehouse || 'Unknown'}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -4222,11 +4234,11 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                 <span>Remaining</span>
                                                 <span>Receive</span>
                                             </div>
-                                            ${transfer.items.map(item => `
+                                            ${(transfer.items || []).map(item => `
                                                 <div class="item-grid-row">
                                                     <div class="item-details" data-label="Item:">
-                                                        <div class="item-code">${item.item_code}</div>
-                                                        <div class="item-name">${item.item_name}</div>
+                                                        <div class="item-code">${item.item_code || ''}</div>
+                                                        <div class="item-name">${item.item_name || ''}</div>
                                                     </div>
                                                     <div class="qty-cell total-qty" data-label="Total:">
                                                         ${item.qty} ${item.uom}
@@ -4257,8 +4269,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                                ${transfer.has_open_concerns ? 'disabled' : ''}
                                                                data-item-code="${item.item_code}"
                                                                data-item-name="${item.item_name}"
-                                                                   data-uom="${item.uom}"
-                                                                   data-expected-qty="${item.remaining_qty}">
+                                                               data-uom="${item.uom}"
+                                                               data-ste-detail="${item.ste_detail}"
+                                                               data-expected-qty="${item.remaining_qty}">
 
                                                         </div>
                                                         <div class="discrepancy-indicator" style="display: none;">
@@ -4343,7 +4356,11 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
         } catch (error) {
             console.error('Error opening transfer receive modal:', error);
-            frappe.msgprint('Error opening transfer receive modal: ' + error.message);
+            frappe.msgprint({
+                title: 'Error',
+                message: 'Error opening transfer receive modal: ' + (error && error.message ? error.message : String(error)),
+                indicator: 'red'
+            });
         }
     };
 
@@ -4526,7 +4543,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                         item_code: $(this).data('item-code'),
                         item_name: $(this).data('item-name'),
                         qty: qty,
-                        uom: $(this).data('uom')
+                        uom: $(this).data('uom'),
+                        ste_detail: $(this).data('ste-detail')  // Include ste_detail for proper row tracking
                     });
                 }
             });
@@ -4539,34 +4557,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 return;
             }
             
-            // Validate quantities before proceeding
-            const validationResult = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.validate_transfer_receive_quantities', {
-                stock_entry_name: stockEntryName,
-                items_data: JSON.stringify(items)
-            });
-            
-            if (validationResult.message.status === 'success' && !validationResult.message.valid) {
-                const errors = validationResult.message.errors;
-                let errorMessage = 'Quantity validation failed:\n';
-                errors.forEach(error => {
-                    if (error.error_type === 'exceeds_remaining') {
-                        errorMessage += `• ${error.item_code}: Requested ${error.requested_qty} ${error.uom}, but only ${error.remaining_qty} ${error.uom} remaining\n`;
-                    } else if (error.error_type === 'insufficient_stock') {
-                        errorMessage += `• ${error.item_code}: Insufficient stock in transit warehouse. Requested ${error.requested_qty} ${error.uom}, but only ${error.available_stock} ${error.uom} available in ${error.warehouse}\n`;
-                    } else {
-                        errorMessage += `• ${error.item_code}: ${error.message || 'Validation error'}\n`;
-                    }
-                });
-                frappe.msgprint({
-                    title: 'Validation Error',
-                    message: errorMessage,
-                    indicator: 'red'
-                });
-                // Reset button state
-                submitButton.removeClass('processing').prop('disabled', false);
-                submitButton.text('Receive');
-                return;
-            }
+            // Skip validation here - let make_stock_in_entry handle it in the backend
+            // This avoids the issue of checking wrong rows when multiple same items exist
             
             // Temporarily hide our modal to ensure confirmation dialog appears on top
             const modal = $('#transferReceiveModal');
