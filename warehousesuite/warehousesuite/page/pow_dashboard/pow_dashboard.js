@@ -5107,6 +5107,21 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         $(btn).closest('.item-row').remove();
     };
 
+    // Add CSS for duplicate item error
+    const style = document.createElement('style');
+    style.textContent = `
+        .duplicate-item-error {
+            background-color: #fff3f3;
+            border: 1px solid #ffa8a8;
+            animation: flash-error 1s;
+        }
+        @keyframes flash-error {
+            0%, 100% { background-color: #fff3f3; }
+            50% { background-color: #ffd7d7; }
+        }
+    `;
+    document.head.appendChild(style);
+
     // Error display functions
     window.showError = function(message, details = null) {
         const errorDisplay = $('#errorDisplay');
@@ -5135,6 +5150,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 
     window.hideError = function() {
         $('#errorDisplay').removeClass('show');
+        // Clear duplicate item error highlighting
+        $('.duplicate-item-error').removeClass('duplicate-item-error');
     };
     
     // Cleanup function for quantity warnings
@@ -5324,12 +5341,27 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             const items = [];
             let hasQuantityErrors = false;
             let adjustedItems = [];
+            const seenItems = new Map(); // Track seen items for duplicate check
             
             $('.item-row').each(function() {
                 const itemCode = $(this).find('.col-item .item-code').val();
                 let qty = parseFloat($(this).find('.col-qty input').val()) || 0;
                 const uom = $(this).find('.col-uom .item-uom').val();
                 const stockText = $(this).find('.stock-info').text();
+                
+                // Check for duplicates
+                if (seenItems.has(itemCode)) {
+                    validationErrors.push(`Duplicate item found: ${itemCode}. Please combine quantities into a single row.`);
+                    // Highlight both rows with the duplicate item
+                    $('.item-row').each(function() {
+                        if ($(this).find('.col-item .item-code').val() === itemCode) {
+                            $(this).addClass('duplicate-item-error');
+                        }
+                    });
+                    hasQuantityErrors = true;
+                    return; // Skip this iteration
+                }
+                seenItems.set(itemCode, true);
                 
                 if (itemCode && qty > 0 && uom) {
                     // Parse stock text to get available quantity
@@ -5426,10 +5458,19 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             console.log('Items being sent to backend:', items);
             
             try {
+                const form = $('#transferForm');
+                
+                // Prevent multiple submissions
+                if (form.data('submitting')) {
+                    return;
+                }
+                
+                // Store the original button text before disabling
+                const submitBtn = form.find('button[type="submit"]');
+                form.data('originalButtonText', submitBtn.text());
+                
                 // Show loading state
-                const submitBtn = $('#transferForm button[type="submit"]');
-                const originalText = submitBtn.text();
-                submitBtn.text('Creating Transfer...').prop('disabled', true);
+                setFormSubmitting(true);
                 
                 // Create stock entry
                 const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_transfer_stock_entry', {
@@ -5490,15 +5531,38 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     'Please try again or contact your administrator.'
                 ]);
             } finally {
-                // Restore button state
-                const submitBtn = $('#transferForm button[type="submit"]');
-                submitBtn.text(originalText).prop('disabled', false);
+                // Reset form state
+                setFormSubmitting(false);
             }
         });
     }
 
 
     
+    // Form state management
+    function setFormSubmitting(isSubmitting) {
+        const form = $('#transferForm');
+        const submitBtn = form.find('button[type="submit"]');
+        
+        if (isSubmitting) {
+            // Update button and form state
+            submitBtn.text('Creating Transfer...').prop('disabled', true);
+            form.data('submitting', true);
+            form.find('input, select, button').prop('disabled', true);
+        } else {
+            // Get the stored text or use default
+            const originalText = form.data('originalButtonText') || 'Create Transfer';
+            
+            // Restore original state
+            submitBtn.text(originalText).prop('disabled', false);
+            form.data('submitting', false);
+            form.find('input, select, button').prop('disabled', false);
+            
+            // Clear stored text
+            form.data('originalButtonText', null);
+        }
+    }
+
     function updateTransferCount() {
         const totalCount = $('.transfer-grid-item').length;
         $('.stat-item').html(`<i class="fa fa-file-text"></i> ${totalCount} Transfers`);

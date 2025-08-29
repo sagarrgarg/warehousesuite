@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, flt
 
 @frappe.whitelist()
 def get_applicable_pow_profiles():
@@ -395,30 +395,27 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
 
 @frappe.whitelist()
 def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None):
-    """Create stock entry for transfer (source -> in-transit)"""
+    """Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
     try:
-        from warehousesuite.warehousesuite.utils.validation import (
-            validate_warehouse_transfer_data, validate_stock_availability, 
-            create_api_response, format_validation_errors
-        )
+        # Log input parameters
+        frappe.logger().debug(f"Creating transfer with params: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}, items={items}, company={company}, session={session_name}")
         
-        items = frappe.parse_json(items)
+        # Parse items
+        try:
+            items = frappe.parse_json(items)
+            frappe.logger().debug(f"Parsed items: {items}")
+        except Exception as e:
+            frappe.logger().error(f"Error parsing items JSON: {str(e)}")
+            frappe.throw(_("Invalid items data format"))
         
-        # Validate input data
-        validation_result = validate_warehouse_transfer_data(
-            source_warehouse, target_warehouse, items, company
-        )
+        # Basic input validation
+        if not source_warehouse or not target_warehouse or not in_transit_warehouse:
+            frappe.logger().warning(f"Missing warehouse: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}")
+            frappe.throw(_("Source, Target and Transit warehouses are required"))
         
-        if not validation_result.is_valid:
-            return create_api_response(validation_result)
-        
-        # Validate stock availability for each item
-        for item in items:
-            stock_validation = validate_stock_availability(
-                item["item_code"], source_warehouse, item["qty"], item["uom"]
-            )
-            if not stock_validation.is_valid:
-                return create_api_response(stock_validation)
+        if not items or not isinstance(items, list):
+            frappe.logger().warning(f"Invalid items format: {items}")
+            frappe.throw(_("Items list is required"))
         
         # Create stock entry
         stock_entry = frappe.new_doc("Stock Entry")
@@ -427,17 +424,64 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
         stock_entry.from_warehouse = source_warehouse
         stock_entry.to_warehouse = in_transit_warehouse
         stock_entry.add_to_transit = 1
+        stock_entry.posting_date = frappe.utils.today()
+        stock_entry.posting_time = frappe.utils.nowtime()
         
-        # Add items
+        # Add items with proper stock ledger fields
         for item in items:
+            if not item.get("item_code") or not item.get("qty") or not item.get("uom"):
+                frappe.throw(_("Item Code, Quantity and UOM are required for all items"))
+            
+            # Get item details
+            item_doc = frappe.get_doc("Item", item["item_code"])
+            
+            # Get conversion factor
+            conversion_factor = frappe.get_value("UOM Conversion Detail",
+                {"parent": item["item_code"], "uom": item["uom"]}, "conversion_factor") or 1.0
+            
+            # Get valuation rate
+            valuation_rate = frappe.get_value("Stock Ledger Entry",
+                {
+                    "item_code": item["item_code"],
+                    "warehouse": source_warehouse,
+                    "is_cancelled": 0
+                },
+                "valuation_rate",
+                order_by="posting_date desc, posting_time desc, creation desc"
+            ) or 0
+            
+            # Calculate quantities
+            qty = flt(item["qty"])
+            transfer_qty = flt(qty * conversion_factor)
+            
+            # Calculate stock value
+            basic_rate = flt(valuation_rate)
+            basic_amount = flt(basic_rate * qty)
+            
+            # Log item details
+            frappe.logger().debug(
+                f"Adding item: code={item['item_code']}, qty={qty}, "
+                f"transfer_qty={transfer_qty}, rate={basic_rate}, amount={basic_amount}"
+            )
+            
             stock_entry.append("items", {
                 "item_code": item["item_code"],
-                "qty": float(item["qty"]),
+                "item_name": item_doc.item_name,
+                "description": item_doc.description,
+                "qty": qty,
+                "transfer_qty": transfer_qty,
                 "uom": item["uom"],
+                "stock_uom": item_doc.stock_uom,
+                "conversion_factor": conversion_factor,
                 "s_warehouse": source_warehouse,
                 "t_warehouse": in_transit_warehouse,
-                "basic_rate": 0,
-                "basic_amount": 0
+                "basic_rate": basic_rate,
+                "basic_amount": basic_amount,
+                "valuation_rate": valuation_rate,
+                "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
+                "is_finished_item": item_doc.is_stock_item,
+                "retain_sample": item_doc.retain_sample,
+                "sample_quantity": (item_doc.sample_quantity if item_doc.retain_sample else 0)
             })
         
         # Set custom field for final target warehouse
@@ -447,21 +491,91 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
         if session_name:
             stock_entry.custom_pow_session_id = session_name
         
-        stock_entry.insert(ignore_permissions=True)
-        stock_entry.submit()
-        
-        return {
-            "status": "success",
-            "stock_entry": stock_entry.name,
-            "message": f"Transfer created: {stock_entry.name}"
-        }
-        
+        try:
+            # Start a new transaction
+            frappe.db.begin()
+            
+            # First try to insert without submitting to catch validation errors
+            stock_entry.insert(ignore_permissions=True)
+            
+            # If insert succeeds, try to submit
+            try:
+                stock_entry.submit()
+                
+                # If both succeed, commit the transaction
+                frappe.db.commit()
+                
+                return {
+                    "status": "success",
+                    "stock_entry": stock_entry.name,
+                    "message": f"Transfer created: {stock_entry.name}"
+                }
+                
+            except Exception as submit_error:
+                # If submit fails, rollback and raise the error
+                frappe.db.rollback()
+                raise submit_error
+            
+        except frappe.ValidationError as e:
+            # Handle validation errors from ERPNext
+            error_msg = str(e)
+            frappe.logger().warning(f"Validation error in transfer creation: {error_msg}")
+            frappe.db.rollback()
+            
+            # Extract meaningful error messages
+            if "Insufficient stock" in error_msg.lower():
+                return {
+                    "status": "error",
+                    "error_type": "insufficient_stock",
+                    "message": error_msg
+                }
+            elif "negative stock" in error_msg.lower():
+                return {
+                    "status": "error", 
+                    "error_type": "negative_stock",
+                    "message": error_msg
+                }
+            else:
+                return {
+                    "status": "error",
+                    "error_type": "validation_error",
+                    "message": error_msg
+                }
+                
+        except frappe.DuplicateEntryError as e:
+            frappe.logger().warning(f"Duplicate entry error in transfer creation: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "duplicate_entry",
+                "message": str(e)
+            }
+            
+        except frappe.MandatoryError as e:
+            frappe.logger().warning(f"Mandatory field error in transfer creation: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "mandatory_error",
+                "message": f"Required field missing: {str(e)}"
+            }
+            
+        except Exception as e:
+            frappe.logger().error(f"Error in create_transfer_stock_entry: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "system_error",
+                "message": "An error occurred while creating the transfer. Please try again."
+            }
+            
     except Exception as e:
-        frappe.logger().error(f"Error in create_transfer_stock_entry: {str(e)}")
+        frappe.logger().error(f"Error preparing transfer data: {str(e)}")
         return {
             "status": "error",
-            "message": "An error occurred while creating the transfer. Please try again."
-        } 
+            "error_type": "system_error",
+            "message": "An error occurred while preparing the transfer data. Please try again."
+        }
 
 @frappe.whitelist()
 def get_transfer_receive_data(default_warehouse=None):
@@ -659,46 +773,100 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
             for item in new_se.items:
                 item.t_warehouse = dest_warehouse
         
-        # Validate and submit
+        # Validate and submit with transaction handling
         try:
+            # Start a new transaction
+            frappe.db.begin()
+            
+            # First try to insert without submitting to catch validation errors
             new_se.insert(ignore_permissions=True)
-            new_se.submit()
             
-            frappe.logger().info(f"Transfer receive completed: {new_se.name}")
+            # If insert succeeds, try to submit
+            try:
+                new_se.submit()
+                
+                # If both succeed, commit the transaction
+                frappe.db.commit()
+                
+                frappe.logger().info(f"Transfer receive completed: {new_se.name}")
+                
+                return {
+                    "status": "success",
+                    "stock_entry": new_se.name,
+                    "message": f"Transfer received: {new_se.name}"
+                }
+                
+            except Exception as submit_error:
+                # If submit fails, rollback and raise the error
+                frappe.db.rollback()
+                raise submit_error
             
-            return {
-                "status": "success",
-                "stock_entry": new_se.name,
-                "message": f"Transfer received: {new_se.name}"
-            }
         except frappe.ValidationError as e:
             # Handle validation errors from ERPNext
             error_msg = str(e)
             frappe.logger().warning(f"Validation error in transfer receive: {error_msg}")
+            frappe.db.rollback()
             
-            # Try to extract meaningful error details
-            if "exceeds pending quantity" in error_msg:
+            # Extract meaningful error messages
+            if "exceeds pending quantity" in error_msg.lower():
                 return {
                     "status": "error",
-                    "message": f"Validation failed: {error_msg}"
+                    "error_type": "exceeds_pending",
+                    "message": error_msg
                 }
-            elif "Insufficient Stock" in error_msg:
+            elif "insufficient stock" in error_msg.lower():
                 return {
                     "status": "error",
-                    "message": f"Insufficient stock in transit warehouse: {error_msg}"
+                    "error_type": "insufficient_stock",
+                    "message": error_msg
+                }
+            elif "negative stock" in error_msg.lower():
+                return {
+                    "status": "error",
+                    "error_type": "negative_stock",
+                    "message": error_msg
                 }
             else:
                 return {
                     "status": "error",
+                    "error_type": "validation_error",
                     "message": error_msg
                 }
-        
+                
+        except frappe.DuplicateEntryError as e:
+            frappe.logger().warning(f"Duplicate entry error in transfer receive: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "duplicate_entry",
+                "message": str(e)
+            }
+            
+        except frappe.MandatoryError as e:
+            frappe.logger().warning(f"Mandatory field error in transfer receive: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "mandatory_error",
+                "message": f"Required field missing: {str(e)}"
+            }
+            
+        except Exception as e:
+            frappe.logger().error(f"Error in transfer receive submission: {str(e)}")
+            frappe.db.rollback()
+            return {
+                "status": "error",
+                "error_type": "system_error",
+                "message": "An error occurred while submitting the transfer receive. Please try again."
+            }
+            
     except Exception as e:
-        frappe.logger().error(f"Error in receive_transfer_stock_entry: {str(e)}")
+        frappe.logger().error(f"Error preparing transfer receive data: {str(e)}")
         return {
             "status": "error",
-            "message": str(e)
-        } 
+            "error_type": "system_error",
+            "message": "An error occurred while preparing the transfer receive data. Please try again."
+        }
 
 @frappe.whitelist()
 def create_pow_stock_count(warehouse, company, session_name=None):
@@ -1020,35 +1188,48 @@ def create_stock_match_entry(warehouse, company, session_name, items_count):
 
 @frappe.whitelist()
 def validate_transfer_receive_quantities(stock_entry_name, items_data):
-    """Validate quantities for transfer receive with improved logic using ste_detail"""
+    """Validate only UI-specific aspects of transfer receive"""
     try:
         items_data = frappe.parse_json(items_data)
         validation_errors = []
-        discrepancies = []
         
+        if not items_data:
+            return {
+                "status": "error",
+                "message": "No items provided for validation"
+            }
+            
         # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
         
-        # Group items by item_code to check total stock in transit warehouse
-        item_totals = {}
-        
+        # Only validate UI-specific requirements
         for item_data in items_data:
             item_code = item_data.get('item_code')
             qty = item_data.get('qty', 0)
             ste_detail = item_data.get('ste_detail')
             
-            # Find the corresponding item in the original stock entry by ste_detail
+            # Basic data validation
+            if not item_code:
+                validation_errors.append(f"Item code is required")
+                continue
+                
+            if not qty or qty <= 0:
+                validation_errors.append(f"Quantity must be greater than 0 for item {item_code}")
+                continue
+            
+            # Find corresponding original item
             original_item = None
             for item in original_se.items:
                 if ste_detail and item.name == ste_detail:
                     original_item = item
                     break
                 elif not ste_detail and item.item_code == item_code:
-                    # Fallback to item_code if ste_detail not provided
                     original_item = item
                     break
             
-            if original_item:
+            if not original_item:
+                validation_errors.append(f"Item {item_code} not found in original transfer")
+                continue
                 # Get the quantity for this specific row
                 total_sent_qty = original_item.qty
                 transferred_qty = original_item.transferred_qty or 0
