@@ -193,36 +193,62 @@ def get_pow_profile_operations(pow_profile):
 @frappe.whitelist()
 def get_items_for_dropdown(warehouse=None, show_only_stock_items=False):
     """Get items for dropdown with item_code:item_name format and optional stock filtering"""
-    items = frappe.get_all(
-        "Item",
-        filters={"disabled": 0},
-        fields=["name", "item_name"],
-        limit=1000  # Limit for performance
-    )
-    
-    result = []
-    for item in items:
-        item_data = {
-            "item_code": item.name,
-            "item_name": item.item_name or item.name
-        }
-        
-        # If warehouse is specified, get stock information
-        if warehouse:
-            stock_qty = frappe.db.get_value("Bin", {"item_code": item.name, "warehouse": warehouse}, "actual_qty") or 0
-            stock_uom = frappe.db.get_value("Item", item.name, "stock_uom")
-            item_data.update({
-                "stock_qty": stock_qty,
-                "stock_uom": stock_uom
-            })
+    try:
+        if warehouse and show_only_stock_items:
+            # Use efficient JOIN query for items with stock (like stock count)
+            items = frappe.db.sql("""
+                SELECT 
+                    b.item_code,
+                    i.item_name,
+                    i.stock_uom,
+                    b.actual_qty as stock_qty
+                FROM `tabBin` b
+                INNER JOIN `tabItem` i ON b.item_code = i.name
+                WHERE b.warehouse = %s 
+                    AND b.actual_qty > 0
+                    AND i.disabled = 0
+                ORDER BY i.item_name
+            """, warehouse, as_dict=True)
             
-            # Filter out items with zero stock if show_only_stock_items is True
-            if show_only_stock_items and stock_qty <= 0:
-                continue
+            # Format the results
+            result = [{
+                "item_code": item.item_code,
+                "item_name": item.item_name or item.item_code,
+                "stock_qty": item.stock_qty,
+                "stock_uom": item.stock_uom
+            } for item in items]
+            
+        else:
+            # Get all enabled items when no warehouse specified or show_only_stock_items is False
+            items = frappe.get_all(
+                "Item",
+                filters={"disabled": 0},
+                fields=["name as item_code", "item_name", "stock_uom"]
+            )
+            
+            result = []
+            for item in items:
+                item_data = {
+                    "item_code": item.item_code,
+                    "item_name": item.item_name or item.item_code,
+                    "stock_uom": item.stock_uom,
+                    "stock_qty": 0
+                }
+                
+                # Get stock information if warehouse is specified
+                if warehouse:
+                    stock_qty = frappe.db.get_value("Bin", 
+                        {"item_code": item.item_code, "warehouse": warehouse}, 
+                        "actual_qty") or 0
+                    item_data["stock_qty"] = stock_qty
+                
+                result.append(item_data)
         
-        result.append(item_data)
-    
-    return result
+        return result
+        
+    except Exception as e:
+        frappe.logger().error(f"Error in get_items_for_dropdown: {str(e)}")
+        return []
 
 @frappe.whitelist()
 def get_item_uoms(item_code):
