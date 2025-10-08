@@ -250,3 +250,4 @@ fixtures = [
     {"doctype": "Custom Field", "filters": [["module", "=", "WarehouseSuite"]]},
     {"doctype": "DocType", "filters": [["module", "=", "WarehouseSuite"]]}
 ]
+website_route_rules = [{'from_route': '/powdashboard/<path:app_path>', 'to_route': 'powdashboard'},]

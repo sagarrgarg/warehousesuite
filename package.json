@@ -1,0 +1,15 @@
+{
+  "name": "warehousesuite",
+  "version": "1.0.0",
+  "description": "> **\ud83d\ude80 Production Ready & Actively Used in 6 Companies**   > **\ud83d\udcf1 Mobile-First Design for Warehouse Operations**   > **\ud83c\udfaf Built for ERPNext Community**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "cd powdashboard && yarn install",
+    "dev": "cd powdashboard && yarn dev",
+    "build": "cd powdashboard && yarn build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

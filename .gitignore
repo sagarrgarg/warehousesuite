@@ -5,3 +5,7 @@
 tags
 node_modules
 __pycache__
+
+warehousesuite/public/powdashboard
+warehousesuite/public/node_modules
+warehousesuite/www/powdashboard.html
