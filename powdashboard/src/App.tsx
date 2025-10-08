@@ -2,12 +2,35 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import './App.css'
 import { FrappeProvider } from 'frappe-react-sdk'
+
+import "@radix-ui/themes/styles.css";
+import { Theme } from '@radix-ui/themes'
+
+
 function App() {
   const [count, setCount] = useState(0)
 
+  const getSiteName = () => {
+		// @ts-ignore
+		if (window.frappe?.boot?.versions?.frappe && (window.frappe.boot.versions.frappe.startsWith('15') || window.frappe.boot.versions.frappe.startsWith('16'))) {
+			// @ts-ignore
+			return window.frappe?.boot?.sitename ?? import.meta.env.VITE_SITE_NAME
+		}
+		return import.meta.env.VITE_SITE_NAME
+
+	}
+
+
   return (
 	<div className="App">
-	  <FrappeProvider>
+		<Theme 
+		appearance="dark"
+		accentColor="iris"
+		panelBackground="translucent">
+	  <FrappeProvider
+	  socketPort={import.meta.env.VITE_SOCKET_PORT}
+	  siteName={getSiteName()}
+	  >
 		<div>
 	  <div>
 		<a href="https://vitejs.dev" target="_blank">
@@ -31,6 +54,7 @@ function App() {
 	  </p>
 	  </div>
 	  </FrappeProvider>
+	  </Theme>
 	</div>
   )
 }
