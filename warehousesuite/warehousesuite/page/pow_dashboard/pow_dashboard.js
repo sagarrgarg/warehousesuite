@@ -1,3 +1,12 @@
+// Cleanup function to remove styles and classes when leaving the page
+frappe.pages['pow-dashboard'].on_page_unload = function() {
+    // Remove the custom styles
+    $('#pow-dashboard-styles').remove();
+    
+    // Remove the page class from body
+    $('.pow-dashboard-page').removeClass('pow-dashboard-page');
+};
+
 frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -7,8 +16,13 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 
     // Add custom CSS for responsive design
     const customCSS = `
-        <style>
-            .pow-dashboard-container {
+        <style id="pow-dashboard-styles">
+            .pow-dashboard-page {
+                /* Base styles for the page */
+                background: #fff;
+            }
+            
+            .pow-dashboard-page .pow-dashboard-container {
                 padding: 20px;
                 max-width: 1200px;
                 margin: 0 auto;
@@ -60,7 +74,46 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 color: white;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                 position: relative;
-                overflow: hidden;
+                overflow: visible;
+            }
+            
+            @keyframes badge-pulse {
+                0% {
+                    transform: scale(1);
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                }
+                50% {
+                    transform: scale(1.1);
+                    box-shadow: 0 4px 10px rgba(255,0,25,0.4);
+                }
+                100% {
+                    transform: scale(1);
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                }
+            }
+
+            .notification-badge {
+                position: absolute;
+                top: -10px;
+                right: -10px;
+                background:rgb(255, 0, 25);
+                color: white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                border: 2px solid white;
+                animation: badge-pulse 2s ease-in-out infinite;
+                /* Improve animation performance */
+                will-change: transform;
+                backface-visibility: hidden;
+                /* Make sure badge stays on top */
+                z-index: 10;
             }
             
             .pow-action-btn::before {
@@ -3667,7 +3720,15 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 
     // Helper to clear and render content
     function render_content(html) {
+        // Remove any existing container
         $(page.body).find('.pow-dashboard-container').remove();
+        
+        // Add page class if not present
+        if (!$(page.body).hasClass('pow-dashboard-page')) {
+            $(page.body).addClass('pow-dashboard-page');
+        }
+        
+        // Append new content
         $(page.body).append(html);
     }
 
@@ -3730,10 +3791,25 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     
         // Material Transfer Receive button (always show if transfer is allowed)
         if (operations.material_transfer) {
+            // Get current default warehouse
+            const defaultWarehouse = $('#defaultWarehouse').val();
+            
+            // Get pending transfers count
+            let pendingTransfersCount = 0;
+            if (defaultWarehouse) {
+                const transferData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_transfer_receive_data', {
+                    default_warehouse: defaultWarehouse
+                });
+                if (transferData && transferData.message) {
+                    pendingTransfersCount = transferData.message.length;
+                }
+            }
+            
             actionButtonsHTML += `
                     <button class="pow-action-btn btn-transfer-receive" onclick="openTransferReceiveModal('${session_name}', '${profile_name}')">
                         <i class="fa fa-arrow-down"></i>
                         <span class="btn-text">Transfer<br>Receive</span>
+                        ${pendingTransfersCount > 0 ? `<span class="notification-badge">${pendingTransfersCount}</span>` : ''}
                     </button>
             `;
         }
@@ -4002,6 +4078,35 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         
         $('#transferModal').remove();
         window.transferModalData = null;
+        
+        // Update the badge count after closing the modal
+        updateTransferBadgeCount();
+    };
+    
+    window.updateTransferBadgeCount = async function() {
+        const defaultWarehouse = $('#defaultWarehouse').val();
+        if (!defaultWarehouse) return;
+        
+        try {
+            const transferData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_transfer_receive_data', {
+                default_warehouse: defaultWarehouse
+            });
+            
+            const pendingTransfersCount = transferData && transferData.message ? transferData.message.length : 0;
+            const badge = $('.btn-transfer-receive .notification-badge');
+            
+            if (pendingTransfersCount > 0) {
+                if (badge.length) {
+                    badge.text(pendingTransfersCount);
+                } else {
+                    $('.btn-transfer-receive').append(`<span class="notification-badge">${pendingTransfersCount}</span>`);
+                }
+            } else {
+                badge.remove();
+            }
+        } catch (error) {
+            console.error('Error updating transfer badge count:', error);
+        }
     };
     
     window.updateTransferRoute = function() {
@@ -5304,6 +5409,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             if (result.message.status === 'success') {
                 frappe.show_alert('Default warehouse updated successfully', 3);
+                // Update the badge count when warehouse changes
+                await updateTransferBadgeCount();
             } else {
                 frappe.msgprint('Error updating default warehouse: ' + result.message.message);
             }
