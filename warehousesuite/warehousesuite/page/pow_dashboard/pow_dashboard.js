@@ -1599,11 +1599,23 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             .transfer-actions {
                 display: flex;
+                flex-direction: column;
                 gap: 15px;
-                justify-content: flex-end;
                 margin-top: 20px;
                 padding-top: 20px;
                 border-top: 1px solid #eee;
+            }
+
+            .remarks-group {
+                margin-bottom: 10px;
+            }
+
+            .remarks-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #333;
+                font-size: 0.9rem;
             }
             
             .btn-cancel {
@@ -2043,6 +2055,32 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             
             .transfer-route {
                 text-align: right;
+            }
+
+            .transfer-remarks {
+                background: #f8f9fa;
+                border: 1px solid #e9ecef;
+                border-radius: 6px;
+                padding: 8px 12px;
+                margin-top: 10px;
+                font-size: 0.85rem;
+                color: #495057;
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+                line-height: 1.4;
+            }
+
+            .transfer-remarks i {
+                color: #ffc107;
+                margin-top: 2px;
+                flex-shrink: 0;
+            }
+
+            .transfer-remarks span {
+                flex: 1;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
             }
             
             .route-info {
@@ -3913,6 +3951,15 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             </div>
                             
                             <div class="transfer-actions">
+                                <div class="form-group remarks-group">
+                                    <label for="transferRemarks">Remarks</label>
+                                    <input type="text"
+                                           id="transferRemarks"
+                                           class="form-control"
+                                           placeholder="Add remarks for this transfer..."
+                                           maxlength="140"
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+                                </div>
                                 <button type="button" class="btn-cancel" onclick="closeTransferModal()">Cancel</button>
                                 <button type="submit" class="btn-move-stock" ${noItems ? 'disabled style="background:#dc3545;opacity:0.7;cursor:not-allowed;"' : ''}>
                                     <i class="fa fa-paper-plane"></i> Send Transfer
@@ -4143,7 +4190,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             });
             
             console.log('Transfer data response:', transferData);
-            
+
             if (!transferData || !transferData.message) {
                 frappe.msgprint({
                     title: 'Error',
@@ -4154,10 +4201,11 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
             
             const transfers = transferData.message;
-            
-            // Debug: Log the first transfer to see POW session data
+
+            // Debug: Log the first transfer to see POW session data and remarks
             if (transfers && transfers.length > 0) {
                 console.log('First transfer data:', transfers[0]);
+                console.log('First transfer remarks:', transfers[0].remarks);
                 console.log('POW Session ID:', transfers[0].pow_session_id);
             }
             
@@ -4216,6 +4264,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                                         <i class="fa fa-play-circle"></i> ${transfer.pow_session_id}
                                                     </span>` : ''}
                                                 </div>
+                                                ${transfer.remarks && transfer.remarks.trim() ? `<div class="transfer-remarks">
+                                                    <i class="fa fa-sticky-note"></i>
+                                                    <span>${transfer.remarks.trim()}</span>
+                                                </div>` : ''}
                                             </div>
                                             <div class="transfer-route">
                                                 <div class="route-info">
@@ -5456,22 +5508,25 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
             
             console.log('Items being sent to backend:', items);
-            
+
             try {
                 const form = $('#transferForm');
-                
+
                 // Prevent multiple submissions
                 if (form.data('submitting')) {
                     return;
                 }
-                
+
+                // Get remarks from the form
+                const remarks = $('#transferRemarks').val() || '';
+
                 // Store the original button text before disabling
                 const submitBtn = form.find('button[type="submit"]');
                 form.data('originalButtonText', submitBtn.text());
-                
+
                 // Show loading state
                 setFormSubmitting(true);
-                
+
                 // Create stock entry
                 const result = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.create_transfer_stock_entry', {
                     source_warehouse: sourceWarehouse,
@@ -5479,7 +5534,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     in_transit_warehouse: inTransitWarehouse,
                     items: JSON.stringify(items),
                     company: frappe.defaults.get_global_default('company'),
-                    session_name: window.transferModalData.session_name
+                    session_name: window.transferModalData.session_name,
+                    remarks: remarks
                 });
                 
                 const response = result.message;

@@ -420,7 +420,7 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
         }
 
 @frappe.whitelist()
-def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None):
+def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None):
     """Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
     try:
         # Log input parameters
@@ -512,10 +512,14 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
         
         # Set custom field for final target warehouse
         stock_entry.custom_for_which_warehouse_to_transfer = target_warehouse
-        
+
         # Set POW Session ID if provided
         if session_name:
             stock_entry.custom_pow_session_id = session_name
+
+        # Set remarks if provided
+        if remarks:
+            stock_entry.remarks = remarks
         
         try:
             # Start a new transaction
@@ -610,7 +614,7 @@ def get_transfer_receive_data(default_warehouse=None):
         frappe.logger().info(f"get_transfer_receive_data called with warehouse: {default_warehouse}")
         # Build the SQL query
         sql_query = """
-        SELECT 
+        SELECT
             se.posting_date AS posting_date,
             se.name AS stock_entry,
             sei.name AS ste_detail,
@@ -624,7 +628,8 @@ def get_transfer_receive_data(default_warehouse=None):
             IFNULL(sei.transferred_qty, 0) AS transferred_qty,
             se.custom_sales_order AS ref_so,
             u.full_name AS created_by,
-            se.custom_pow_session_id AS pow_session_id
+            se.custom_pow_session_id AS pow_session_id,
+            se.remarks AS remarks
 
         FROM 
             `tabStock Entry` se
@@ -651,7 +656,7 @@ def get_transfer_receive_data(default_warehouse=None):
         # Log the results for debugging
         frappe.logger().info(f"Found {len(result)} transfer rows")
         for row in result[:3]:  # Log first 3 rows
-            frappe.logger().info(f"Stock Entry: {row['stock_entry']}, POW Session: {row['pow_session_id']}")
+            frappe.logger().info(f"Stock Entry: {row['stock_entry']}, POW Session: {row['pow_session_id']}, Remarks: {repr(row['remarks'])}")
         
         # Group by stock entry for better organization
         grouped_data = {}
@@ -667,6 +672,7 @@ def get_transfer_receive_data(default_warehouse=None):
                     'ref_so': row['ref_so'],
                     'created_by': row['created_by'],
                     'pow_session_id': row['pow_session_id'],
+                    'remarks': row['remarks'],
                     'items': []
                 }
             
@@ -719,6 +725,11 @@ def get_transfer_receive_data(default_warehouse=None):
             transfer['open_concerns'] = open_concerns
             transfer['concern_count'] = len(open_concerns)
         
+        # Debug logging for grouped data
+        frappe.logger().info(f"Returning {len(grouped_data)} grouped transfers")
+        for stock_entry, transfer_data in list(grouped_data.items())[:2]:  # Log first 2 transfers
+            frappe.logger().info(f"Transfer {stock_entry}: remarks={repr(transfer_data.get('remarks'))}")
+
         return list(grouped_data.values())
         
     except Exception as e:
