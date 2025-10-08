@@ -1827,6 +1827,102 @@ def debug_stock_entry_warehouses(stock_entry_name):
 
 
 @frappe.whitelist()
+def get_pending_sent_transfers(source_warehouse=None):
+    """Get pending sent transfers for a warehouse that:
+    1. Were sent by the current user
+    2. Have add_to_transit ticked
+    3. Are not fully delivered
+    """
+    try:
+        if not source_warehouse:
+            return []
+            
+        current_user = frappe.session.user
+        
+        # Get all stock entries that match our base criteria
+        # Show ALL pending transfers from this warehouse, not just those created by current user
+        stock_entries = frappe.get_all(
+            "Stock Entry",
+            filters={
+                "add_to_transit": 1,
+                "docstatus": 1,
+                "from_warehouse": source_warehouse
+            },
+            fields=[
+                "name",
+                "posting_date",
+                "to_warehouse",
+                "owner",
+                "remarks",
+                "custom_pow_session_id",
+                "custom_for_which_warehouse_to_transfer"
+            ],
+            order_by="posting_date desc"
+        )
+        
+        transfers = []
+        
+        # Process each stock entry
+        for entry in stock_entries:
+            # Get items for this stock entry
+            items = frappe.get_all(
+                "Stock Entry Detail",
+                filters={
+                    "parent": entry.name
+                },
+                fields=[
+                    "item_code",
+                    "item_name",
+                    "qty",
+                    "transferred_qty",
+                    "uom"
+                ]
+            )
+            
+            # Check if any items are not fully transferred
+            has_pending_items = False
+            pending_items = []
+            
+            for item in items:
+                transferred_qty = item.transferred_qty or 0
+                remaining_qty = item.qty - transferred_qty
+                
+                if remaining_qty > 0:
+                    has_pending_items = True
+                    pending_items.append({
+                        "item_code": item.item_code,
+                        "item_name": item.item_name,
+                        "qty": item.qty,
+                        "transferred_qty": transferred_qty,
+                        "remaining_qty": remaining_qty,
+                        "uom": item.uom
+                    })
+            
+            # Only include this transfer if it has pending items
+            if has_pending_items:
+                transfer = {
+                    "name": entry.name,
+                    "posting_date": entry.posting_date,
+                    "to_warehouse": entry.to_warehouse,
+                    "final_destination": entry.custom_for_which_warehouse_to_transfer,
+                    "owner": entry.owner,
+                    "remarks": entry.remarks,
+                    "pow_session_id": entry.custom_pow_session_id,
+                    "items": pending_items,
+                    "total_items": len(items),
+                    "pending_items": len(pending_items)
+                }
+                transfers.append(transfer)
+        
+        return transfers
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting pending sent transfers: {str(e)}")
+        import traceback
+        frappe.logger().error(f"Traceback: {traceback.format_exc()}")
+        return []
+
+@frappe.whitelist()
 def fix_stock_entry_warehouses(stock_entry_name):
     """Fix stock entry warehouse information if missing"""
     try:

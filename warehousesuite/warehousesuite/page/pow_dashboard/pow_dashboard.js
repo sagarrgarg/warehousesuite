@@ -132,6 +132,11 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 /* Make sure badge stays on top */
                 z-index: 10;
             }
+
+            .notification-badge.pending-transfers {
+                background: #17a2b8;
+                animation: badge-pulse 2s ease-in-out infinite;
+            }
             
             .pow-action-btn::before {
                 content: '';
@@ -182,6 +187,216 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             .btn-bin-inquiry { background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%); }
             .btn-picklist { background: linear-gradient(135deg, #795548 0%, #5D4037 100%); }
             .btn-close-shift { background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); }
+            
+            /* Pending Transfers Tab Styles */
+            .pending-transfers-tab {
+                margin: 15px 0;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                overflow: hidden;
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+            
+            .pending-tab-header {
+                background: #f8f9fa;
+                padding: 15px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid #e0e0e0;
+                transition: background 0.2s ease;
+            }
+            
+            .pending-tab-header:hover {
+                background: #f0f0f0;
+            }
+            
+            .pending-tab-header h4 {
+                margin: 0;
+                font-size: 1rem;
+                color: #1a1a1a;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .pending-tab-header .pending-count {
+                background: rgb(255, 0, 25);
+                color: white;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 0.85rem;
+                font-weight: bold;
+                min-width: 30px;
+                text-align: center;
+                box-shadow: 0 2px 4px rgba(255,0,25,0.2);
+            }
+            
+            .pending-tab-header .toggle-icon {
+                transition: transform 0.3s ease;
+            }
+            
+            .pending-tab-header.expanded .toggle-icon {
+                transform: rotate(180deg);
+            }
+            
+            .pending-tab-content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-out;
+            }
+            
+            .pending-tab-content.expanded {
+                max-height: 500px;
+                overflow-y: auto;
+            }
+            
+            .pending-transfers-list {
+                padding: 15px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+            }
+
+            .pending-transfer-item {
+                background: white !important;
+                border: 1px solid #e0e0e0 !important;
+                border-radius: 8px !important;
+                padding: 20px !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+                transition: all 0.3s ease;
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            .pending-transfer-item:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transform: translateY(-2px);
+            }
+
+            .pending-transfer-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .pending-transfer-id {
+                margin: 0 0 10px 0;
+                color: #333;
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+            .pending-transfer-date {
+                color: #666;
+                font-size: 0.9rem;
+                background: #f8f9fa;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+
+            .pending-transfer-details {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-top: 10px;
+            }
+
+            .pending-transfer-detail {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .detail-label {
+                color: #666;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .detail-value {
+                color: #333;
+                font-weight: 500;
+                font-size: 0.95rem;
+            }
+
+            .pending-transfer-items {
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid #f0f0f0;
+            }
+
+            .pending-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                font-size: 0.95rem;
+            }
+
+            .pending-item:not(:last-child) {
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .pending-item-name {
+                color: #333;
+                font-weight: 500;
+            }
+
+            .pending-item-qty {
+                color: #666;
+                font-weight: 600;
+                background: #f8f9fa;
+                padding: 4px 8px;
+                border-radius: 4px;
+                min-width: 80px;
+                text-align: right;
+            }
+
+            /* Mobile Responsive for Pending Transfers */
+            @media (max-width: 767px) {
+                .pending-transfers-list {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                    padding: 10px;
+                }
+
+                .pending-transfer-item {
+                    padding: 15px;
+                }
+
+                .pending-transfer-header {
+                    flex-direction: column;
+                    gap: 10px;
+                    align-items: stretch;
+                }
+
+                .pending-transfer-id {
+                    font-size: 1rem;
+                    margin-bottom: 8px;
+                }
+
+                .pending-transfer-details {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+            }
+
+            /* Desktop Responsive for Pending Transfers */
+            @media (min-width: 768px) {
+                .pending-transfers-list {
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 25px;
+                }
+            }
             
             /* Transfer Modal Styles */
             .transfer-modal {
@@ -1230,6 +1445,7 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 transition: all 0.2s;
                 display: flex;
                 align-items: center;
+                justify-content: center;
                 gap: 8px;
                 min-width: 160px;
             }
@@ -1707,6 +1923,10 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 cursor: pointer;
                 font-size: 1rem;
                 font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
             }
             
             /* Session Info with Default Warehouse */
@@ -3798,11 +4018,28 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     
         // Material Transfer Send button
         if (operations.material_transfer) {
+            // Get current default warehouse
+            const defaultWarehouse = $('#defaultWarehouse').val();
+
+            // Get pending transfers count for notification badge
+            let pendingTransfersCount = 0;
+            if (defaultWarehouse) {
+                const transferData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pending_sent_transfers', {
+                    source_warehouse: defaultWarehouse
+                });
+                if (transferData && transferData.message) {
+                    pendingTransfersCount = transferData.message.length;
+                }
+            }
+
             actionButtonsHTML += `
-                    <button class="pow-action-btn btn-transfer" onclick="openTransferModal('${session_name}', '${profile_name}')">
-                        <i class="fa fa-arrow-up"></i>
-                        <span class="btn-text">Transfer<br>Send</span>
-                    </button>
+                    <div class="pow-action-btn-wrapper">
+                        <button class="pow-action-btn btn-transfer" onclick="openTransferModal('${session_name}', '${profile_name}')">
+                            <i class="fa fa-arrow-up"></i>
+                            <span class="btn-text">Transfer<br>Send</span>
+                        </button>
+                        ${pendingTransfersCount > 0 ? `<span class="notification-badge pending-transfers" style="display: none;">${pendingTransfersCount}</span>` : ''}
+                    </div>
             `;
         }
                     
@@ -3951,9 +4188,9 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             // Create modal HTML with improved compact design
             const modalHTML = `
                 <div class="transfer-modal" id="transferModal">
-                    <div class="transfer-modal-content compact">
-                        <div class="transfer-modal-header">
-                            <div class="header-content">
+                        <div class="transfer-modal-content compact">
+                            <div class="transfer-modal-header">
+                                <div class="header-content">
                             <h3><i class="fa fa-exchange"></i> Transfer Send</h3>
                                 <div class="transfer-route-preview">
                                     <span class="route-label">Route:</span>
@@ -3963,11 +4200,28 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                             </div>
                             <button class="close-btn" onclick="closeTransferModal()">&times;</button>
                         </div>
-                        
+
                         <div id="errorDisplay" class="error-display" style="display: none;">
                             <!-- Errors will be displayed here -->
                         </div>
-                        
+
+                        <!-- Pending Transfers Tab - Moved to top -->
+                        <div class="pending-transfers-tab">
+                            <div class="pending-tab-header" onclick="togglePendingTransfers()">
+                                <h4>
+                                    <i class="fa fa-clock-o"></i>
+                                    Pending Transfers
+                                    <span class="pending-count">0</span>
+                                </h4>
+                                <i class="fa fa-chevron-down toggle-icon"></i>
+                            </div>
+                            <div class="pending-tab-content">
+                                <div class="pending-transfers-list">
+                                    <!-- Content will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
                         <form class="transfer-form" id="transferForm">
                             <div class="warehouse-selection">
                                 <div class="warehouse-row">
@@ -4055,6 +4309,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                                            maxlength="140"
                                            style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
                                 </div>
+                                
+                                
                                 <button type="button" class="btn-cancel" onclick="closeTransferModal()">Cancel</button>
                                 <button type="submit" class="btn-move-stock" ${noItems ? 'disabled style="background:#dc3545;opacity:0.7;cursor:not-allowed;"' : ''}>
                                     <i class="fa fa-paper-plane"></i> Send Transfer
@@ -4075,6 +4331,12 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 session_name: session_name,
                 profile_settings: profile_settings
             };
+
+            // Update pending transfers count when modal opens
+            const sourceWarehouse = $('#sourceWarehouse').val();
+            if (sourceWarehouse) {
+                fetchAndRenderPendingTransfers(sourceWarehouse);
+            }
             
             console.log('Transfer modal data stored:', window.transferModalData);
             
@@ -4105,28 +4367,141 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
     window.updateTransferBadgeCount = async function() {
         const defaultWarehouse = $('#defaultWarehouse').val();
         if (!defaultWarehouse) return;
-        
+
         try {
-            const transferData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_transfer_receive_data', {
+            // Update transfer receive badge (red badge)
+            const receiveData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_transfer_receive_data', {
                 default_warehouse: defaultWarehouse
             });
-            
-            const pendingTransfersCount = transferData && transferData.message ? transferData.message.length : 0;
-            const wrapper = $('.pow-action-btn-wrapper');
-            const badge = wrapper.find('.notification-badge');
-            
-            if (pendingTransfersCount > 0) {
-                if (badge.length) {
-                    badge.text(pendingTransfersCount);
-                } else {
-                    wrapper.append(`<span class="notification-badge">${pendingTransfersCount}</span>`);
-                }
-            } else {
-                badge.remove();
+
+            const pendingReceiveCount = receiveData && receiveData.message ? receiveData.message.length : 0;
+            const receiveWrapper = $('.pow-action-btn-wrapper:has(.btn-transfer-receive)');
+            // Remove existing badge first
+            receiveWrapper.find('.notification-badge').remove();
+
+            if (pendingReceiveCount > 0) {
+                receiveWrapper.append(`<span class="notification-badge">${pendingReceiveCount}</span>`);
             }
+
+            // Update transfer send badge (blue badge for pending sent transfers)
+            const sentData = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pending_sent_transfers', {
+                source_warehouse: defaultWarehouse
+            });
+
+            const pendingSentCount = sentData && sentData.message ? sentData.message.length : 0;
+            const sentWrapper = $('.pow-action-btn-wrapper:has(.btn-transfer)');
+            // Remove existing badge first
+            sentWrapper.find('.notification-badge').remove();
+
+            if (pendingSentCount > 0) {
+                sentWrapper.append(`<span class="notification-badge pending-transfers">${pendingSentCount}</span>`);
+            }
+
+            // Show all badges after updating
+            $('.notification-badge').show();
         } catch (error) {
-            console.error('Error updating transfer badge count:', error);
+            console.error('Error updating transfer badge counts:', error);
         }
+    };
+    
+    window.fetchAndRenderPendingTransfers = async function(sourceWarehouse) {
+        if (!sourceWarehouse) return;
+        
+        try {
+            const result = await frappe.call({
+                method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pending_sent_transfers',
+                args: {
+                    source_warehouse: sourceWarehouse
+                }
+            });
+            
+            const transfers = result.message || [];
+            const pendingTab = $('.pending-transfers-tab');
+            const header = pendingTab.find('.pending-tab-header');
+            
+            // Update count in header
+            pendingTab.find('.pending-count').text(transfers.length);
+            
+            // Update grid content
+            const gridHTML = transfers.map(transfer => `
+                <div class="pending-transfer-item" onclick="showPendingTransferDetails('${transfer.name}')" style="cursor: pointer;">
+                    <div class="pending-transfer-header">
+                        <h4 class="pending-transfer-id">
+                            <i class="fa fa-file-text"></i> ${transfer.name}
+                        </h4>
+                        <span class="pending-transfer-date">
+                            <i class="fa fa-calendar"></i> ${frappe.datetime.str_to_user(transfer.posting_date)}
+                        </span>
+                    </div>
+                    <div class="pending-transfer-details">
+                        <div class="pending-transfer-detail">
+                            <span class="detail-label">In-Transit To</span>
+                            <span class="detail-value">${transfer.to_warehouse}</span>
+                        </div>
+                        <div class="pending-transfer-detail">
+                            <span class="detail-label">Final Destination</span>
+                            <span class="detail-value">${transfer.final_destination}</span>
+                        </div>
+                    </div>
+                    ${transfer.remarks ? `
+                        <div class="pending-transfer-detail" style="grid-column: 1 / -1;">
+                            <span class="detail-label">Remarks</span>
+                            <span class="detail-value">${transfer.remarks}</span>
+                        </div>
+                    ` : ''}
+                    <div class="pending-transfer-items">
+                        ${transfer.items.map(item => `
+                            <div class="pending-item">
+                                <span class="pending-item-name">${item.item_name}</span>
+                                <span class="pending-item-qty">${item.qty} ${item.uom}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            
+            pendingTab.find('.pending-transfers-list').html(gridHTML || '<div class="text-muted text-center p-4">No pending transfers found</div>');
+            
+        } catch (error) {
+            console.error('Error fetching pending transfers:', error);
+            frappe.msgprint({
+                title: 'Error',
+                message: 'Could not fetch pending transfers. Please try again.',
+                indicator: 'red'
+            });
+        }
+    };
+    
+    window.togglePendingTransfers = async function() {
+        const header = $('.pending-tab-header');
+        const content = $('.pending-tab-content');
+        const isExpanded = content.hasClass('expanded');
+
+        if (isExpanded) {
+            content.removeClass('expanded');
+            header.removeClass('expanded');
+        } else {
+            content.addClass('expanded');
+            header.addClass('expanded');
+            // Fetch latest data when expanding
+            const sourceWarehouse = $('#sourceWarehouse').val();
+            if (sourceWarehouse) {
+                await fetchAndRenderPendingTransfers(sourceWarehouse);
+            }
+        }
+    };
+
+    window.showPendingTransferDetails = function(stockEntryName) {
+        // For now, just show a simple alert with the stock entry name
+        // This could be expanded to show detailed view or navigate to the stock entry
+        frappe.msgprint({
+            title: 'Pending Transfer Details',
+            message: `Viewing details for Stock Entry: ${stockEntryName}`,
+            indicator: 'blue'
+        });
+
+        // Could also navigate to the stock entry form
+        // frappe.set_route('stock-entry', stockEntryName);
     };
     
     window.updateTransferRoute = function() {
@@ -4171,6 +4546,21 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
         const $input = $(inputSelector);
         const $list = $(listSelector);
         const $hiddenInput = $(hiddenInputSelector);
+        
+        // Handle source warehouse changes
+        if (hiddenInputSelector === '#sourceWarehouse') {
+            $hiddenInput.on('change', function() {
+                const warehouse = $(this).val();
+                if (warehouse) {
+                    // Update pending transfers count and data
+                    fetchAndRenderPendingTransfers(warehouse);
+                } else {
+                    // Clear pending transfers when no warehouse selected
+                    $('.pending-count').text('0');
+                    $('.pending-transfers-list').html('<div class="text-muted text-center p-4">No pending transfers found</div>');
+                }
+            });
+        }
         
         // Show dropdown on focus
         $input.on('focus', function() {
