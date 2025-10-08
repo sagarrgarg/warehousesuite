@@ -58,6 +58,16 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 margin: 0 auto;
             }
             
+            .pow-actions-grid .pow-action-btn-wrapper {
+                width: 100%;
+                aspect-ratio: 1;
+            }
+            
+            .pow-actions-grid .pow-action-btn {
+                width: 100%;
+                height: 100%;
+            }
+            
             .pow-action-btn {
                 aspect-ratio: 1;
                 border: none;
@@ -74,7 +84,14 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 color: white;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                 position: relative;
-                overflow: visible;
+                /* Change to hidden to fix clickable area */
+                overflow: hidden;
+            }
+            
+            /* Wrapper for the button to contain the badge */
+            .pow-action-btn-wrapper {
+                position: relative;
+                display: inline-block;
             }
             
             @keyframes badge-pulse {
@@ -3806,11 +3823,13 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             }
             
             actionButtonsHTML += `
-                    <button class="pow-action-btn btn-transfer-receive" onclick="openTransferReceiveModal('${session_name}', '${profile_name}')">
-                        <i class="fa fa-arrow-down"></i>
-                        <span class="btn-text">Transfer<br>Receive</span>
+                    <div class="pow-action-btn-wrapper">
+                        <button class="pow-action-btn btn-transfer-receive" onclick="openTransferReceiveModal('${session_name}', '${profile_name}')">
+                            <i class="fa fa-arrow-down"></i>
+                            <span class="btn-text">Transfer<br>Receive</span>
+                        </button>
                         ${pendingTransfersCount > 0 ? `<span class="notification-badge">${pendingTransfersCount}</span>` : ''}
-                    </button>
+                    </div>
             `;
         }
                     
@@ -4093,13 +4112,14 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
             });
             
             const pendingTransfersCount = transferData && transferData.message ? transferData.message.length : 0;
-            const badge = $('.btn-transfer-receive .notification-badge');
+            const wrapper = $('.pow-action-btn-wrapper');
+            const badge = wrapper.find('.notification-badge');
             
             if (pendingTransfersCount > 0) {
                 if (badge.length) {
                     badge.text(pendingTransfersCount);
                 } else {
-                    $('.btn-transfer-receive').append(`<span class="notification-badge">${pendingTransfersCount}</span>`);
+                    wrapper.append(`<span class="notification-badge">${pendingTransfersCount}</span>`);
                 }
             } else {
                 badge.remove();
