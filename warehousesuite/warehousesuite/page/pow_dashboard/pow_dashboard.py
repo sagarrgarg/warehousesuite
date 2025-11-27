@@ -1,6 +1,10 @@
 import frappe
 from frappe import _
+<<<<<<< HEAD
 from frappe.utils import now_datetime, flt
+=======
+from frappe.utils import cint, flt, now_datetime, strip_html
+>>>>>>> b8a38a1 (testing qz tray)
 
 @frappe.whitelist()
 def get_applicable_pow_profiles():
@@ -1558,6 +1562,196 @@ def get_item_inquiry_data(item_code, allowed_warehouses=None):
             "message": str(e)
         } 
 
+
+def _get_default_company_details():
+    """Fetch company information for label context."""
+    company_name = (
+        frappe.defaults.get_user_default("Company")
+        or frappe.defaults.get_global_default("company")
+    )
+
+    if not company_name:
+        company_name = frappe.db.get_value("Company", {}, "name")
+
+    if not company_name:
+        return {
+            "name": _("Company Name"),
+            "address_line": "",
+            "phone": "",
+            "email": "",
+            "website": "",
+        }
+
+    company = frappe.get_doc("Company", company_name)
+    address_line = ""
+    company_country = company.country or ""
+
+    return {
+        "name": company.company_name or company.name,
+        "address_line": address_line,
+        "phone": company.phone_no or company.get("company_phone") or "",
+        "email": company.email or company.get("company_email") or "",
+        "website": company.website or "",
+        "country": company_country,
+    }
+
+
+def _select_packaging_uom(item):
+    """Pick the most suitable UOM for packaging context."""
+    uom_rows = getattr(item, "uoms", []) or []
+    if not uom_rows:
+        return None
+
+    priority_keywords = ["carton", "ctn", "box", "case", "pack"]
+    for keyword in priority_keywords:
+        keyword = keyword.lower()
+        for row in uom_rows:
+            row_uom = (row.uom or "").lower()
+            if keyword in row_uom:
+                return row
+
+    # Fallback to the highest conversion factor
+    ordered_uoms = sorted(
+        uom_rows,
+        key=lambda row: flt(row.conversion_factor or 0),
+        reverse=True,
+    )
+    return ordered_uoms[0] if ordered_uoms else None
+
+
+def _format_quantity(value):
+    """Format numeric values for display."""
+    if value is None:
+        return ""
+    value = flt(value)
+    if value == cint(value):
+        return str(cint(value))
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def _format_weight_text(value, weight_uom):
+    """Build a human readable weight string."""
+    value = flt(value)
+    if not value:
+        return ""
+    unit = weight_uom or "Kg"
+    return f"{_format_quantity(value)} {unit}"
+
+
+def _format_barcode_display(barcode_value):
+    """Insert lightweight spacing for barcode readability."""
+    if not barcode_value:
+        return ""
+    clean_value = "".join(ch for ch in str(barcode_value) if ch.strip())
+    return " ".join(
+        clean_value[i : i + 4] for i in range(0, len(clean_value), 4)
+    )
+
+
+def _build_label_context(item, barcode_data, quantity, company_details):
+    """Aggregate all dynamic values needed for the label."""
+    description_lines = [
+        line.strip()
+        for line in strip_html(item.description or "").splitlines()
+        if line.strip()
+    ]
+
+    secondary_name = ""
+    tertiary_name = ""
+    if description_lines:
+        secondary_name = description_lines[0]
+        if len(description_lines) > 1:
+            tertiary_name = description_lines[1]
+    if not secondary_name:
+        secondary_name = item.brand or item.item_group or ""
+    if not tertiary_name and item.item_group and item.item_group != secondary_name:
+        tertiary_name = item.item_group
+
+    packaging_uom_row = _select_packaging_uom(item)
+    conversion_factor = flt(
+        getattr(packaging_uom_row, "conversion_factor", 1)
+    ) or 1
+    packaging_uom = (
+        getattr(packaging_uom_row, "uom", None) or item.stock_uom or ""
+    ).strip()
+
+    pack_details = ""
+    if packaging_uom_row and item.stock_uom:
+        pack_details = _(
+            "{qty} {stock_uom} in a {pack_uom}"
+        ).format(
+            qty=_format_quantity(conversion_factor),
+            stock_uom=item.stock_uom,
+            pack_uom=packaging_uom,
+        )
+    elif item.stock_uom:
+        pack_details = _("Packed in {uom}").format(uom=item.stock_uom)
+    elif description_lines:
+        pack_details = description_lines[0]
+
+    unit_weight = flt(item.weight_per_unit) or 0
+    net_weight = unit_weight * (conversion_factor or 1)
+    gross_weight_source = (
+        flt(item.get("gross_weight_per_unit") or 0)
+        or flt(item.get("gross_weight") or 0)
+    )
+    packaging_weight = flt(item.get("packaging_weight") or 0)
+
+    if gross_weight_source:
+        gross_weight = gross_weight_source * (conversion_factor or 1)
+    elif packaging_weight:
+        gross_weight = net_weight + packaging_weight
+    else:
+        gross_weight = net_weight
+
+    barcode_value = (
+        barcode_data.barcode if barcode_data and barcode_data.barcode else item.name
+    )
+
+    return {
+        "company_name": company_details.get("name", ""),
+        "item_code": item.name,
+        "item_name": item.item_name or item.name,
+        "item_name_secondary": secondary_name,
+        "item_name_tertiary": tertiary_name,
+        "uom_display": (
+            f"{_format_quantity(conversion_factor)} {packaging_uom}".strip()
+            if packaging_uom
+            else item.stock_uom or ""
+        ),
+        "uom_unit_label": (
+            _("Per {uom}").format(uom=packaging_uom)
+            if packaging_uom
+            else _("Per Unit")
+        ),
+        "pack_details": pack_details or _("Pack details not available"),
+        "net_weight_text": _format_weight_text(net_weight, item.weight_uom),
+        "gross_weight_text": _format_weight_text(gross_weight, item.weight_uom),
+        "customer_care_number": company_details.get("phone") or _("Not Available"),
+        "customer_care_email": company_details.get("email") or _("Not Available"),
+        "customer_care_website": company_details.get("website") or _("Not Available"),
+        "barcode_value": barcode_value,
+        "barcode_display": _format_barcode_display(barcode_value),
+        "quantity": cint(quantity) or 1,
+    }
+
+
+def _sanitize_for_zpl(value):
+    """Escape reserved characters for ZPL printers."""
+    if value is None:
+        return ""
+    text = str(value)
+    replacements = {
+        "\\": "\\\\",
+        "^": r"\^",
+        "~": r"\~",
+        "{": r"\{",
+        "}": r"\}",
+    }
+    for char, substitute in replacements.items():
+        text = text.replace(char, substitute)
+    return text
+
 @frappe.whitelist()
 def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
     """Generate ZPL code for item labels"""
@@ -1575,15 +1769,6 @@ def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
             order_by="idx"
         )
         
-        # Get UOM conversions
-        uom_conversions = []
-        if item.uoms:
-            for uom_entry in item.uoms:
-                uom_conversions.append({
-                    "uom": uom_entry.uom,
-                    "conversion_factor": uom_entry.conversion_factor
-                })
-        
         # Find selected barcode or default to stock UOM barcode
         selected_barcode_data = None
         if selected_barcode and selected_barcode.strip():  # Only if barcode is selected and not empty
@@ -1596,12 +1781,21 @@ def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
             else:
                 selected_barcode_data = barcodes[0]  # First barcode if no stock UOM match
         
+        company_details = _get_default_company_details()
+        label_context = _build_label_context(
+            item,
+            selected_barcode_data,
+            quantity,
+            company_details,
+        )
+
         # Generate ZPL code
-        zpl_code = generate_zpl_label(item, selected_barcode_data, uom_conversions, quantity)
+        zpl_code = generate_zpl_label(label_context)
         
         return {
             "status": "success",
             "zpl_code": zpl_code,
+            "label_context": label_context,
             "item_data": {
                 "item_code": item.name,
                 "item_name": item.item_name,
@@ -1620,72 +1814,140 @@ def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
             "message": str(e)
         }
 
-def generate_zpl_label(item, barcode_data, uom_conversions, quantity):
-    """Generate ZPL code for a single label"""
-    # Ensure quantity is an integer
-    quantity = int(quantity) if quantity else 1
-    
-    # Weight text
-    weight_text = ""
-    if item.weight_per_unit and item.weight_per_unit > 0:
-        weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
-    
-    # Item name
-    item_name = item.item_name or item.name
-    
-    # Generate ZPL code based on whether barcode is available
-    if barcode_data:
-        # Format with barcode
-        zpl_code = f"""^XA
+def generate_zpl_label(label_context):
+    """Generate ZPL code for the configured label."""
+    def ctx(key, default=""):
+        return _sanitize_for_zpl(label_context.get(key) or default)
 
-^FO0,10
-^FB400,1,0,C,0
+    quantity = cint(label_context.get("quantity") or 1)
+
+    zpl_code = f"""^XA
+^PW812
+^LL1218
+^LH0,0
+^CI28
+
+^FO50,40
+^A0N,85,65
+^FD{ctx("company_name")}^FS
+
+^FO40,190
+^GB732,3,3^FS
+
+^FO400,190
+^GB2,635,2^FS
+
+^FO40,220
+^A0N,45,32
+^FDITEM CODE:^FS
+
+^FO35,300
+^A0N,180,110
+^FD{ctx("item_code")}^FS
+
+^FO40,540
+^A0N,45,32
+^FDITEM NAME:^FS
+
+^FO40,600
+^A0N,60,40
+^FD{ctx("item_name")}^FS
+
+^FO40,670
+^A0N,60,40
+^FD{ctx("item_name_secondary")}^FS
+
+^FO40,740
+^A0N,60,40
+^FD{ctx("item_name_tertiary")}^FS
+
+^FO410,220
+^A0N,66,50
+^FDUOM:^FS
+
+^FO540,220
+^A0N,80,65
+^FD{ctx("uom_display")}^FS
+
+^FO410,300
+^A0N,80,65
+^FD{ctx("uom_unit_label")}^FS
+
+^FO400,390
+^GB366,2,2^FS
+
+^FO410,410
 ^A0N,30,30
-^FD{item.name}\\&^FS
+^FDNW:^FS
 
-^FO0,40
-^FB400,1,0,C,0
+^FO410,450
+^A0N,55,40
+^FD{ctx("net_weight_text")}^FS
+
+^FO590,390
+^GB2,125,2^FS
+
+^FO600,410
 ^A0N,30,30
-^FD{item_name}\\&^FS
+^FDGW (Approx):^FS
 
-^FO0,70
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{weight_text}\\&^FS
+^FO600,450
+^A0N,55,40
+^FD{ctx("gross_weight_text")}^FS
 
-^FO0,100
-^FB400,1,0,C,0
-^A0N,30,30
-^FD220 Pcs/Carton\\&^FS
+^FO40,515
+^GB732,2,2^FS
 
-^FO20,130
-^BCN,45,Y,N,N
-^FD{barcode_data.barcode}^FS
+^FO410,527
+^A0N,26,22
+^FDPACK DETAILS:^FS
+
+^FO410,560
+^A0N,28,26
+^FD{ctx("pack_details")}^FS
+
+^FO400,600
+^GB366,2,2^FS
+
+^FO410,620
+^A0N,26,24
+^FDFor consumer complaints & feedback^FS
+
+^FO410,650
+^A0N,26,24
+^FDPlease contact us on above mentioned^FS
+
+^FO410,680
+^A0N,26,24
+^FDaddress or^FS
+
+^FO410,720
+^A0N,26,24
+^FDCustomer Care No.: {ctx("customer_care_number")}^FS
+
+^FO410,760
+^A0N,26,24
+^FDE-Mail : {ctx("customer_care_email")}^FS
+
+^FO410,795
+^A0N,26,24
+^FDWebsite : {ctx("customer_care_website")}^FS
+
+^FO40,825
+^GB732,2,2^FS
+
+^BY7,3
+^FO75,850
+^BEN,300,N
+^FD{ctx("barcode_value", label_context.get("item_code"))}^FS
+
+^FO120,1170
+^AB,35,25
+^FD{ctx("barcode_display", label_context.get("barcode_value"))}^FS
 
 ^XZ"""
-    else:
-        # Format without barcode
-        zpl_code = f"""^XA
 
-^FO0,35
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item.name}\\&^FS
-
-^FO0,80
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item_name}\\&^FS
-
-^FO0,130
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{weight_text}\\&^FS
-
-^XZ"""
-    
-    # Repeat for quantity
-    return zpl_code * quantity 
+    return zpl_code * quantity
 
 @frappe.whitelist()
 def get_available_boms():

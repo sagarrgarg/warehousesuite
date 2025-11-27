@@ -3857,62 +3857,156 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                 margin-top: 0.25rem;
             }
             
+            .printer-control-row {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+            
+            .printer-control-row .btn {
+                padding: 0.55rem 0.85rem;
+                height: 42px;
+            }
+            
+            .printer-status-text {
+                display: block;
+                margin-top: 0.35rem;
+                font-size: 0.85rem;
+            }
+            
             .label-preview {
                 margin-top: 1.5rem;
-                padding: 1rem;
-                background: #f7fafc;
+            }
+            
+            .label-preview-card {
+                width: 420px;
+                min-height: 640px;
+                border: 2px solid #1a202c;
                 border-radius: 8px;
+                background: #fff;
+                padding: 1.25rem;
+                font-family: 'Courier New', Courier, monospace;
+                color: #1a202c;
+                box-shadow: inset 0 0 0 1px #e2e8f0;
             }
             
-            .label-preview h5 {
-                margin: 0 0 1rem 0;
-                color: #2d3748;
-            }
-            
-            .preview-container {
-                display: flex;
-                justify-content: center;
-            }
-            
-            .label-sample {
-                width: 200px;
-                height: 100px;
-                border: 2px solid #e2e8f0;
-                border-radius: 6px;
-                background: white;
-                padding: 0.5rem;
-                font-size: 0.75rem;
+            .label-preview .preview-heading {
                 text-align: center;
-            }
-            
-            .label-content {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                height: 100%;
-            }
-            
-            .label-item-code {
-                font-weight: bold;
-                font-size: 0.8rem;
-                color: #2d3748;
-            }
-            
-            .label-item-name {
-                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 0.75rem;
+                font-size: 0.85rem;
                 color: #4a5568;
+            }
+            
+            .label-preview .label-company {
+                font-size: 1.6rem;
+                font-weight: 700;
+            }
+            
+            .label-preview .label-divider {
+                width: 100%;
+                height: 3px;
+                background: #2d3748;
+                margin: 1rem 0;
+            }
+            
+            .label-preview .label-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                margin: 0.5rem 0;
+            }
+            
+            .label-preview .label-row .label {
+                font-size: 0.9rem;
+                font-weight: 600;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+            }
+            
+            .label-preview .label-code {
+                font-size: 2.4rem;
+                font-weight: 700;
+            }
+            
+            .label-preview .label-name {
+                font-size: 1.2rem;
+                font-weight: 600;
+                line-height: 1.3;
+            }
+            
+            .label-preview .label-subtext {
+                font-size: 1rem;
                 line-height: 1.2;
+                margin-top: 0.25rem;
             }
             
-            .label-weight {
-                font-size: 0.65rem;
-                color: #718096;
+            .label-preview .label-highlight {
+                font-size: 1.25rem;
+                font-weight: 700;
             }
             
-            .label-barcode {
-                font-size: 0.6rem;
+            .label-preview .weight-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+                margin: 1rem 0;
+            }
+            
+            .label-preview .weight-box {
+                border: 1px solid #cbd5f5;
+                padding: 0.5rem 0.75rem;
+                border-radius: 4px;
+                background: #f7fafc;
+            }
+            
+            .label-preview .weight-label {
+                font-size: 0.8rem;
+                margin-bottom: 0.25rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #4a5568;
+            }
+            
+            .label-preview .info-text {
+                font-size: 0.85rem;
+                line-height: 1.3;
+                margin: 0.15rem 0;
+            }
+            
+            .label-preview .text-muted {
                 color: #a0aec0;
-                font-family: monospace;
+                font-size: 0.85rem;
+            }
+            
+            .label-preview .barcode-block {
+                text-align: center;
+                margin-top: 1rem;
+            }
+            
+            .label-preview canvas {
+                border: 1px solid #cbd5f5;
+                border-radius: 4px;
+                background: #fff;
+            }
+            
+            .label-preview .barcode-text {
+                margin-top: 0.35rem;
+                font-size: 0.9rem;
+                letter-spacing: 2px;
+            }
+            
+            .preview-loading,
+            .preview-error {
+                padding: 1.25rem;
+                text-align: center;
+                font-size: 0.95rem;
+                color: #4a5568;
+            }
+            
+            .preview-error {
+                color: #c53030;
             }
             
             .print-labels-footer {
@@ -3944,9 +4038,8 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
                     margin-bottom: 0.5rem;
                 }
                 
-                .label-sample {
-                    width: 150px;
-                    height: 80px;
+                .label-preview-card {
+                    width: 100%;
                 }
             }
         </style>
@@ -7674,6 +7767,13 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 };
 
 // Global Print Labels Modal Functions
+window.currentLabelZplCache = {};
+const MAX_LABEL_QUANTITY = 50;
+const QZ_TRAY_SCRIPT_URL = 'https://demo.qz.io/js/qz-tray.js';
+const QZ_PRINTER_STORAGE_KEY = 'pow_dashboard_last_printer';
+let qzScriptPromise = null;
+let printerListCache = [];
+
 window.openPrintLabelsModal = async function(itemCode) {
     try {
         // Get item details for barcode selection
@@ -7726,20 +7826,31 @@ window.openPrintLabelsModal = async function(itemCode) {
                                     </div>
                                 </div>
                             `}
+                            
+                            <div class="form-group printer-controls">
+                                <label>Printer (QZ Tray)</label>
+                                <div class="printer-control-row">
+                                    <select id="printerSelection" class="form-control" disabled>
+                                        <option value="">Checking QZ Tray...</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" id="refreshPrintersBtn" type="button" disabled>
+                                        <i class="fa fa-sync"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text printer-status-text" id="printerStatusText">
+                                    Install and run QZ Tray to enable direct printing.
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Number of Labels</label>
+                                <input type="number" id="labelQuantity" class="form-control" value="1" min="1" max="${MAX_LABEL_QUANTITY}" />
+                                <small class="form-text text-muted">Max ${MAX_LABEL_QUANTITY} labels per request.</small>
+                            </div>
                         </div>
                         
                         <div class="label-preview" id="labelPreview">
-                            <h5>Label Preview</h5>
-                            <div class="preview-container">
-                                <div class="label-sample">
-                                    <div class="label-content">
-                                        <div class="label-item-code">${itemData.item_code}</div>
-                                        <div class="label-item-name">${itemData.item_name || itemData.item_code}</div>
-                                        ${itemData.weight > 0 ? `<div class="label-weight">${itemData.weight} ${itemData.weight_uom || 'Gram'}</div>` : ''}
-                                        <div class="label-barcode">[Barcode will appear here]</div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="preview-loading">Generating preview...</div>
                         </div>
                     </div>
                     
@@ -7766,6 +7877,7 @@ window.openPrintLabelsModal = async function(itemCode) {
         
         // Setup event handlers
         setupPrintLabelsEvents();
+        initializePrinterControls();
         
     } catch (error) {
         console.error('Error opening print labels modal:', error);
@@ -7778,65 +7890,371 @@ window.closePrintLabelsModal = function() {
         $(this).remove();
     });
     window.currentPrintItemData = null;
+    window.currentLabelZplCache = {};
 };
+
+function loadQzTrayScript() {
+    if (qzScriptPromise) {
+        return qzScriptPromise;
+    }
+    
+    qzScriptPromise = new Promise((resolve, reject) => {
+        if (window.qz) {
+            resolve();
+            return;
+        }
+        
+        const existingScript = document.querySelector(`script[src="${QZ_TRAY_SCRIPT_URL}"]`);
+        if (existingScript) {
+            existingScript.addEventListener('load', resolve);
+            existingScript.addEventListener('error', reject);
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = QZ_TRAY_SCRIPT_URL;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load QZ Tray script'));
+        document.head.appendChild(script);
+    });
+    
+    return qzScriptPromise;
+}
+
+async function ensureQzScriptLoaded() {
+    await loadQzTrayScript();
+    if (!window.qz) {
+        throw new Error('QZ Tray script is not available on the page.');
+    }
+}
+
+async function ensureQZReady() {
+    await ensureQzScriptLoaded();
+    if (qz.websocket.isActive()) {
+        return;
+    }
+    await qz.websocket.connect();
+}
+
+function setPrinterStatus(message, type = 'info') {
+    const statusEl = $('#printerStatusText');
+    if (!statusEl.length) {
+        return;
+    }
+    statusEl.text(message || '');
+    statusEl.toggleClass('text-danger', type === 'error');
+}
+
+async function refreshPrinterList(showNotification = false) {
+    const printerSelect = $('#printerSelection');
+    const refreshBtn = $('#refreshPrintersBtn');
+    
+    if (!printerSelect.length) {
+        return;
+    }
+    
+    printerSelect.prop('disabled', true);
+    refreshBtn.prop('disabled', true);
+    setPrinterStatus('Connecting to QZ Tray...');
+    
+    try {
+        await ensureQZReady();
+        const printers = await qz.printers.findAll();
+        printerListCache = printers || [];
+        
+        if (!printerListCache.length) {
+            printerSelect.html('<option value="">No printers found</option>');
+            setPrinterStatus('No printers returned by QZ Tray.', 'error');
+        } else {
+            const storedPrinter = localStorage.getItem(QZ_PRINTER_STORAGE_KEY);
+            printerSelect.empty();
+            printerListCache.forEach((printer) => {
+                printerSelect.append(
+                    $('<option></option>').attr('value', printer).text(printer)
+                );
+            });
+            
+            if (storedPrinter && printerListCache.includes(storedPrinter)) {
+                printerSelect.val(storedPrinter);
+            } else {
+                printerSelect.val(printerListCache[0]);
+                localStorage.setItem(QZ_PRINTER_STORAGE_KEY, printerListCache[0]);
+            }
+            
+            setPrinterStatus('QZ Tray connected. Select a printer for direct printing.');
+        }
+        
+        printerSelect.prop('disabled', false);
+        refreshBtn.prop('disabled', false);
+        
+        if (showNotification) {
+            frappe.show_alert('Printer list refreshed.', 'green');
+        }
+    } catch (error) {
+        console.warn('Unable to load printers from QZ Tray:', error);
+        printerSelect.html('<option value="">QZ Tray unavailable</option>');
+        setPrinterStatus('QZ Tray not detected. Please install, run it, and accept its security prompts.', 'error');
+        printerSelect.prop('disabled', true);
+        refreshBtn.prop('disabled', false);
+        
+        if (showNotification) {
+            frappe.msgprint({
+                title: 'QZ Tray Unavailable',
+                message: 'Please ensure QZ Tray is installed and running, then refresh the printer list.',
+                indicator: 'red'
+            });
+        }
+    }
+}
+
+function initializePrinterControls() {
+    setPrinterStatus('Checking QZ Tray...');
+    refreshPrinterList(false);
+}
+
+function getLabelCacheKey(itemCode, barcodeValue, quantity = 1) {
+    return `${itemCode || ''}::${barcodeValue || 'NO_BARCODE'}::${quantity || 1}`;
+}
+
+function getSelectedPrinter() {
+    const printer = $('#printerSelection').val();
+    return (printer || '').trim();
+}
+
+function handlePrinterSelectionChange(event) {
+    const value = (event.target.value || '').trim();
+    if (value) {
+        localStorage.setItem(QZ_PRINTER_STORAGE_KEY, value);
+    }
+}
+
+function getLabelQuantity() {
+    const input = $('#labelQuantity');
+    let value = parseInt(input.val ? input.val() : input, 10);
+    if (!value || value < 1) {
+        value = 1;
+    }
+    if (value > MAX_LABEL_QUANTITY) {
+        value = MAX_LABEL_QUANTITY;
+    }
+    if (input.length) {
+        input.val(value);
+    }
+    return value;
+}
+
+function handleLabelQuantityInput() {
+    const input = $('#labelQuantity');
+    const rawValue = parseInt(input.val ? input.val() : input, 10) || 1;
+    const value = getLabelQuantity();
+    if (rawValue > MAX_LABEL_QUANTITY) {
+        frappe.msgprint(`Maximum ${MAX_LABEL_QUANTITY} labels allowed per request.`);
+    }
+    return value;
+}
+
+async function getLabelData(selectedBarcode, forceRefresh = false, quantity = 1) {
+    const itemData = window.currentPrintItemData;
+    if (!itemData) {
+        throw new Error('No item selected for label generation');
+    }
+    
+    const qty = Math.min(Math.max(parseInt(quantity || 1, 10), 1), MAX_LABEL_QUANTITY);
+    const cacheKey = getLabelCacheKey(itemData.item_code, selectedBarcode, qty);
+    if (!forceRefresh && window.currentLabelZplCache[cacheKey]) {
+        return window.currentLabelZplCache[cacheKey];
+    }
+    
+    const response = await frappe.call({
+        method: 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl',
+        args: {
+            item_code: itemData.item_code,
+            quantity: qty,
+            selected_barcode: selectedBarcode
+        }
+    });
+    
+    if (!response.message || response.message.status !== 'success') {
+        throw new Error(response.message?.message || 'Unable to generate label data');
+    }
+    
+    const payload = {
+        ...response.message,
+        cache_key: cacheKey,
+        selected_barcode: selectedBarcode || '',
+        item_code: itemData.item_code,
+        quantity: qty
+    };
+    
+    window.currentLabelZplCache[cacheKey] = payload;
+    return payload;
+}
+
+function escapeHTML(value) {
+    if (!value) {
+        return '';
+    }
+    if (frappe.utils && frappe.utils.escape_html) {
+        return frappe.utils.escape_html(value);
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function renderLabelPreview(context = {}) {
+    const safe = (text, fallback = 'N/A') => escapeHTML(text || fallback);
+    const barcodeText = safe(
+        context.barcode_display || context.barcode_value || '',
+        'Barcode pending'
+    );
+    const hasBarcode = Boolean(context.barcode_value);
+    
+    return `
+        <div class="label-preview-card">
+            <div class="preview-heading">4 x 6 inch label preview</div>
+            <div class="label-company">${safe(context.company_name, 'Company Name')}</div>
+            <div class="label-divider"></div>
+            
+            <div class="label-row">
+                <span class="label">Item Code</span>
+                <span class="label-code">${safe(context.item_code)}</span>
+            </div>
+            
+            <div class="label-row" style="flex-direction: column; align-items: flex-start;">
+                <span class="label">Item Name</span>
+                <div class="label-name">${safe(context.item_name)}</div>
+                ${context.item_name_secondary ? `<div class="label-subtext">${safe(context.item_name_secondary)}</div>` : ''}
+                ${context.item_name_tertiary ? `<div class="label-subtext">${safe(context.item_name_tertiary)}</div>` : ''}
+            </div>
+            
+            <div class="label-row">
+                <span class="label">UOM</span>
+                <span class="label-highlight">${safe(context.uom_display)}</span>
+            </div>
+            <div class="info-text">${safe(context.uom_unit_label)}</div>
+            
+            <div class="label-divider"></div>
+            <div class="weight-grid">
+                <div class="weight-box">
+                    <div class="weight-label">Net Weight</div>
+                    <div class="label-highlight">${safe(context.net_weight_text)}</div>
+                </div>
+                <div class="weight-box">
+                    <div class="weight-label">Gross Weight</div>
+                    <div class="label-highlight">${safe(context.gross_weight_text)}</div>
+                </div>
+            </div>
+            
+            <div class="info-text"><strong>Pack Details:</strong> ${safe(context.pack_details)}</div>
+            <div class="info-text">Customer Care No.: ${safe(context.customer_care_number)}</div>
+            <div class="info-text">Email: ${safe(context.customer_care_email)}</div>
+            <div class="info-text">Website: ${safe(context.customer_care_website)}</div>
+            
+            <div class="label-divider"></div>
+            <div class="barcode-block">
+                ${
+                    hasBarcode
+                        ? `<canvas id="labelPreviewBarcode" width="320" height="90"></canvas>`
+                        : `<div class="text-muted">Barcode will appear after selecting one.</div>`
+                }
+                <div class="barcode-text">${barcodeText}</div>
+            </div>
+        </div>
+    `;
+}
+
+function fallbackBrowserPrint(zplContent, labelContext, itemData) {
+    try {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Labels - ${escapeHTML(labelContext.item_code || itemData.item_code)}</title>
+                    <style>
+                        body { font-family: monospace; margin: 0; padding: 20px; }
+                        .zpl-content { white-space: pre; font-size: 12px; }
+                        .print-info { margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-info">
+                        <h3>ZPL Label Data</h3>
+                        <p><strong>Item:</strong> ${escapeHTML(labelContext.item_code || itemData.item_code)} - ${escapeHTML(labelContext.item_name || itemData.item_name || '')}</p>
+                        <p><strong>Company:</strong> ${escapeHTML(labelContext.company_name || '')}</p>
+                        <p><strong>Instructions:</strong> Copy the ZPL code below and send it to your Zebra printer</p>
+                    </div>
+                    <div class="zpl-content">${escapeHTML(zplContent)}</div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+        
+        frappe.show_alert('Print window opened. Please check your printer settings.', 'green');
+    } catch (printError) {
+        navigator.clipboard.writeText(zplContent).then(() => {
+            frappe.msgprint({
+                title: 'ZPL Copied to Clipboard',
+                message: 'ZPL code has been copied to clipboard. Please paste it into your printer software.',
+                indicator: 'green'
+            });
+        }).catch(() => {
+            frappe.msgprint({
+                title: 'ZPL Generated',
+                message: 'ZPL code generated successfully. Please copy the code and send to your printer.',
+                indicator: 'blue'
+            });
+        });
+    }
+}
 
 function setupPrintLabelsEvents() {
     // Update preview when barcode selection changes
-    $('#barcodeSelection').on('change', updateLabelPreview);
+    $('#barcodeSelection').on('change', () => updateLabelPreview(true));
+    $('#refreshPrintersBtn').on('click', () => refreshPrinterList(true));
+    $('#printerSelection').on('change', handlePrinterSelectionChange);
+    $('#labelQuantity').on('change', () => {
+        handleLabelQuantityInput();
+        updateLabelPreview(true);
+    });
     
     // Initial preview update
-    updateLabelPreview();
+    handleLabelQuantityInput();
+    updateLabelPreview(true);
 }
 
-function updateLabelPreview() {
+async function updateLabelPreview(forceRefresh = false) {
+    const previewContainer = $('#labelPreview');
     const selectedBarcode = $('#barcodeSelection').val();
-    const itemData = window.currentPrintItemData;
+    const quantity = getLabelQuantity();
     
-    if (!itemData) return;
+    if (!previewContainer.length || !window.currentPrintItemData) {
+        return;
+    }
     
-    // Weight text
-    const weightText = itemData.weight > 0 ? `${itemData.weight} ${itemData.weight_uom || 'Gram'}` : '';
+    previewContainer.html('<div class="preview-loading">Generating preview...</div>');
     
-    if (selectedBarcode) {
-        // Preview with barcode format
-        const previewHTML = `
-            <h5>Label Preview (With Barcode)</h5>
-            <div class="preview-container">
-                <div class="label-sample" style="width: 400px; height: 200px; border: 2px solid #333; background: white; padding: 10px; font-family: monospace; position: relative;">
-                    <div class="label-content" style="text-align: center;">
-                        <div class="label-item-code" style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">${itemData.item_code}</div>
-                        <div class="label-item-name" style="font-size: 14px; margin-bottom: 10px; line-height: 1.2;">${itemData.item_name || itemData.item_code}</div>
-                        ${weightText ? `<div class="label-weight" style="font-size: 12px; margin-bottom: 10px;">${weightText}</div>` : ''}
-                        <div class="label-pcs" style="font-size: 12px; margin-bottom: 15px;">220 Pcs/Carton</div>
-                        <div class="label-barcode" style="margin-top: 10px;">
-                            <canvas id="barcodeCanvas" width="200" height="40"></canvas>
-                            <div style="font-size: 8px; margin-top: 2px;">${selectedBarcode}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        $('#labelPreview').html(previewHTML);
+    try {
+        const labelData = await getLabelData(selectedBarcode, forceRefresh, quantity);
+        const context = labelData.label_context || {};
+        previewContainer.html(renderLabelPreview(context));
         
-        // Generate barcode after HTML is added
-        setTimeout(() => {
-            generateBarcode(selectedBarcode, 'barcodeCanvas');
-        }, 100);
-    } else {
-        // Preview without barcode format
-        const previewHTML = `
-            <h5>Label Preview (Simple Label)</h5>
-            <div class="preview-container">
-                <div class="label-sample" style="width: 400px; height: 150px; border: 2px solid #333; background: white; padding: 10px; font-family: monospace; position: relative;">
-                    <div class="label-content" style="text-align: center;">
-                        <div class="label-item-code" style="font-size: 16px; font-weight: bold; margin-bottom: 20px; margin-top: 10px;">${itemData.item_code}</div>
-                        <div class="label-item-name" style="font-size: 14px; margin-bottom: 20px; line-height: 1.2;">${itemData.item_name || itemData.item_code}</div>
-                        ${weightText ? `<div class="label-weight" style="font-size: 12px;">${weightText}</div>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-        $('#labelPreview').html(previewHTML);
+        if (context.barcode_value) {
+            setTimeout(() => {
+                generateBarcode(context.barcode_value, 'labelPreviewBarcode');
+            }, 30);
+        }
+    } catch (error) {
+        console.error('Error updating label preview:', error);
+        previewContainer.html(`<div class="preview-error">${escapeHTML(error.message || 'Unable to load preview')}</div>`);
     }
 }
 
@@ -7915,6 +8333,7 @@ window.generateAndDownloadZPL = async function() {
     try {
         const selectedBarcode = $('#barcodeSelection').val();
         const itemData = window.currentPrintItemData;
+        const quantity = getLabelQuantity();
         
         if (!itemData) {
             frappe.msgprint('No item data available');
@@ -7924,37 +8343,27 @@ window.generateAndDownloadZPL = async function() {
         // Show loading
         frappe.show_alert('Generating ZPL file...', 'blue');
         
-        // Generate ZPL
-        const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
-            item_code: itemData.item_code,
-            quantity: 1,
-            selected_barcode: selectedBarcode
-        });
+        const labelData = await getLabelData(selectedBarcode, false, quantity);
+        const zplContent = labelData.zpl_code;
+        const labelContext = labelData.label_context || {};
+        const fileName = `${labelContext.item_code || itemData.item_code}_label.zpl`;
         
-        if (response.message.status === 'success') {
-            // Create and download file
-            const zplContent = response.message.zpl_code;
-            const fileName = `${itemData.item_code}_label.zpl`;
-            
-            // Create blob and download
-            const blob = new Blob([zplContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            frappe.show_alert(`ZPL file downloaded: ${fileName}`, 'green');
-        } else {
-            frappe.msgprint('Error generating ZPL: ' + response.message.message);
-        }
+        // Create blob and download
+        const blob = new Blob([zplContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        frappe.show_alert(`ZPL file downloaded: ${fileName}`, 'green');
         
     } catch (error) {
         console.error('Error generating ZPL:', error);
-        frappe.msgprint('Error generating ZPL file');
+        frappe.msgprint(error.message || 'Error generating ZPL file');
     }
 };
 
@@ -7962,79 +8371,61 @@ window.generateAndPrintZPL = async function() {
     try {
         const selectedBarcode = $('#barcodeSelection').val();
         const itemData = window.currentPrintItemData;
+        const quantity = getLabelQuantity();
+        const printerName = getSelectedPrinter();
         
         if (!itemData) {
             frappe.msgprint('No item data available');
+            return;
+        }
+        if (!printerName) {
+            frappe.msgprint('Please select a printer before printing.');
             return;
         }
         
         // Show loading
         frappe.show_alert('Generating ZPL for printing...', 'blue');
         
-        // Generate ZPL
-        const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
-            item_code: itemData.item_code,
-            quantity: 1,
-            selected_barcode: selectedBarcode
-        });
+        const labelData = await getLabelData(selectedBarcode, false, quantity);
+        const zplContent = labelData.zpl_code;
+        const labelContext = labelData.label_context || {};
         
-        if (response.message.status === 'success') {
-            const zplContent = response.message.zpl_code;
-            
-            // Try to print directly using browser print API
-            try {
-                // Create a new window with ZPL content
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>Print Labels - ${itemData.item_code}</title>
-                            <style>
-                                body { font-family: monospace; margin: 0; padding: 20px; }
-                                .zpl-content { white-space: pre; font-size: 12px; }
-                                .print-info { margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-info">
-                                <h3>ZPL Label Data</h3>
-                                <p><strong>Item:</strong> ${itemData.item_code} - ${itemData.item_name}</p>
-                                <p><strong>Instructions:</strong> Copy the ZPL code below and send to your TSC printer</p>
-                            </div>
-                            <div class="zpl-content">${zplContent}</div>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                
-                // Try to print
-                setTimeout(() => {
-                    printWindow.print();
-                }, 500);
-                
-                frappe.show_alert('Print window opened. Please check your printer settings.', 'green');
-            } catch (printError) {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(zplContent).then(() => {
-                    frappe.msgprint({
-                        title: 'ZPL Copied to Clipboard',
-                        message: 'ZPL code has been copied to clipboard. Please paste it into your printer software.',
-                        indicator: 'green'
-                    });
-                }).catch(() => {
-                    frappe.msgprint({
-                        title: 'ZPL Generated',
-                        message: 'ZPL code generated successfully. Please copy the code and send to your printer.',
-                        indicator: 'blue'
-                    });
-                });
-            }
-        } else {
-            frappe.msgprint('Error generating ZPL: ' + response.message.message);
+        try {
+            await ensureQZReady();
+        } catch (connectionError) {
+            frappe.msgprint({
+                title: 'QZ Tray Not Ready',
+                message: 'Unable to connect to QZ Tray. Please ensure it is installed, running, and security prompts are accepted, then refresh the printer list.',
+                indicator: 'red'
+            });
+            fallbackBrowserPrint(zplContent, labelContext, itemData);
+            return;
         }
         
+        try {
+            const copies = Math.min(quantity, MAX_LABEL_QUANTITY);
+            const config = qz.configs.create(printerName, { copies });
+            const data = [
+                {
+                    type: 'raw',
+                    format: 'command',
+                    data: zplContent
+                }
+            ];
+            
+            await qz.print(config, data);
+            frappe.show_alert(`Sent ${copies} label(s) to ${printerName}`, 'green');
+        } catch (printError) {
+            console.error('Error printing via QZ Tray:', printError);
+            frappe.msgprint({
+                title: 'Printing Failed',
+                message: `Unable to print via QZ Tray: ${printError.message || printError}.`,
+                indicator: 'red'
+            });
+            fallbackBrowserPrint(zplContent, labelContext, itemData);
+        }
     } catch (error) {
         console.error('Error generating ZPL for printing:', error);
-        frappe.msgprint('Error generating ZPL for printing');
+        frappe.msgprint(error.message || 'Error generating ZPL for printing');
     }
 };
