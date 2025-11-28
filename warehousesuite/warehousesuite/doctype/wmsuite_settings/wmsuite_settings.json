@@ -17,7 +17,8 @@
   "enable_barcode_scanning",
   "auto_refresh_interval",
   "label_printing_section",
-  "max_label_quantity"
+  "max_label_quantity",
+  "customer_care_email"
  ],
  "fields": [
   {
@@ -103,6 +104,12 @@
    "label": "Maximum Label Quantity",
    "default": 100,
    "description": "Maximum number of labels that can be printed at once"
+  },
+  {
+   "fieldname": "customer_care_email",
+   "fieldtype": "Data",
+   "label": "Customer Care Email",
+   "description": "Email address to display on labels for customer care inquiries"
   }
  ],
  "index_web_pages_for_search": 1,

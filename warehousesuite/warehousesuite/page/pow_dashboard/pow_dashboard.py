@@ -1583,12 +1583,23 @@ def _get_default_company_details():
     company = frappe.get_doc("Company", company_name)
     address_line = ""
     company_country = company.country or ""
+    
+    # Get customer care email from WMS Settings, fallback to company email
+    customer_care_email = ""
+    try:
+        wms_settings = frappe.get_single("WMSuite Settings")
+        customer_care_email = wms_settings.get("customer_care_email") or ""
+    except Exception:
+        pass
+    
+    # Use customer care email from settings if available, otherwise use company email
+    email_to_use = customer_care_email or company.email or company.get("company_email") or ""
 
     return {
         "name": company.company_name or company.name,
         "address_line": address_line,
         "phone": company.phone_no or company.get("company_phone") or "",
-        "email": company.email or company.get("company_email") or "",
+        "email": email_to_use,
         "website": company.website or "",
         "country": company_country,
     }
@@ -1631,7 +1642,7 @@ def _format_weight_text(value, weight_uom):
     """Build a human readable weight string."""
     value = flt(value)
     if not value:
-        return ""
+        return "Optional"  # Changed from "" to "Optional"
     unit = weight_uom or "Kg"
     return f"{_format_quantity(value)} {unit}"
 
@@ -1646,6 +1657,89 @@ def _format_barcode_display(barcode_value):
     )
 
 
+def _format_company_name_for_label(company_name):
+    """Format company name for label display:
+    - If > 22 chars: split to next row and shrink font
+    - Keep in same vertical space (don't shift content down)
+    Returns dict with formatted name parts and size indicator.
+    """
+    if not company_name:
+        return {
+            "company_name_line1": "",
+            "company_name_line2": "",
+            "company_font_size": "85,65"  # Default font size
+        }
+    
+    company_name = str(company_name).strip()
+    name_len = len(company_name)
+    
+    # If <= 22 chars, use single line with normal font
+    if name_len <= 22:
+        return {
+            "company_name_line1": company_name,
+            "company_name_line2": "",
+            "company_font_size": "85,65"
+        }
+    else:
+        # Split at 22 chars and use smaller font
+        return {
+            "company_name_line1": company_name[:22],
+            "company_name_line2": company_name[22:44] if name_len > 22 else "",
+            "company_font_size": "65,50"  # Smaller font for long names
+        }
+
+def _format_item_name_for_label(item_name):
+    """Format item name for label display:
+    - If > 18 chars: split to next row
+    - If > 36 chars: use small size
+    - If > 54 chars: use ellipsis
+    Returns dict with formatted name parts and size indicator.
+    """
+    if not item_name:
+        return {
+            "item_name": "",
+            "item_name_secondary": "",
+            "item_name_tertiary": "",
+            "name_size": "normal"  # normal, small
+        }
+    
+    item_name = str(item_name).strip()
+    name_len = len(item_name)
+    
+    # If > 54 chars, truncate with ellipsis
+    if name_len > 54:
+        item_name = item_name[:51] + "..."
+        name_len = 54
+    
+    # Determine size
+    name_size = "small" if name_len > 36 else "normal"
+    
+    # Split at 18 chars if needed
+    if name_len <= 18:
+        return {
+            "item_name": item_name,
+            "item_name_secondary": "",
+            "item_name_tertiary": "",
+            "name_size": name_size
+        }
+    elif name_len <= 36:
+        # Split into two lines at 18 chars
+        return {
+            "item_name": item_name[:18],
+            "item_name_secondary": item_name[18:],
+            "item_name_tertiary": "",
+            "name_size": name_size
+        }
+    else:
+        # Split into three lines, each max 18 chars
+        return {
+            "item_name": item_name[:18],
+            "item_name_secondary": item_name[18:36] if name_len > 18 else "",
+            "item_name_tertiary": item_name[36:54] if name_len > 36 else "",
+            "name_size": name_size
+        }
+
+
 def _build_label_context(item, barcode_data, quantity, company_details):
     """Aggregate all dynamic values needed for the label."""
     description_lines = [
@@ -1654,33 +1748,84 @@ def _build_label_context(item, barcode_data, quantity, company_details):
         if line.strip()
     ]
 
-    secondary_name = ""
-    tertiary_name = ""
-    if description_lines:
-        secondary_name = description_lines[0]
-        if len(description_lines) > 1:
-            tertiary_name = description_lines[1]
-    if not secondary_name:
-        secondary_name = item.brand or item.item_group or ""
-    if not tertiary_name and item.item_group and item.item_group != secondary_name:
-        tertiary_name = item.item_group
+    # Format item name with proper splitting and sizing
+    item_name_full = item.item_name or item.name
+    formatted_name = _format_item_name_for_label(item_name_full)
+    
+    # Use formatted name parts, but keep description lines for secondary/tertiary if name is short
+    item_name_primary = formatted_name["item_name"]
+    item_name_secondary = formatted_name["item_name_secondary"]
+    item_name_tertiary = formatted_name["item_name_tertiary"]
+    name_size = formatted_name["name_size"]
+    
+    # If name didn't fill all lines, use description/brand/item_group for remaining lines
+    if not item_name_secondary and description_lines:
+        item_name_secondary = description_lines[0]
+        if len(description_lines) > 1 and not item_name_tertiary:
+            item_name_tertiary = description_lines[1]
+    if not item_name_secondary:
+        item_name_secondary = item.brand or item.item_group or ""
+    if not item_name_tertiary and item.item_group and item.item_group != item_name_secondary:
+        item_name_tertiary = item.item_group
 
-    packaging_uom_row = _select_packaging_uom(item)
-    conversion_factor = flt(
-        getattr(packaging_uom_row, "conversion_factor", 1)
-    ) or 1
-    packaging_uom = (
-        getattr(packaging_uom_row, "uom", None) or item.stock_uom or ""
-    ).strip()
+    # Determine UOM: Use selected barcode's UOM if available and valid, otherwise fallback to packaging UOM
+    selected_uom = None
+    conversion_factor = 1.0
+    
+    if barcode_data and barcode_data.uom:
+        # Use the UOM from selected barcode
+        barcode_uom = barcode_data.uom.strip()
+        
+        # Verify this UOM exists in Item's UOM list (filtered by available in ERP's Item doctype)
+        uom_found = False
+        if item.uoms:
+            for uom_row in item.uoms:
+                if uom_row.uom == barcode_uom:
+                    selected_uom = barcode_uom
+                    conversion_factor = flt(uom_row.conversion_factor) or 1.0
+                    uom_found = True
+                    break
+        
+        # If UOM is stock UOM, it's always valid (even if not in uoms table)
+        if not uom_found and barcode_uom == item.stock_uom:
+            selected_uom = barcode_uom
+            conversion_factor = 1.0
+        elif not uom_found:
+            # Barcode UOM not found in Item's UOM list, fallback to packaging UOM
+            packaging_uom_row = _select_packaging_uom(item)
+            conversion_factor = flt(
+                getattr(packaging_uom_row, "conversion_factor", 1)
+            ) or 1
+            selected_uom = (
+                getattr(packaging_uom_row, "uom", None) or item.stock_uom or ""
+            ).strip()
+    else:
+        # Fallback to packaging UOM selection
+        packaging_uom_row = _select_packaging_uom(item)
+        conversion_factor = flt(
+            getattr(packaging_uom_row, "conversion_factor", 1)
+        ) or 1
+        selected_uom = (
+            getattr(packaging_uom_row, "uom", None) or item.stock_uom or ""
+        ).strip()
+    
+    # Format UOM display: "x (stock_uom) per (selected_uom)"
+    stock_uom = item.stock_uom or ""
+    if selected_uom and selected_uom != stock_uom:
+        uom_display = f"{_format_quantity(conversion_factor)} {stock_uom}"
+        uom_unit_label = _("Per {uom}").format(uom=selected_uom)
+    else:
+        uom_display = stock_uom or ""
+        uom_unit_label = _("Per Unit")
 
     pack_details = ""
-    if packaging_uom_row and item.stock_uom:
+    if selected_uom and item.stock_uom and selected_uom != stock_uom:
         pack_details = _(
             "{qty} {stock_uom} in a {pack_uom}"
         ).format(
             qty=_format_quantity(conversion_factor),
             stock_uom=item.stock_uom,
-            pack_uom=packaging_uom,
+            pack_uom=selected_uom,
         )
     elif item.stock_uom:
         pack_details = _("Packed in {uom}").format(uom=item.stock_uom)
@@ -1706,22 +1851,35 @@ def _build_label_context(item, barcode_data, quantity, company_details):
         barcode_data.barcode if barcode_data and barcode_data.barcode else item.name
     )
 
+    # Format company name for label
+    company_name_full = company_details.get("name", "")
+    formatted_company = _format_company_name_for_label(company_name_full)
+    
+    # Format UOM display - check if text is too long and needs shrinking
+    uom_display_text = uom_display
+    uom_display_font = "80,65"  # Default font size
+    if len(uom_display_text) > 12:  # If UOM display is too long, shrink font
+        uom_display_font = "60,50"
+    
+    uom_unit_label_text = uom_unit_label
+    uom_unit_label_font = "80,65"  # Default font size
+    if len(uom_unit_label_text) > 12:  # If UOM label is too long, shrink font
+        uom_unit_label_font = "60,50"
+
     return {
-        "company_name": company_details.get("name", ""),
+        "company_name": company_name_full,  # Keep full name for backward compatibility
+        "company_name_line1": formatted_company["company_name_line1"],
+        "company_name_line2": formatted_company["company_name_line2"],
+        "company_font_size": formatted_company["company_font_size"],
+        "uom_display_font": uom_display_font,
+        "uom_unit_label_font": uom_unit_label_font,
         "item_code": item.name,
-        "item_name": item.item_name or item.name,
-        "item_name_secondary": secondary_name,
-        "item_name_tertiary": tertiary_name,
-        "uom_display": (
-            f"{_format_quantity(conversion_factor)} {packaging_uom}".strip()
-            if packaging_uom
-            else item.stock_uom or ""
-        ),
-        "uom_unit_label": (
-            _("Per {uom}").format(uom=packaging_uom)
-            if packaging_uom
-            else _("Per Unit")
-        ),
+        "item_name": item_name_primary,
+        "item_name_secondary": item_name_secondary,
+        "item_name_tertiary": item_name_tertiary,
+        "item_name_size": name_size,  # "normal" or "small"
+        "uom_display": uom_display,
+        "uom_unit_label": uom_unit_label,
         "pack_details": pack_details or _("Pack details not available"),
         "net_weight_text": _format_weight_text(net_weight, item.weight_uom),
         "gross_weight_text": _format_weight_text(gross_weight, item.weight_uom),
@@ -1818,6 +1976,22 @@ def generate_zpl_label(label_context):
         return _sanitize_for_zpl(label_context.get(key) or default)
 
     quantity = cint(label_context.get("quantity") or 1)
+    
+    # Determine font size for item name based on length
+    item_name_size = label_context.get("item_name_size", "normal")
+    if item_name_size == "small":
+        item_name_font = "50,35"
+    else:
+        item_name_font = "60,40"
+
+    # Get company name formatting
+    company_line1 = ctx("company_name_line1")
+    company_line2 = ctx("company_name_line2")
+    company_font = ctx("company_font_size", "85,65")
+    
+    # Get UOM font sizes
+    uom_display_font = ctx("uom_display_font", "80,65")
+    uom_unit_label_font = ctx("uom_unit_label_font", "80,65")
 
     zpl_code = f"""^XA
 ^PW812
@@ -1826,9 +2000,18 @@ def generate_zpl_label(label_context):
 ^CI28
 
 ^FO50,40
-^A0N,85,65
-^FD{ctx("company_name")}^FS
-
+^A0N,{company_font}
+^FD{company_line1}^FS
+"""
+    
+    # Add second line of company name if exists (positioned to not shift content)
+    if company_line2:
+        zpl_code += f"""^FO50,110
+^A0N,{company_font}
+^FD{company_line2}^FS
+"""
+    
+    zpl_code += f"""
 ^FO40,190
 ^GB732,3,3^FS
 
@@ -1848,15 +2031,15 @@ def generate_zpl_label(label_context):
 ^FDITEM NAME:^FS
 
 ^FO40,600
-^A0N,60,40
+^A0N,{item_name_font}
 ^FD{ctx("item_name")}^FS
 
 ^FO40,670
-^A0N,60,40
+^A0N,{item_name_font}
 ^FD{ctx("item_name_secondary")}^FS
 
 ^FO40,740
-^A0N,60,40
+^A0N,{item_name_font}
 ^FD{ctx("item_name_tertiary")}^FS
 
 ^FO410,220
@@ -1864,11 +2047,11 @@ def generate_zpl_label(label_context):
 ^FDUOM:^FS
 
 ^FO540,220
-^A0N,80,65
+^A0N,{uom_display_font}
 ^FD{ctx("uom_display")}^FS
 
 ^FO410,300
-^A0N,80,65
+^A0N,{uom_unit_label_font}
 ^FD{ctx("uom_unit_label")}^FS
 
 ^FO400,390

@@ -7960,7 +7960,27 @@ async function refreshPrinterList(showNotification = false) {
     
     try {
         await ensureQZReady();
-        const printers = await qz.printers.findAll();
+        
+        // Get printers with retry logic - certificate might need more time to be fully accepted
+        // Use qz.printers.find() - correct method name (not findAll)
+        let printers = null;
+        let retries = 3;
+        
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                printers = await qz.printers.find();
+                break; // Success, exit retry loop
+            } catch (apiError) {
+                // If connection is still active, wait and retry (certificate might need more time)
+                if (qz.websocket.isActive() && attempt < retries) {
+                    setPrinterStatus(`Retrieving printers... (attempt ${attempt}/${retries}). Please wait.`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } else {
+                    throw apiError; // Connection lost or last attempt failed
+                }
+            }
+        }
+        
         printerListCache = printers || [];
         
         if (!printerListCache.length) {
