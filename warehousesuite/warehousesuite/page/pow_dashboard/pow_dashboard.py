@@ -1,10 +1,8 @@
 import frappe
 from frappe import _
-<<<<<<< HEAD
-from frappe.utils import now_datetime, flt
-=======
+
 from frappe.utils import cint, flt, now_datetime, strip_html
->>>>>>> b8a38a1 (testing qz tray)
+
 
 @frappe.whitelist()
 def get_applicable_pow_profiles():
