@@ -26,7 +26,10 @@ app_license = "Commercial"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/warehousesuite/css/warehousesuite.css"
-app_include_js = ["/assets/warehousesuite/js/zebrabrowserprint.js?v=1"]
+app_include_js = [
+    "/assets/warehousesuite/js/zebrabrowserprint.js?v=2",
+    "/assets/warehousesuite/js/print_labels.js?v=1"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/warehousesuite/css/warehousesuite.css"
@@ -44,7 +47,7 @@ app_include_js = ["/assets/warehousesuite/js/zebrabrowserprint.js?v=1"]
 # Note: pow-dashboard is a client-side page, so we include the script directly in pow_dashboard.js
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Item" : "public/js/item.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
