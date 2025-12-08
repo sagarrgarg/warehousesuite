@@ -17,7 +17,10 @@
   "enable_barcode_scanning",
   "auto_refresh_interval",
   "label_printing_section",
-  "max_label_quantity"
+  "max_label_quantity",
+  "company_email",
+  "customer_care_number",
+  "company_website"
  ],
  "fields": [
   {
@@ -103,6 +106,24 @@
    "label": "Maximum Label Quantity",
    "default": 100,
    "description": "Maximum number of labels that can be printed at once"
+  },
+  {
+   "fieldname": "company_email",
+   "fieldtype": "Data",
+   "label": "Company Email",
+   "description": "Email address for consumer complaints and feedback (displayed on labels)"
+  },
+  {
+   "fieldname": "customer_care_number",
+   "fieldtype": "Data",
+   "label": "Customer Care Number",
+   "description": "Customer care contact number (displayed on labels)"
+  },
+  {
+   "fieldname": "company_website",
+   "fieldtype": "Data",
+   "label": "Company Website",
+   "description": "Company website URL (displayed on labels)"
   }
  ],
  "index_web_pages_for_search": 1,

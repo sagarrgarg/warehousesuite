@@ -45,7 +45,10 @@ class WMSuiteSettings(Document):
             'override_roles': getattr(self, 'override_roles', ''),
             'enable_barcode_scanning': getattr(self, 'enable_barcode_scanning', 1),
             'auto_refresh_interval': getattr(self, 'auto_refresh_interval', 30),
-            'max_label_quantity': getattr(self, 'max_label_quantity', 100)
+            'max_label_quantity': getattr(self, 'max_label_quantity', 100),
+            'company_email': getattr(self, 'company_email', ''),
+            'customer_care_number': getattr(self, 'customer_care_number', ''),
+            'company_website': getattr(self, 'company_website', '')
         }
     
 

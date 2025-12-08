@@ -7676,7 +7676,36 @@ frappe.pages['pow-dashboard'].on_page_load = async function(wrapper) {
 // Global Print Labels Modal Functions
 window.openPrintLabelsModal = async function(itemCode) {
     try {
-        // Get item details for barcode selection
+        // Load Zebra Browser Print script if not already loaded (non-blocking)
+        loadZebraBrowserPrintScript().catch(error => {
+            console.warn('Zebra Browser Print script could not be loaded:', error);
+            // Don't block modal opening - user can still download ZPL
+        });
+        
+        // Get WMS settings
+        const settingsResponse = await frappe.call('warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_wmsuite_settings');
+        const wmsSettings = settingsResponse.message || {};
+        const maxLabelQuantity = wmsSettings.max_label_quantity || 100;
+        
+        // Get company info
+        const companyInfoResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_company_info_for_labels');
+        const companyInfo = companyInfoResponse.message || {};
+        
+        // Get print formats for Item doctype
+        const printFormatsResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_print_formats');
+        const printFormats = printFormatsResponse.message?.formats || [];
+        
+        // Check if any print formats are available
+        if (printFormats.length === 0) {
+            frappe.msgprint({
+                title: 'No Print Formats Available',
+                message: 'No print formats found for Item doctype. Please create a print format with Raw Printing enabled.',
+                indicator: 'orange'
+            });
+            return;
+        }
+        
+        // Get item details
         const itemResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_inquiry_data', {
             item_code: itemCode,
             allowed_warehouses: []
@@ -7688,6 +7717,35 @@ window.openPrintLabelsModal = async function(itemCode) {
         }
         
         const itemData = itemResponse.message.data;
+        
+        // Get item UOMs from item doctype
+        const itemDocResponse = await frappe.call({
+            method: 'frappe.client.get',
+            args: {
+                doctype: 'Item',
+                name: itemCode
+            }
+        });
+        const itemDoc = itemDocResponse.message || {};
+        
+        // Build UOM options (all UOMs from item's uoms table, excluding stock_uom)
+        const uomOptions = [];
+        if (itemDoc.uoms && itemDoc.uoms.length > 0) {
+            itemDoc.uoms.forEach(uomEntry => {
+                if (uomEntry.uom !== itemData.stock_uom) {
+                    uomOptions.push({
+                        uom: uomEntry.uom,
+                        conversion_factor: uomEntry.conversion_factor
+                    });
+                }
+            });
+        }
+        // Add default stock UOM as first option
+        uomOptions.unshift({ uom: itemData.stock_uom, conversion_factor: 1, is_default: true });
+        
+        // Net weight from item
+        const netWeight = itemData.weight || 0;
+        const netWeightUOM = itemData.weight_uom || 'Gram';
         
         // Create print labels modal
         const modalHTML = `
@@ -7705,6 +7763,82 @@ window.openPrintLabelsModal = async function(itemCode) {
                         </div>
                         
                         <div class="print-options">
+                            <div class="form-group">
+                                <label>Item Code <span class="text-muted">(Read-only)</span></label>
+                                <input type="text" class="form-control" value="${itemData.item_code}" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Item Name <span class="text-muted">(Read-only)</span></label>
+                                <input type="text" class="form-control" value="${itemData.item_name || itemData.item_code}" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Net Weight <span class="text-muted">(Read-only)</span></label>
+                                <input type="text" class="form-control" value="${netWeight > 0 ? netWeight + ' ' + netWeightUOM : 'Optional'}" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Print Format <span class="text-danger">*</span></label>
+                                <select id="printFormatSelection" class="form-control" required>
+                                    <option value="">Select a print format...</option>
+                                    ${printFormats.map(pf => `
+                                        <option value="${pf.name}" 
+                                                data-uses-uom="${pf.uses_selected_uom || false}"
+                                                data-uses-company="${pf.uses_company_info || false}"
+>
+                                            ${pf.name}${pf.raw_printing ? ' (ZPL)' : ''}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                                <small class="form-text text-muted">Select print format for ZPL code generation (required)</small>
+                            </div>
+                            
+                            <div class="form-group" id="uomSelectionGroup" style="display: none;">
+                                <label>UOM Selection <span class="text-danger">*</span></label>
+                                <select id="uomSelection" class="form-control">
+                                    ${uomOptions.map(uom => `
+                                        <option value="${uom.uom}" ${uom.is_default ? 'selected' : ''}>
+                                            ${uom.uom}${uom.conversion_factor && uom.conversion_factor !== 1 ? ` (${uom.conversion_factor}x)` : ''}${uom.is_default ? ' (Default)' : ''}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                                <small class="form-text text-muted">Select UOM for label display</small>
+                            </div>
+                            
+                            <div class="form-group" id="companySelectionGroup" style="display: none;">
+                                <label>Company <span class="text-danger">*</span></label>
+                                <select id="companySelection" class="form-control">
+                                    <option value="">Loading companies...</option>
+                                </select>
+                                <small class="form-text text-muted">Select company for label</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Gross Weight (Approx) <span class="text-danger">*</span></label>
+                                <input type="number" id="grossWeight" class="form-control" step="0.01" min="0" placeholder="Enter gross weight" required>
+                                <small class="form-text text-muted">Enter gross weight manually</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Label Quantity <span class="text-danger">*</span></label>
+                                <input type="number" id="labelQuantity" class="form-control" min="1" max="${maxLabelQuantity}" value="1" required>
+                                <small class="form-text text-muted">Number of labels to print (Max: ${maxLabelQuantity})</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Printer Selection <span class="text-danger">*</span> <span class="text-muted">(Required for direct print only)</span></label>
+                                <div style="display: flex; gap: 10px;">
+                                    <select id="printerSelection" class="form-control" style="flex: 1;">
+                                        <option value="">Loading printers...</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="refreshPrinters()" title="Refresh printer list">
+                                        <i class="fa fa-refresh"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Select Zebra printer for direct printing (ensure Zebra Browser Print is running). Not required for ZPL download.</small>
+                            </div>
+                            
                             ${itemData.barcodes && itemData.barcodes.length > 0 ? `
                                 <div class="form-group">
                                     <label>Barcode Selection</label>
@@ -7726,6 +7860,17 @@ window.openPrintLabelsModal = async function(itemCode) {
                                     </div>
                                 </div>
                             `}
+                            
+                            <div class="form-group">
+                                <label>Company Information</label>
+                                <div class="alert alert-info" style="margin: 0;">
+                                    <strong>${companyInfo.company_name || 'Not Available'}</strong><br>
+                                    ${companyInfo.address ? companyInfo.address.replace(/\n/g, '<br>') : 'Not Available'}<br>
+                                    <strong>Customer Care:</strong> ${companyInfo.customer_care_number || 'Not Available'}<br>
+                                    <strong>Email:</strong> ${companyInfo.email || 'Not Available'}<br>
+                                    <strong>Website:</strong> ${companyInfo.website || 'Not Available'}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="label-preview" id="labelPreview">
@@ -7735,7 +7880,7 @@ window.openPrintLabelsModal = async function(itemCode) {
                                     <div class="label-content">
                                         <div class="label-item-code">${itemData.item_code}</div>
                                         <div class="label-item-name">${itemData.item_name || itemData.item_code}</div>
-                                        ${itemData.weight > 0 ? `<div class="label-weight">${itemData.weight} ${itemData.weight_uom || 'Gram'}</div>` : ''}
+                                        ${netWeight > 0 ? `<div class="label-weight">NW: ${netWeight} ${netWeightUOM}</div>` : ''}
                                         <div class="label-barcode">[Barcode will appear here]</div>
                                     </div>
                                 </div>
@@ -7761,15 +7906,47 @@ window.openPrintLabelsModal = async function(itemCode) {
         $('body').append(modalHTML);
         $('#printLabelsModal').fadeIn(300);
         
-        // Store item data globally for use in print functions
+        // Store data globally for use in print functions
         window.currentPrintItemData = itemData;
+        window.currentWmsSettings = wmsSettings;
+        window.currentCompanyInfo = companyInfo;
+        window.currentUomOptions = uomOptions;
+        
+        // Initialize printers (script should be loaded via app_include_js)
+        // Check if BrowserPrint is available immediately, otherwise wait a bit
+        if (typeof BrowserPrint !== 'undefined') {
+            // Already available, initialize immediately
+            initializePrinters().catch(error => {
+                console.warn('Could not initialize printers:', error);
+            });
+        } else {
+            // Wait a bit for script to load (since it's in app_include_js)
+            setTimeout(() => {
+                if (typeof BrowserPrint !== 'undefined') {
+                    initializePrinters().catch(error => {
+                        console.warn('Could not initialize printers:', error);
+                    });
+                } else {
+                    // Still not available after wait, try loading dynamically
+                    loadZebraBrowserPrintScript()
+                        .then(() => {
+                            initializePrinters().catch(error => {
+                                console.warn('Could not initialize printers:', error);
+                            });
+                        })
+                        .catch(() => {
+                            $('#printerSelection').html('<option value="">Zebra Browser Print not available. You can still download ZPL file.</option>');
+                        });
+                }
+            }, 500);
+        }
         
         // Setup event handlers
         setupPrintLabelsEvents();
         
     } catch (error) {
         console.error('Error opening print labels modal:', error);
-        frappe.msgprint('Error opening print labels modal');
+        frappe.msgprint('Error opening print labels modal: ' + error.message);
     }
 };
 
@@ -7778,11 +7955,343 @@ window.closePrintLabelsModal = function() {
         $(this).remove();
     });
     window.currentPrintItemData = null;
+    window.currentWmsSettings = null;
+    window.currentCompanyInfo = null;
+    window.currentUomOptions = null;
+    window.availablePrinters = null;
 };
 
+// Load Zebra Browser Print script
+async function loadZebraBrowserPrintScript() {
+    return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (typeof BrowserPrint !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        // Check if script tag already exists
+        const existingScript = $('script[src*="zebrabrowserprint"]');
+        if (existingScript.length > 0) {
+            // Wait for it to load
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds total (50 * 100ms)
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (typeof BrowserPrint !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    reject(new Error('Zebra Browser Print script failed to load after timeout'));
+                }
+            }, 100);
+            return;
+        }
+        
+        // Load the script
+        const script = document.createElement('script');
+        // Try multiple path options
+        let scriptPath = '/assets/warehousesuite/js/zebrabrowserprint.js';
+        
+        // Try Frappe's asset path helper if available
+        if (typeof frappe !== 'undefined' && frappe.assets) {
+            try {
+                if (frappe.assets.bundled_asset) {
+                    scriptPath = frappe.assets.bundled_asset('warehousesuite:public/js/zebrabrowserprint.js');
+                } else if (frappe.boot && frappe.boot.assets) {
+                    // Try to find in boot assets
+                    const asset = frappe.boot.assets.find(a => a.includes('zebrabrowserprint'));
+                    if (asset) scriptPath = asset;
+                }
+            } catch (e) {
+                console.warn('Could not use Frappe asset helper, using direct path');
+            }
+        }
+        
+        script.src = scriptPath;
+        script.async = true;
+        
+        script.onload = () => {
+            // Wait a bit for BrowserPrint to initialize
+            let attempts = 0;
+            const maxAttempts = 10; // 1 second total
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (typeof BrowserPrint !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    reject(new Error('BrowserPrint object not found after script load'));
+                }
+            }, 100);
+        };
+        
+        script.onerror = () => {
+            reject(new Error(`Failed to load Zebra Browser Print script from ${scriptPath}. Make sure the file exists at /assets/warehousesuite/js/zebrabrowserprint.js`));
+        };
+        
+        document.head.appendChild(script);
+    });
+}
+
+// Initialize printers list with retry logic
+async function initializePrintersWithRetry() {
+    let attempts = 0;
+    const maxAttempts = 20; // Try for 2 seconds
+    
+    const tryInitialize = async () => {
+        attempts++;
+        
+        if (typeof BrowserPrint !== 'undefined') {
+            try {
+                await getAvailablePrinters();
+                return; // Success
+            } catch (error) {
+                console.error('Error getting printers:', error);
+                $('#printerSelection').html('<option value="">Error loading printers. Make sure Zebra Browser Print is running.</option>');
+                return;
+            }
+        }
+        
+        // If BrowserPrint not available yet, retry
+        if (attempts < maxAttempts) {
+            setTimeout(tryInitialize, 100);
+        } else {
+            // Final attempt failed
+            $('#printerSelection').html('<option value="">Zebra Browser Print not available. You can still download ZPL file.</option>');
+            console.warn('BrowserPrint not available after', maxAttempts, 'attempts');
+        }
+    };
+    
+    // Start trying
+    tryInitialize();
+}
+
+// Initialize printers list (direct call - used by refresh)
+async function initializePrinters() {
+    try {
+        await getAvailablePrinters();
+    } catch (error) {
+        console.error('Error initializing printers:', error);
+        $('#printerSelection').html('<option value="">Error loading printers. Make sure Zebra Browser Print is running.</option>');
+    }
+}
+
+// Get available printers from Zebra Browser Print
+window.getAvailablePrinters = async function() {
+    return new Promise((resolve, reject) => {
+        if (typeof BrowserPrint === 'undefined') {
+            $('#printerSelection').html('<option value="">Zebra Browser Print not available</option>');
+            reject(new Error('BrowserPrint not available'));
+            return;
+        }
+        
+        // Set timeout to prevent hanging
+        const timeout = setTimeout(() => {
+            $('#printerSelection').html('<option value="">Timeout loading printers. Make sure Zebra Browser Print is running.</option>');
+            reject(new Error('Timeout waiting for printer list'));
+        }, 10000); // 10 second timeout
+        
+        try {
+            // BrowserPrint.getLocalDevices(successCallback, errorCallback, deviceType)
+            BrowserPrint.getLocalDevices(
+                function(printers) {
+                    clearTimeout(timeout);
+                    
+                    try {
+                        window.availablePrinters = printers || {};
+                        // If deviceType filter was used, printers might be an array directly
+                        // Otherwise it's an object with device types as keys
+                        let printerList = [];
+                        if (Array.isArray(printers)) {
+                            printerList = printers;
+                        } else if (printers && printers.printer) {
+                            printerList = printers.printer;
+                        } else if (printers && typeof printers === 'object') {
+                            // Try to find any array in the response
+                            for (let key in printers) {
+                                if (Array.isArray(printers[key])) {
+                                    printerList = printers[key];
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        const select = $('#printerSelection');
+                        select.empty();
+                        
+                        if (printerList.length === 0) {
+                            select.append('<option value="">No printers found. Make sure Zebra Browser Print is running.</option>');
+                        } else {
+                            select.append('<option value="">Select a printer...</option>');
+                            printerList.forEach((printer, index) => {
+                                const option = $('<option></option>')
+                                    .attr('value', JSON.stringify(printer))
+                                    .text(printer.name || `Printer ${index + 1}`);
+                                select.append(option);
+                            });
+                        }
+                        
+                        resolve(printerList);
+                    } catch (err) {
+                        clearTimeout(timeout);
+                        console.error('Error processing printer list:', err);
+                        $('#printerSelection').html('<option value="">Error processing printer list</option>');
+                        reject(err);
+                    }
+                },
+                function(error) {
+                    clearTimeout(timeout);
+                    console.error('Error getting printers:', error);
+                    $('#printerSelection').html('<option value="">Error loading printers: ' + (error || 'Unknown error') + '</option>');
+                    reject(error || new Error('Failed to get printers'));
+                },
+                "printer"  // deviceType filter as third parameter
+            );
+        } catch (err) {
+            clearTimeout(timeout);
+            console.error('Error calling BrowserPrint.getLocalDevices:', err);
+            $('#printerSelection').html('<option value="">Error initializing printer detection</option>');
+            reject(err);
+        }
+    });
+};
+
+// Refresh printers list
+window.refreshPrinters = async function() {
+    const select = $('#printerSelection');
+    select.html('<option value="">Refreshing...</option>');
+    try {
+        await getAvailablePrinters();
+        frappe.show_alert('Printers refreshed', 'green');
+    } catch (error) {
+        frappe.show_alert('Error refreshing printers', 'red');
+    }
+};
+
+// Load companies for selection
+async function loadCompanies() {
+    try {
+        console.log('Loading companies...');
+        const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_companies');
+        
+        console.log('Full response:', response);
+        console.log('Response message:', response.message);
+        
+        // Handle both direct list return and wrapped object return
+        let companies = [];
+        if (Array.isArray(response.message)) {
+            companies = response.message;
+        } else if (response.message && Array.isArray(response.message.companies)) {
+            companies = response.message.companies;
+        } else if (response.message && response.message.companies) {
+            companies = response.message.companies;
+        }
+        
+        console.log('Companies array:', companies, 'Length:', companies.length);
+        
+        const select = $('#companySelection');
+        select.empty();
+        select.append('<option value="">Select a company...</option>');
+        
+        if (companies.length === 0) {
+            select.append('<option value="">No companies found</option>');
+            console.warn('No companies returned from backend');
+            frappe.show_alert('No companies found. Please check permissions.', 'orange');
+            return;
+        }
+        
+        companies.forEach(company => {
+            const companyName = company.company_name || company.name || '';
+            const companyCode = company.name || '';
+            if (companyCode) {
+                const option = $('<option></option>')
+                    .attr('value', companyCode)
+                    .text(companyName || companyCode);
+                select.append(option);
+            }
+        });
+        
+        // Set default company if available
+        const defaultCompany = frappe.defaults.get_global_default('company');
+        if (defaultCompany && select.find(`option[value="${defaultCompany}"]`).length > 0) {
+            select.val(defaultCompany);
+        }
+        
+        console.log('Companies loaded successfully:', companies.length);
+    } catch (error) {
+        console.error('Error loading companies:', error);
+        $('#companySelection').html('<option value="">Error loading companies</option>');
+        frappe.show_alert('Error loading companies: ' + (error.message || 'Unknown error'), 'red');
+    }
+}
+
 function setupPrintLabelsEvents() {
-    // Update preview when barcode selection changes
+    // Handle print format selection change - analyze and show/hide fields
+    $('#printFormatSelection').on('change', async function() {
+        const printFormat = $(this).val();
+        if (!printFormat) {
+            // Hide all dynamic fields
+            $('#uomSelectionGroup').hide();
+            $('#companySelectionGroup').hide();
+            return;
+        }
+        
+        // Analyze print format variables
+        try {
+            const analysisResponse = await frappe.call(
+                'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.analyze_print_format_variables',
+                { print_format_name: printFormat }
+            );
+            const analysis = analysisResponse.message || {};
+            
+            // Show/hide UOM selection
+            if (analysis.uses_selected_uom) {
+                $('#uomSelectionGroup').show();
+                $('#uomSelection').prop('required', true);
+            } else {
+                $('#uomSelectionGroup').hide();
+                $('#uomSelection').prop('required', false);
+            }
+            
+            // Show/hide company selection
+            if (analysis.uses_company_info) {
+                $('#companySelectionGroup').show();
+                $('#companySelection').prop('required', true);
+                
+                // Load companies if not already loaded
+                if ($('#companySelection option').length <= 1) {
+                    await loadCompanies();
+                }
+            } else {
+                $('#companySelectionGroup').hide();
+                $('#companySelection').prop('required', false);
+            }
+        } catch (error) {
+            console.error('Error analyzing print format:', error);
+        }
+    });
+    
+    // Handle company selection change
+    $('#companySelection').on('change', function() {
+        // Company selection changed - update preview if needed
+        updateLabelPreview();
+    });
+    
+    // Update preview when fields change
     $('#barcodeSelection').on('change', updateLabelPreview);
+    $('#uomSelection').on('change', updateLabelPreview);
+    $('#grossWeight').on('input', updateLabelPreview);
+    $('#labelQuantity').on('input', function() {
+        const maxQty = window.currentWmsSettings?.max_label_quantity || 100;
+        const value = parseInt($(this).val()) || 0;
+        if (value > maxQty) {
+            $(this).val(maxQty);
+            frappe.show_alert(`Label quantity cannot exceed ${maxQty}`, 'orange');
+        }
+    });
     
     // Initial preview update
     updateLabelPreview();
@@ -7913,8 +8422,19 @@ function generateBarcode(text, canvasId) {
 
 window.generateAndDownloadZPL = async function() {
     try {
+        // Validate inputs (skip printer check for download)
+        if (!validatePrintForm(true)) {
+            return;
+        }
+        
         const selectedBarcode = $('#barcodeSelection').val();
+        const selectedUOM = $('#uomSelection').val();
+        const grossWeight = $('#grossWeight').val();
+        const labelQuantity = parseInt($('#labelQuantity').val()) || 1;
+        const printFormat = $('#printFormatSelection').val();
+        const selectedCompany = $('#companySelection').val();
         const itemData = window.currentPrintItemData;
+        const companyInfo = window.currentCompanyInfo;
         
         if (!itemData) {
             frappe.msgprint('No item data available');
@@ -7927,8 +8447,13 @@ window.generateAndDownloadZPL = async function() {
         // Generate ZPL
         const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
             item_code: itemData.item_code,
-            quantity: 1,
-            selected_barcode: selectedBarcode
+            quantity: labelQuantity,
+            selected_barcode: selectedBarcode || null,
+            selected_uom: selectedUOM || null,
+            gross_weight: grossWeight ? parseFloat(grossWeight) : null,
+            company_info: companyInfo,
+            print_format: printFormat || null,
+            selected_company: selectedCompany || null,
         });
         
         if (response.message.status === 'success') {
@@ -7954,17 +8479,44 @@ window.generateAndDownloadZPL = async function() {
         
     } catch (error) {
         console.error('Error generating ZPL:', error);
-        frappe.msgprint('Error generating ZPL file');
+        frappe.msgprint('Error generating ZPL file: ' + error.message);
     }
 };
 
 window.generateAndPrintZPL = async function() {
     try {
+        // Validate inputs
+        if (!validatePrintForm()) {
+            return;
+        }
+        
         const selectedBarcode = $('#barcodeSelection').val();
+        const selectedUOM = $('#uomSelection').val();
+        const grossWeight = $('#grossWeight').val();
+        const labelQuantity = parseInt($('#labelQuantity').val()) || 1;
+        const printFormat = $('#printFormatSelection').val();
+        const selectedCompany = $('#companySelection').val();
+        const printerSelection = $('#printerSelection').val();
         const itemData = window.currentPrintItemData;
+        const companyInfo = window.currentCompanyInfo;
         
         if (!itemData) {
             frappe.msgprint('No item data available');
+            return;
+        }
+        
+        // Validate printer selection and BrowserPrint availability
+        if (!printerSelection) {
+            frappe.msgprint('Please select a printer');
+            return;
+        }
+        
+        if (typeof BrowserPrint === 'undefined') {
+            frappe.msgprint({
+                title: 'Zebra Browser Print Not Available',
+                message: 'Zebra Browser Print script is not loaded. Please refresh the page and try again, or use the "Download ZPL File" option instead.',
+                indicator: 'orange'
+            });
             return;
         }
         
@@ -7974,67 +8526,123 @@ window.generateAndPrintZPL = async function() {
         // Generate ZPL
         const response = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.generate_label_zpl', {
             item_code: itemData.item_code,
-            quantity: 1,
-            selected_barcode: selectedBarcode
+            quantity: labelQuantity,
+            selected_barcode: selectedBarcode || null,
+            selected_uom: selectedUOM || null,
+            gross_weight: grossWeight ? parseFloat(grossWeight) : null,
+            company_info: companyInfo,
+            print_format: printFormat || null,
+            selected_company: selectedCompany || null,
         });
         
         if (response.message.status === 'success') {
             const zplContent = response.message.zpl_code;
             
-            // Try to print directly using browser print API
+            // Parse selected printer
+            let printerDevice;
             try {
-                // Create a new window with ZPL content
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>Print Labels - ${itemData.item_code}</title>
-                            <style>
-                                body { font-family: monospace; margin: 0; padding: 20px; }
-                                .zpl-content { white-space: pre; font-size: 12px; }
-                                .print-info { margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="print-info">
-                                <h3>ZPL Label Data</h3>
-                                <p><strong>Item:</strong> ${itemData.item_code} - ${itemData.item_name}</p>
-                                <p><strong>Instructions:</strong> Copy the ZPL code below and send to your TSC printer</p>
-                            </div>
-                            <div class="zpl-content">${zplContent}</div>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                
-                // Try to print
-                setTimeout(() => {
-                    printWindow.print();
-                }, 500);
-                
-                frappe.show_alert('Print window opened. Please check your printer settings.', 'green');
-            } catch (printError) {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(zplContent).then(() => {
-                    frappe.msgprint({
-                        title: 'ZPL Copied to Clipboard',
-                        message: 'ZPL code has been copied to clipboard. Please paste it into your printer software.',
-                        indicator: 'green'
-                    });
-                }).catch(() => {
-                    frappe.msgprint({
-                        title: 'ZPL Generated',
-                        message: 'ZPL code generated successfully. Please copy the code and send to your printer.',
-                        indicator: 'blue'
-                    });
-                });
+                const printerData = JSON.parse(printerSelection);
+                printerDevice = new BrowserPrint.Device(printerData);
+            } catch (e) {
+                frappe.msgprint('Error parsing printer data. Please refresh and select printer again.');
+                return;
             }
+            
+            // Send ZPL to printer
+            printerDevice.send(zplContent, 
+                function() {
+                    frappe.show_alert(`Successfully sent ${labelQuantity} label(s) to printer`, 'green');
+                },
+                function(error) {
+                    console.error('Print error:', error);
+                    frappe.msgprint({
+                        title: 'Print Error',
+                        message: 'Error sending to printer: ' + (error || 'Unknown error') + '. Make sure Zebra Browser Print is running and printer is connected.',
+                        indicator: 'red'
+                    });
+                }
+            );
         } else {
             frappe.msgprint('Error generating ZPL: ' + response.message.message);
         }
         
     } catch (error) {
-        console.error('Error generating ZPL for printing:', error);
-        frappe.msgprint('Error generating ZPL for printing');
+        console.error('Error generating ZPL:', error);
+        frappe.msgprint('Error generating ZPL for printing: ' + error.message);
     }
 };
+
+// Validate print form (skip printer validation for download)
+function validatePrintForm(skipPrinterCheck = false) {
+    const printFormat = $('#printFormatSelection').val();
+    const grossWeight = $('#grossWeight').val();
+    const labelQuantity = $('#labelQuantity').val();
+    const printerSelection = $('#printerSelection').val();
+    const maxQty = window.currentWmsSettings?.max_label_quantity || 100;
+    
+    // Validate print format
+    if (!printFormat || printFormat.trim() === '') {
+        frappe.msgprint('Please select a print format');
+        $('#printFormatSelection').focus();
+        return false;
+    }
+    
+    // Validate UOM if required
+    if ($('#uomSelectionGroup').is(':visible')) {
+        const selectedUOM = $('#uomSelection').val();
+        if (!selectedUOM || selectedUOM.trim() === '') {
+            frappe.msgprint('Please select UOM');
+            $('#uomSelection').focus();
+            return false;
+        }
+    }
+    
+    // Validate company if required
+    if ($('#companySelectionGroup').is(':visible')) {
+        const selectedCompany = $('#companySelection').val();
+        if (!selectedCompany || selectedCompany.trim() === '') {
+            frappe.msgprint('Please select a company');
+            $('#companySelection').focus();
+            return false;
+        }
+    }
+    
+    // Validate gross weight
+    if (!grossWeight || grossWeight.trim() === '') {
+        frappe.msgprint('Please enter gross weight');
+        $('#grossWeight').focus();
+        return false;
+    }
+    
+    const grossWeightNum = parseFloat(grossWeight);
+    if (isNaN(grossWeightNum) || grossWeightNum <= 0) {
+        frappe.msgprint('Gross weight must be a positive number');
+        $('#grossWeight').focus();
+        return false;
+    }
+    
+    // Validate label quantity
+    if (!labelQuantity || labelQuantity.trim() === '') {
+        frappe.msgprint('Please enter label quantity');
+        $('#labelQuantity').focus();
+        return false;
+    }
+    
+    const labelQtyNum = parseInt(labelQuantity);
+    if (isNaN(labelQtyNum) || labelQtyNum < 1) {
+        frappe.msgprint('Label quantity must be at least 1');
+        $('#labelQuantity').focus();
+        return false;
+    }
+    
+    if (labelQtyNum > maxQty) {
+        frappe.msgprint(`Label quantity cannot exceed ${maxQty}`);
+        $('#labelQuantity').focus();
+        return false;
+    }
+    
+    // Validate printer selection (only for direct print)
+    // Note: This is checked in generateAndPrintZPL, not here for download
+    
+    return true;
+}

@@ -1,4 +1,6 @@
 import frappe
+import json
+import re
 from frappe import _
 from frappe.utils import now_datetime, flt
 
@@ -1559,7 +1561,214 @@ def get_item_inquiry_data(item_code, allowed_warehouses=None):
         } 
 
 @frappe.whitelist()
-def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
+def get_company_info_for_labels(company=None, address_name=None):
+    """Get company information from WMS Settings and Company doctype for label printing"""
+    try:
+        company_info = {
+            'company_name': '',
+            'address': '',
+            'email': '',
+            'customer_care_number': '',
+            'website': ''
+        }
+        
+        # Get company (use provided or default)
+        if not company:
+            company = frappe.defaults.get_global_default('company')
+        if not company:
+            company = frappe.db.get_single_value('Global Defaults', 'default_company')
+        
+        if company:
+            # Get company name
+            company_info['company_name'] = frappe.db.get_value('Company', company, 'company_name') or company
+            
+            # Get company address (use provided address or default)
+            from frappe.contacts.doctype.address.address import get_default_address, render_address
+            if address_name:
+                try:
+                    address_doc = frappe.get_doc('Address', address_name)
+                    # Verify address is linked to the company
+                    linked_companies = [link.link_name for link in address_doc.links if link.link_doctype == 'Company']
+                    if company in linked_companies:
+                        company_info['address'] = render_address(address_doc, check_permissions=False) or ''
+                except:
+                    pass
+            
+            # If no address set, get default
+            if not company_info['address']:
+                company_address = get_default_address('Company', company)
+                if company_address:
+                    address_doc = frappe.get_doc('Address', company_address)
+                    company_info['address'] = render_address(address_doc, check_permissions=False) or ''
+            
+            # Get company website if available
+            company_website = frappe.db.get_value('Company', company, 'website')
+            if company_website:
+                company_info['website'] = company_website
+        
+        # Get WMS Settings for email and customer care
+        if frappe.db.exists("WMSuite Settings"):
+            wms_settings = frappe.get_single("WMSuite Settings")
+            company_info['email'] = getattr(wms_settings, 'company_email', '') or 'Not Available'
+            company_info['customer_care_number'] = getattr(wms_settings, 'customer_care_number', '') or 'Not Available'
+            company_info['website'] = getattr(wms_settings, 'company_website', '') or company_info.get('website', 'Not Available')
+        else:
+            company_info['email'] = 'Not Available'
+            company_info['customer_care_number'] = 'Not Available'
+            if not company_info.get('website'):
+                company_info['website'] = 'Not Available'
+        
+        return company_info
+        
+    except Exception as e:
+        frappe.logger().error(f"Error getting company info for labels: {str(e)}")
+    return {
+            'company_name': 'Not Available',
+            'address': 'Not Available',
+            'email': 'Not Available',
+            'customer_care_number': 'Not Available',
+            'website': 'Not Available'
+        }
+
+@frappe.whitelist()
+def analyze_print_format_variables(print_format_name):
+    """Analyze print format raw_commands to detect which variables are used"""
+    try:
+        print_format_doc = frappe.get_doc("Print Format", print_format_name)
+        
+        if not print_format_doc.raw_printing or not print_format_doc.raw_commands:
+            return {
+                "uses_selected_uom": False,
+                "uses_company_info": False,
+                "uses_company_address": False
+            }
+        
+        raw_commands = print_format_doc.raw_commands or ""
+        
+        # Check for selected_uom variable usage
+        uses_selected_uom = (
+            "selected_uom" in raw_commands or 
+            "{{ selected_uom }}" in raw_commands or
+            "{{selected_uom}}" in raw_commands
+        )
+        
+        # Check for company_info variable usage
+        uses_company_info = (
+            "company_info" in raw_commands or
+            "{{ company_info }}" in raw_commands or
+            "{{company_info}}" in raw_commands or
+            "company_name" in raw_commands or
+            "{{ company_name }}" in raw_commands or
+            "{{company_name}}" in raw_commands or
+            "company_email" in raw_commands or
+            "{{ company_email }}" in raw_commands or
+            "{{company_email}}" in raw_commands or
+            "customer_care_number" in raw_commands or
+            "{{ customer_care_number }}" in raw_commands or
+            "{{customer_care_number}}" in raw_commands or
+            "company_website" in raw_commands or
+            "{{ company_website }}" in raw_commands or
+            "{{company_website}}" in raw_commands
+        )
+        
+        return {
+            "uses_selected_uom": uses_selected_uom,
+            "uses_company_info": uses_company_info
+        }
+    except Exception as e:
+        frappe.logger().error(f"Error analyzing print format {print_format_name}: {str(e)}")
+        return {
+            "uses_selected_uom": False,
+            "uses_company_info": False
+        }
+
+@frappe.whitelist()
+def get_item_print_formats():
+    """Get available print formats for Item doctype"""
+    try:
+        print_formats = frappe.get_all(
+            "Print Format",
+            filters={
+                "doc_type": "Item",
+                "disabled": 0,
+                "docstatus": ["<", 2]
+            },
+            fields=["name", "print_format_type", "raw_printing"],
+            order_by="name"
+        )
+        
+        # Only return actual print formats (no Standard option)
+        formats = []
+        for pf in print_formats:
+            format_info = {
+                "name": pf.name,
+                "print_format_type": pf.print_format_type or "Standard",
+                "raw_printing": pf.raw_printing or 0
+            }
+            
+            # Analyze variables used in print format if it's raw printing
+            if pf.raw_printing:
+                variables = analyze_print_format_variables(pf.name)
+                format_info.update(variables)
+            
+            formats.append(format_info)
+        
+        return {
+            "status": "success",
+            "formats": formats
+        }
+    except Exception as e:
+        frappe.logger().error(f"Error getting print formats: {str(e)}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "formats": []
+        }
+
+@frappe.whitelist()
+def get_companies():
+    """Get all companies for selection"""
+    try:
+        # Use get_list to respect permissions - returns list of dicts
+        # Note: Company doctype doesn't have a 'disabled' field
+        companies = frappe.get_list(
+            "Company",
+            fields=["name", "company_name"],
+            order_by="name",
+            ignore_permissions=False
+        )
+        
+        # If no companies found, try with get_all (might have permission issues)
+        if not companies:
+            companies = frappe.get_all(
+                "Company",
+                fields=["name", "company_name"],
+                order_by="name"
+            )
+        
+        # Format companies list - ensure all fields are present
+        company_list = []
+        for company in companies:
+            company_name = company.get("company_name") or company.get("name") or ""
+            company_code = company.get("name") or ""
+            if company_code:  # Only add if we have a name
+                company_list.append({
+                    "name": company_code,
+                    "company_name": company_name
+                })
+        
+        frappe.logger().info(f"Found {len(company_list)} companies: {[c['name'] for c in company_list]}")
+        
+        # Return directly as list (Frappe will wrap it in message)
+        return company_list
+    except Exception as e:
+        frappe.logger().error(f"Error getting companies: {str(e)}")
+        import traceback
+        frappe.logger().error(traceback.format_exc())
+        frappe.throw(f"Error getting companies: {str(e)}")
+
+@frappe.whitelist()
+def generate_label_zpl(item_code, quantity=1, selected_barcode=None, selected_uom=None, gross_weight=None, company_info=None, print_format=None, selected_company=None):
     """Generate ZPL code for item labels"""
     try:
         # Convert quantity to integer
@@ -1596,20 +1805,103 @@ def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
             else:
                 selected_barcode_data = barcodes[0]  # First barcode if no stock UOM match
         
-        # Generate ZPL code
-        zpl_code = generate_zpl_label(item, selected_barcode_data, uom_conversions, quantity)
+        # Get company info if not provided
+        if not company_info:
+            company_info = get_company_info_for_labels(company=selected_company)
+        elif isinstance(company_info, str):
+            company_info = json.loads(company_info)
+        
+        # Use selected UOM or default to stock UOM
+        display_uom = selected_uom if selected_uom else item.stock_uom
+        
+        # Calculate multiplier/conversion factor for selected UOM
+        multiplier = 1.0  # Default multiplier is 1 for stock UOM
+        if display_uom != item.stock_uom:
+            # Find conversion factor for selected UOM
+            selected_uom_conversion = next(
+                (conv for conv in uom_conversions if conv.get('uom') == display_uom),
+                None
+            )
+            if selected_uom_conversion:
+                multiplier = selected_uom_conversion.get('conversion_factor', 1.0)
+        
+        # Calculate net weight (weight_per_unit * multiplier)
+        net_weight = (item.weight_per_unit or 0) * multiplier
+        
+        # Generate ZPL code - print format is required
+        if print_format:
+            try:
+                # Get print format document
+                print_format_doc = frappe.get_doc("Print Format", print_format)
+                
+                # Check if it's a raw printing format
+                if print_format_doc.raw_printing and print_format_doc.raw_commands:
+                    # Render raw commands directly as Jinja template
+                    from frappe.utils.jinja import get_jenv
+                    
+                    # Prepare context for Jinja template
+                    context = {
+                        "doc": item,
+                        "item": item,
+        "item_code": item.name,
+                        "item_name": item.item_name,
+                        "stock_uom": item.stock_uom,
+                        "selected_uom": display_uom,
+                        "multiplier": multiplier,
+                        "weight_per_unit": item.weight_per_unit or 0,
+                        "net_weight": net_weight,  # Net weight with multiplier applied if selected UOM is used
+                        "weight_uom": item.weight_uom or "",
+                        "gross_weight": gross_weight,
+                        "selected_barcode": selected_barcode_data.barcode if selected_barcode_data else None,
+                        "barcode": selected_barcode_data.barcode if selected_barcode_data else None,
+                        "quantity": quantity,
+                        "company_info": company_info,
+                        "company_name": company_info.get('company_name', ''),
+                        "company_address": company_info.get('address', ''),
+                        "company_email": company_info.get('email', ''),
+                        "customer_care_number": company_info.get('customer_care_number', ''),
+                        "company_website": company_info.get('website', ''),
+                    }
+                    
+                    # Render the raw commands template
+                    jenv = get_jenv()
+                    template = jenv.from_string(print_format_doc.raw_commands)
+                    single_label_zpl = template.render(context)
+                    
+                    # Repeat the label code for the specified quantity
+                    # Ensure quantity is an integer and at least 1
+                    quantity = max(1, int(quantity)) if quantity else 1
+                    
+                    # Multiply the ZPL string by quantity to repeat the label
+                    zpl_code = single_label_zpl * quantity
+                    
+                    frappe.logger().info(f"Generated ZPL: quantity={quantity}, single_label_length={len(single_label_zpl)}, total_zpl_length={len(zpl_code)}")
+                    
+                    frappe.logger().info(f"Successfully rendered ZPL from print format: {print_format}")
+                else:
+                    # Not a raw printing format - throw error as print format is required
+                    frappe.throw(f"Print format '{print_format}' is not configured for raw printing. Please enable 'Raw Printing' and add ZPL commands.")
+            except Exception as e:
+                frappe.logger().error(f"Error using print format {print_format}: {str(e)}")
+                import traceback
+                frappe.logger().error(traceback.format_exc())
+                frappe.throw(f"Error generating ZPL from print format '{print_format}': {str(e)}")
+        else:
+            # Print format is required
+            frappe.throw("Print format is required. Please select a print format.")
         
         return {
             "status": "success",
             "zpl_code": zpl_code,
             "item_data": {
-                "item_code": item.name,
+        "item_code": item.name,
                 "item_name": item.item_name,
                 "stock_uom": item.stock_uom,
                 "weight": item.weight_per_unit or 0,
                 "weight_uom": item.weight_uom or "",
                 "barcodes": barcodes,
-                "selected_barcode": selected_barcode_data
+                "selected_barcode": selected_barcode_data,
+                "selected_uom": display_uom
             }
         }
         
@@ -1620,46 +1912,85 @@ def generate_label_zpl(item_code, quantity=1, selected_barcode=None):
             "message": str(e)
         }
 
-def generate_zpl_label(item, barcode_data, uom_conversions, quantity):
-    """Generate ZPL code for a single label"""
+def generate_zpl_label(item, barcode_data, uom_conversions, quantity, selected_uom=None, gross_weight=None, company_info=None):
+    """Generate ZPL code for a single label matching the label design"""
     # Ensure quantity is an integer
     quantity = int(quantity) if quantity else 1
     
-    # Weight text
-    weight_text = ""
+    # Default values
+    company_info = company_info or {}
+    company_name = company_info.get('company_name', 'Not Available')
+    company_address = company_info.get('address', 'Not Available')
+    company_email = company_info.get('email', 'Not Available')
+    customer_care = company_info.get('customer_care_number', 'Not Available')
+    company_website = company_info.get('website', 'Not Available')
+    
+    # Net weight text
+    net_weight_text = "Optional"
     if item.weight_per_unit and item.weight_per_unit > 0:
-        weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
+        net_weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
+    
+    # Gross weight text
+    gross_weight_text = "Optional"
+    if gross_weight:
+        gross_weight_text = f"{gross_weight} {item.weight_uom or 'Gram'}"
     
     # Item name
     item_name = item.item_name or item.name
     
+    # UOM display
+    display_uom = selected_uom if selected_uom else item.stock_uom
+    
+    # Pack details
+    pack_details = f"Packed in {display_uom}"
+    
+    # Format address for display (remove HTML tags if present)
+    address_display = re.sub('<[^<]+?>', '', company_address) if company_address else 'Not Available'
+    # Clean up address - take first few lines
+    address_lines = [line.strip() for line in address_display.split('\n') if line.strip()][:3]
+    address_display = '\n'.join(address_lines) if address_lines else 'Not Available'
+    
     # Generate ZPL code based on whether barcode is available
     if barcode_data:
-        # Format with barcode
+        # Format with barcode - matching the label design from image
         zpl_code = f"""^XA
 
-^FO0,10
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item.name}\\&^FS
+^FX Top section with company name
+^CF0,40
+^FO50,20^FD{company_name}^FS
 
-^FO0,40
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item_name}\\&^FS
+^FX Main section with item details
+^CF0,50
+^FO50,70^FDITEM CODE:^FS
+^CF0,60
+^FO50,120^FD{item.name}^FS
 
-^FO0,70
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{weight_text}\\&^FS
+^CF0,30
+^FO50,190^FDUOM: {display_uom}^FS
+^FO50,220^FDPer Unit^FS
 
-^FO0,100
-^FB400,1,0,C,0
-^A0N,30,30
-^FD220 Pcs/Carton\\&^FS
+^FO50,260^FDNW: {net_weight_text}^FS
+^FO50,290^FDGW (Approx): {gross_weight_text}^FS
 
-^FO20,130
-^BCN,45,Y,N,N
+^CF0,35
+^FO50,330^FDITEM NAME:^FS
+^CF0,30
+^FO50,370^FD{item_name}^FS
+
+^FO50,410^FDPACK DETAILS:^FS
+^FO50,440^FD{pack_details}^FS
+
+^FX Consumer information section
+^CF0,25
+^FO50,490^FDFor consumer complaints & feedback^FS
+^FO50,520^FDPlease contact us on above mentioned address or^FS
+^FO50,550^FDCustomer Care No.: {customer_care}^FS
+^FO50,580^FDE-Mail: {company_email}^FS
+^FO50,610^FDWebsite: {company_website}^FS
+
+^FX Barcode at bottom
+^FO50,680
+^BCN,60,Y,N,N
 ^FD{barcode_data.barcode}^FS
 
 ^XZ"""
@@ -1667,20 +1998,38 @@ def generate_zpl_label(item, barcode_data, uom_conversions, quantity):
         # Format without barcode
         zpl_code = f"""^XA
 
-^FO0,35
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item.name}\\&^FS
+^FX Top section with company name
+^CF0,40
+^FO50,20^FD{company_name}^FS
 
-^FO0,80
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{item_name}\\&^FS
+^FX Main section with item details
+^CF0,50
+^FO50,70^FDITEM CODE:^FS
+^CF0,60
+^FO50,120^FD{item.name}^FS
 
-^FO0,130
-^FB400,1,0,C,0
-^A0N,30,30
-^FD{weight_text}\\&^FS
+^CF0,30
+^FO50,190^FDUOM: {display_uom}^FS
+^FO50,220^FDPer Unit^FS
+
+^FO50,260^FDNW: {net_weight_text}^FS
+^FO50,290^FDGW (Approx): {gross_weight_text}^FS
+
+^CF0,35
+^FO50,330^FDITEM NAME:^FS
+^CF0,30
+^FO50,370^FD{item_name}^FS
+
+^FO50,410^FDPACK DETAILS:^FS
+^FO50,440^FD{pack_details}^FS
+
+^FX Consumer information section
+^CF0,25
+^FO50,490^FDFor consumer complaints & feedback^FS
+^FO50,520^FDPlease contact us on above mentioned address or^FS
+^FO50,550^FDCustomer Care No.: {customer_care}^FS
+^FO50,580^FDE-Mail: {company_email}^FS
+^FO50,610^FDWebsite: {company_website}^FS
 
 ^XZ"""
     
