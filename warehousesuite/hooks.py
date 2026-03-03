@@ -106,7 +106,7 @@ website_route_rules = [
 # Installation
 # ------------
 
-# after_install = "warehousesuite.install.after_install"
+after_install = "warehousesuite.install.after_install"
 
 # Uninstallation
 # ------------
