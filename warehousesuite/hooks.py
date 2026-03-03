@@ -100,7 +100,7 @@ doctype_js = {"Item" : "public/js/item.js"}
 # Installation
 # ------------
 
-# after_install = "warehousesuite.install.after_install"
+after_install = "warehousesuite.install.after_install"
 
 # Uninstallation
 # ------------
