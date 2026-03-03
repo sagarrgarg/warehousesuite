@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { X, Plus, Trash2 } from 'lucide-react'
+import { X, Plus, Trash2, ArrowUpFromLine, ArrowRight } from 'lucide-react'
 import type { ProfileWarehouses } from '@/types'
 
 interface TransferSendModalProps {
@@ -33,10 +33,7 @@ export default function TransferSendModal({
 
 	const { data: itemsData } = useFrappeGetCall<{ message: any[] }>(
 		'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown',
-		{
-			warehouse: sourceWarehouse,
-			show_only_stock_items: showOnlyStockItems,
-		}
+		{ warehouse: sourceWarehouse, show_only_stock_items: showOnlyStockItems }
 	)
 	const items = itemsData?.message ?? []
 
@@ -47,23 +44,15 @@ export default function TransferSendModal({
 	const updateLine = (index: number, field: keyof TransferLine, value: any) => {
 		setLines(prev => prev.map((line, i) => i === index ? { ...line, [field]: value } : line))
 	}
-
 	const addLine = () => setLines(prev => [...prev, { item_code: '', qty: 1, uom: '' }])
-
 	const removeLine = (index: number) => {
 		if (lines.length > 1) setLines(prev => prev.filter((_, i) => i !== index))
 	}
 
 	const handleSubmit = async () => {
 		const validLines = lines.filter(l => l.item_code && l.qty > 0)
-		if (validLines.length === 0) {
-			toast.error('Add at least one item')
-			return
-		}
-		if (!sourceWarehouse || !targetWarehouse) {
-			toast.error('Select source and target warehouses')
-			return
-		}
+		if (validLines.length === 0) { toast.error('Add at least one item'); return }
+		if (!sourceWarehouse || !targetWarehouse) { toast.error('Select source and target warehouses'); return }
 
 		setSubmitting(true)
 		try {
@@ -72,7 +61,6 @@ export default function TransferSendModal({
 				qty: l.qty,
 				uom: l.uom || items.find((i: any) => i.item_code === l.item_code)?.stock_uom || 'Nos',
 			}))
-
 			await createTransfer({
 				source_warehouse: sourceWarehouse,
 				target_warehouse: targetWarehouse,
@@ -81,7 +69,6 @@ export default function TransferSendModal({
 				company,
 				remarks,
 			})
-
 			toast.success('Transfer created successfully')
 			onClose()
 		} catch (err: any) {
@@ -94,119 +81,89 @@ export default function TransferSendModal({
 	if (!open) return null
 
 	return (
-		<div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
-			<div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] flex flex-col">
+		<div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+			<div
+				className="absolute inset-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white sm:rounded-2xl sm:max-w-lg sm:w-[calc(100%-2rem)] sm:max-h-[85vh] flex flex-col animate-slide-up sm:animate-scale-in"
+				onClick={e => e.stopPropagation()}
+			>
 				{/* Header */}
-				<div className="flex items-center justify-between p-4 border-b">
-					<h2 className="text-lg font-bold">Transfer Send</h2>
-					<button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-						<X className="w-5 h-5" />
+				<div className="flex items-center gap-3 px-4 sm:px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-border shrink-0">
+					<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white">
+						<ArrowUpFromLine className="w-5 h-5" strokeWidth={2.5} />
+					</div>
+					<div className="flex-1">
+						<h2 className="text-lg font-bold text-foreground">Transfer Send</h2>
+						<p className="text-xs text-muted-foreground">Create a warehouse transfer</p>
+					</div>
+					<button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-secondary rounded-xl transition-colors touch-manipulation">
+						<X className="w-5 h-5 text-muted-foreground" />
 					</button>
 				</div>
 
 				{/* Body */}
-				<div className="flex-1 overflow-y-auto p-4 space-y-4">
+				<div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-5">
 					{/* Warehouses */}
-					<div className="grid grid-cols-2 gap-3">
-						<div>
-							<label className="text-xs font-medium text-gray-500 mb-1 block">Source</label>
-							<select
-								className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-								value={sourceWarehouse}
-								onChange={(e) => setSourceWarehouse(e.target.value)}
-							>
-								{warehouses.source_warehouses.map(wh => (
-									<option key={wh} value={wh}>{wh}</option>
-								))}
+					<div className="flex items-center gap-2">
+						<div className="flex-1">
+							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">From</label>
+							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={sourceWarehouse} onChange={(e) => setSourceWarehouse(e.target.value)}>
+								{warehouses.source_warehouses.map(wh => <option key={wh} value={wh}>{wh}</option>)}
 							</select>
 						</div>
-						<div>
-							<label className="text-xs font-medium text-gray-500 mb-1 block">Target</label>
-							<select
-								className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-								value={targetWarehouse}
-								onChange={(e) => setTargetWarehouse(e.target.value)}
-							>
-								{warehouses.target_warehouses.map(wh => (
-									<option key={wh} value={wh}>{wh}</option>
-								))}
+						<ArrowRight className="w-5 h-5 text-muted-foreground mt-6 shrink-0" />
+						<div className="flex-1">
+							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">To</label>
+							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={targetWarehouse} onChange={(e) => setTargetWarehouse(e.target.value)}>
+								{warehouses.target_warehouses.map(wh => <option key={wh} value={wh}>{wh}</option>)}
 							</select>
 						</div>
 					</div>
 
 					{/* Items */}
-					<div className="space-y-3">
-						<div className="flex items-center justify-between">
-							<label className="text-sm font-medium">Items</label>
-							<button
-								onClick={addLine}
-								className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-							>
-								<Plus className="w-4 h-4" /> Add Item
+					<div>
+						<div className="flex items-center justify-between mb-3">
+							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Items</label>
+							<button onClick={addLine} className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 touch-manipulation">
+								<Plus className="w-4 h-4" /> Add
 							</button>
 						</div>
-
-						{lines.map((line, index) => (
-							<div key={index} className="flex items-end gap-2 p-3 bg-gray-50 rounded-lg">
-								<div className="flex-1">
-									<label className="text-xs text-gray-500">Item</label>
-									<select
-										className="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-										value={line.item_code}
-										onChange={(e) => updateLine(index, 'item_code', e.target.value)}
-									>
+						<div className="space-y-3">
+							{lines.map((line, index) => (
+								<div key={index} className="bg-secondary rounded-xl p-3 space-y-2.5">
+									<select className="w-full bg-white border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" value={line.item_code} onChange={(e) => updateLine(index, 'item_code', e.target.value)}>
 										<option value="">Select item...</option>
 										{items.map((item: any) => (
 											<option key={item.item_code} value={item.item_code}>
-												{item.item_code} - {item.item_name}
-												{item.actual_qty !== undefined ? ` (${item.actual_qty} ${item.stock_uom})` : ''}
+												{item.item_code} — {item.item_name}
+												{item.actual_qty !== undefined ? ` (${item.actual_qty})` : ''}
 											</option>
 										))}
 									</select>
+									<div className="flex items-center gap-2">
+										<div className="flex-1">
+											<input type="number" min="0" step="1" placeholder="Qty" className="w-full bg-white border border-border rounded-xl px-3 py-3 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-primary" value={line.qty || ''} onChange={(e) => updateLine(index, 'qty', parseFloat(e.target.value) || 0)} />
+										</div>
+										{lines.length > 1 && (
+											<button onClick={() => removeLine(index)} className="w-11 h-11 flex items-center justify-center text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors touch-manipulation">
+												<Trash2 className="w-5 h-5" />
+											</button>
+										)}
+									</div>
 								</div>
-								<div className="w-20">
-									<label className="text-xs text-gray-500">Qty</label>
-									<input
-										type="number"
-										min="0"
-										step="1"
-										className="w-full border rounded-lg px-3 py-2 text-sm mt-1"
-										value={line.qty}
-										onChange={(e) => updateLine(index, 'qty', parseFloat(e.target.value) || 0)}
-									/>
-								</div>
-								{lines.length > 1 && (
-									<button
-										onClick={() => removeLine(index)}
-										className="p-2 text-red-400 hover:text-red-600"
-									>
-										<Trash2 className="w-4 h-4" />
-									</button>
-								)}
-							</div>
-						))}
+							))}
+						</div>
 					</div>
 
 					{/* Remarks */}
 					<div>
-						<label className="text-xs font-medium text-gray-500 mb-1 block">Remarks</label>
-						<textarea
-							className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-							rows={2}
-							value={remarks}
-							onChange={(e) => setRemarks(e.target.value)}
-							placeholder="Optional remarks..."
-						/>
+						<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Remarks</label>
+						<textarea className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary" rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional..." />
 					</div>
 				</div>
 
 				{/* Footer */}
-				<div className="p-4 border-t">
-					<button
-						onClick={handleSubmit}
-						disabled={submitting}
-						className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50"
-					>
+				<div className="px-4 sm:px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border shrink-0">
+					<button onClick={handleSubmit} disabled={submitting} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 active:scale-[0.98] touch-manipulation text-base shadow-lg shadow-orange-200">
 						{submitting ? 'Creating...' : 'Send Transfer'}
 					</button>
 				</div>

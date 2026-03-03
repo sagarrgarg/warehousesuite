@@ -82,3 +82,15 @@ cd /home/ubuntu/frappe-bench && bench build --app warehousesuite
 - The `bench` CLI is installed in `/home/ubuntu/.local/bin` — ensure PATH includes it.
 - `bench setup backups` may fail because `/usr/bin/crontab` is not available in this environment. This is non-blocking.
 - The React POW Dashboard at `/pow` does **not** use POW Sessions — profiles are auto-selected based on user assignment (no session creation ceremony).
+
+### Mobile-first rule
+
+**Every React frontend change MUST be verified on mobile and tablet viewports before committing.** Use Chrome DevTools device toolbar (Ctrl+Shift+M) with iPhone 12 Pro (390x844) and iPad (768x1024). Key requirements:
+- Touch targets: minimum 44x44px for all interactive elements
+- Inputs: `font-size: 16px` to prevent iOS zoom
+- Modals: full-screen on mobile (`inset-0`), centered dialog on desktop (`sm:` breakpoint)
+- Grids: 3 columns on mobile, 4 on tablet/desktop
+- Safe areas: respect `env(safe-area-inset-*)` for notched devices
+- No horizontal scroll on any viewport
+- Use `touch-manipulation` on all buttons to eliminate 300ms tap delay
+- Use `overscroll-behavior: none` on scrollable modal bodies
