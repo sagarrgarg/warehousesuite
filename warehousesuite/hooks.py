@@ -5,13 +5,27 @@ app_description = "WarehouseSuite is a mobile-first warehouse management solutio
 app_email = "sagar1ratan1garg1@gmail.com"
 app_license = "Commercial"
 
+# SPA Route for React POW Dashboard
+website_route_rules = [
+	{"from_route": "/pow/<path:app_path>", "to_route": "pow"},
+]
+
+add_to_apps_screen = [
+	{
+		"name": "warehousesuite",
+		"logo": "/assets/warehousesuite/images/logo.png",
+		"title": "WarehouseSuite",
+		"route": "/pow",
+	}
+]
+
 # Apps
 # ------------------
 
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
+# add_to_apps_screen_old = [
 # 	{
 # 		"name": "warehousesuite",
 # 		"logo": "/assets/warehousesuite/logo.png",

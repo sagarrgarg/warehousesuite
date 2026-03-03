@@ -5,3 +5,10 @@
 tags
 node_modules
 __pycache__
+
+# React frontend build output
+warehousesuite/public/pow/
+warehousesuite/www/pow.html
+
+# Frontend lockfile tracked separately
+frontend/yarn.lock

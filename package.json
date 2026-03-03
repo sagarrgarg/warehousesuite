@@ -1,0 +1,9 @@
+{
+  "name": "warehousesuite",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && yarn dev",
+    "build": "cd frontend && yarn build",
+    "postinstall": "cd frontend && yarn install"
+  }
+}
