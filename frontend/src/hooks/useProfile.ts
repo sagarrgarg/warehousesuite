@@ -2,19 +2,15 @@ import { useFrappeGetCall } from 'frappe-react-sdk'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { useEffect } from 'react'
+import { API } from '@/lib/api'
 import type { POWProfile, ProfileOperations, ProfileWarehouses } from '@/types'
 
 const selectedProfileAtom = atomWithStorage<string | null>('pow-selected-profile', null)
 const defaultWarehouseAtom = atomWithStorage<string | null>('pow-default-warehouse', null)
 
 export function useProfiles() {
-	const { data, error, isLoading } = useFrappeGetCall<{ message: POWProfile[] }>(
-		'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_applicable_pow_profiles'
-	)
-
-	const profiles = data?.message ?? []
-
-	return { profiles, error, isLoading }
+	const { data, error, isLoading } = useFrappeGetCall<{ message: POWProfile[] }>(API.getProfiles)
+	return { profiles: data?.message ?? [], error, isLoading }
 }
 
 export function useSelectedProfile() {
@@ -23,19 +19,16 @@ export function useSelectedProfile() {
 	const { profiles, isLoading } = useProfiles()
 
 	useEffect(() => {
-		if (!isLoading && profiles.length > 0) {
-			if (profiles.length === 1) {
-				setSelectedProfileName(profiles[0].name)
-			} else if (selectedProfileName && !profiles.find(p => p.name === selectedProfileName)) {
-				setSelectedProfileName(profiles[0].name)
-			}
+		if (isLoading || profiles.length === 0) return
+		if (profiles.length === 1) {
+			setSelectedProfileName(profiles[0].name)
+		} else if (selectedProfileName && !profiles.find(p => p.name === selectedProfileName)) {
+			setSelectedProfileName(profiles[0].name)
 		}
 	}, [profiles, isLoading, selectedProfileName, setSelectedProfileName])
 
-	const selectedProfile = profiles.find(p => p.name === selectedProfileName) ?? null
-
 	return {
-		selectedProfile,
+		selectedProfile: profiles.find(p => p.name === selectedProfileName) ?? null,
 		selectedProfileName,
 		setSelectedProfileName,
 		defaultWarehouse,
@@ -45,27 +38,20 @@ export function useSelectedProfile() {
 	}
 }
 
-const OPERATIONS_METHOD = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_operations'
-const WAREHOUSES_METHOD = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_warehouses'
-
 export function useProfileOperations(profileName: string | null): ProfileOperations | null {
 	const { data } = useFrappeGetCall<{ message: ProfileOperations }>(
-		OPERATIONS_METHOD,
+		API.getProfileOperations,
 		profileName ? { pow_profile: profileName } : undefined,
-		profileName ? undefined : null
+		profileName ? undefined : null,
 	)
-
-	if (!profileName) return null
-	return data?.message ?? null
+	return profileName ? (data?.message ?? null) : null
 }
 
 export function useProfileWarehouses(profileName: string | null): ProfileWarehouses | null {
 	const { data } = useFrappeGetCall<{ message: ProfileWarehouses }>(
-		WAREHOUSES_METHOD,
+		API.getProfileWarehouses,
 		profileName ? { pow_profile: profileName } : undefined,
-		profileName ? undefined : null
+		profileName ? undefined : null,
 	)
-
-	if (!profileName) return null
-	return data?.message ?? null
+	return profileName ? (data?.message ?? null) : null
 }
