@@ -13,9 +13,15 @@ interface StockCountModalProps {
 }
 
 export default function StockCountModal({ open, onClose, warehouses, company }: StockCountModalProps) {
-	const allWarehouses = [...new Set([...warehouses.source_warehouses, ...warehouses.target_warehouses])]
+	const allWarehouseObjects = [...warehouses.source_warehouses, ...warehouses.target_warehouses]
+	const seen = new Set<string>()
+	const allWarehouses = allWarehouseObjects.filter(w => {
+		if (seen.has(w.warehouse)) return false
+		seen.add(w.warehouse)
+		return true
+	})
 
-	const [selectedWarehouse, setSelectedWarehouse] = useState(allWarehouses[0] ?? '')
+	const [selectedWarehouse, setSelectedWarehouse] = useState(allWarehouses[0]?.warehouse ?? '')
 	const [physicalQtys, setPhysicalQtys] = useState<Record<string, number>>({})
 	const [submitting, setSubmitting] = useState(false)
 
@@ -74,7 +80,7 @@ export default function StockCountModal({ open, onClose, warehouses, company }: 
 					<div>
 						<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Warehouse</label>
 						<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={selectedWarehouse} onChange={(e) => { setSelectedWarehouse(e.target.value); setPhysicalQtys({}) }}>
-							{allWarehouses.map(wh => <option key={wh} value={wh}>{wh}</option>)}
+							{allWarehouses.map(wh => <option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>)}
 						</select>
 					</div>
 

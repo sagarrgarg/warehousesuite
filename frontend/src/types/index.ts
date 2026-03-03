@@ -36,10 +36,15 @@ export interface ProfileOperations {
 	show_only_stock_items: boolean
 }
 
+export interface WarehouseOption {
+	warehouse: string
+	warehouse_name: string
+}
+
 export interface ProfileWarehouses {
-	source_warehouses: string[]
-	target_warehouses: string[]
-	in_transit_warehouse: string
+	source_warehouses: WarehouseOption[]
+	target_warehouses: WarehouseOption[]
+	in_transit_warehouse: WarehouseOption
 }
 
 export interface TransferItem {

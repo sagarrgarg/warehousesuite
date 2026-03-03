@@ -25,8 +25,8 @@ export default function TransferSendModal({
 	company,
 	showOnlyStockItems,
 }: TransferSendModalProps) {
-	const [sourceWarehouse, setSourceWarehouse] = useState(warehouses.source_warehouses[0] ?? '')
-	const [targetWarehouse, setTargetWarehouse] = useState(warehouses.target_warehouses[0] ?? '')
+	const [sourceWarehouse, setSourceWarehouse] = useState(warehouses.source_warehouses[0]?.warehouse ?? '')
+	const [targetWarehouse, setTargetWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
 	const [lines, setLines] = useState<TransferLine[]>([{ item_code: '', qty: 1, uom: '' }])
 	const [remarks, setRemarks] = useState('')
 	const [submitting, setSubmitting] = useState(false)
@@ -64,7 +64,7 @@ export default function TransferSendModal({
 			await createTransfer({
 				source_warehouse: sourceWarehouse,
 				target_warehouse: targetWarehouse,
-				in_transit_warehouse: warehouses.in_transit_warehouse,
+				in_transit_warehouse: warehouses.in_transit_warehouse?.warehouse ?? warehouses.in_transit_warehouse,
 				items: JSON.stringify(transferItems),
 				company,
 				remarks,
@@ -107,14 +107,14 @@ export default function TransferSendModal({
 						<div className="flex-1">
 							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">From</label>
 							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={sourceWarehouse} onChange={(e) => setSourceWarehouse(e.target.value)}>
-								{warehouses.source_warehouses.map(wh => <option key={wh} value={wh}>{wh}</option>)}
+								{warehouses.source_warehouses.map(wh => <option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>)}
 							</select>
 						</div>
 						<ArrowRight className="w-5 h-5 text-muted-foreground mt-6 shrink-0" />
 						<div className="flex-1">
 							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">To</label>
 							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={targetWarehouse} onChange={(e) => setTargetWarehouse(e.target.value)}>
-								{warehouses.target_warehouses.map(wh => <option key={wh} value={wh}>{wh}</option>)}
+								{warehouses.target_warehouses.map(wh => <option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>)}
 							</select>
 						</div>
 					</div>

@@ -14,12 +14,24 @@ function renderApp() {
 if (import.meta.env.DEV) {
 	fetch('/api/method/warehousesuite.www.pow.get_context_for_dev', {
 		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
 	})
-		.then(response => response.json())
+		.then(response => {
+			if (!response.ok) throw new Error(`HTTP ${response.status}`)
+			return response.json()
+		})
 		.then((values) => {
-			const v = JSON.parse(values.message)
-			if (!window.frappe) window.frappe = {} as any
-			;(window as any).frappe.boot = v
+			if (values?.message) {
+				const v = typeof values.message === 'string'
+					? JSON.parse(values.message)
+					: values.message
+				if (!window.frappe) (window as any).frappe = {}
+				;(window as any).frappe.boot = v
+			}
+			renderApp()
+		})
+		.catch((err) => {
+			console.warn('Failed to load dev boot data:', err.message)
 			renderApp()
 		})
 } else {
