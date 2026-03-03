@@ -1,7 +1,7 @@
 import {
 	ArrowUpFromLine,
 	ArrowDownToLine,
-	ClipboardList,
+	ClipboardCheck,
 	Search,
 	PackagePlus,
 	Truck,
@@ -19,64 +19,73 @@ interface ActionButton {
 	id: string
 	label: string
 	icon: React.ReactNode
-	color: string
+	gradient: string
+	shadow: string
 	operationKey?: keyof ProfileOperations
 }
 
 const ALL_ACTIONS: ActionButton[] = [
 	{
 		id: 'transfer-send',
-		label: 'Transfer Send',
-		icon: <ArrowUpFromLine className="w-8 h-8" />,
-		color: 'from-orange-500 to-orange-600',
+		label: 'Transfer\nSend',
+		icon: <ArrowUpFromLine strokeWidth={2.5} />,
+		gradient: 'from-orange-400 to-orange-600',
+		shadow: 'shadow-orange-200',
 		operationKey: 'material_transfer',
 	},
 	{
 		id: 'transfer-receive',
-		label: 'Transfer Receive',
-		icon: <ArrowDownToLine className="w-8 h-8" />,
-		color: 'from-purple-500 to-purple-600',
+		label: 'Transfer\nReceive',
+		icon: <ArrowDownToLine strokeWidth={2.5} />,
+		gradient: 'from-violet-400 to-violet-600',
+		shadow: 'shadow-violet-200',
 		operationKey: 'material_transfer',
 	},
 	{
 		id: 'stock-count',
-		label: 'Stock Count',
-		icon: <ClipboardList className="w-8 h-8" />,
-		color: 'from-slate-500 to-slate-600',
+		label: 'Stock\nCount',
+		icon: <ClipboardCheck strokeWidth={2.5} />,
+		gradient: 'from-slate-400 to-slate-600',
+		shadow: 'shadow-slate-200',
 		operationKey: 'stock_count',
 	},
 	{
 		id: 'item-inquiry',
-		label: 'Item Inquiry',
-		icon: <Search className="w-8 h-8" />,
-		color: 'from-pink-500 to-pink-600',
+		label: 'Item\nInquiry',
+		icon: <Search strokeWidth={2.5} />,
+		gradient: 'from-pink-400 to-pink-600',
+		shadow: 'shadow-pink-200',
 	},
 	{
 		id: 'purchase-receipt',
-		label: 'Receive (PR)',
-		icon: <PackagePlus className="w-8 h-8" />,
-		color: 'from-green-500 to-green-600',
+		label: 'Receive\n(PR)',
+		icon: <PackagePlus strokeWidth={2.5} />,
+		gradient: 'from-emerald-400 to-emerald-600',
+		shadow: 'shadow-emerald-200',
 		operationKey: 'purchase_receipt',
 	},
 	{
 		id: 'delivery-note',
-		label: 'Delivery (DN)',
-		icon: <Truck className="w-8 h-8" />,
-		color: 'from-blue-500 to-blue-600',
+		label: 'Delivery\n(DN)',
+		icon: <Truck strokeWidth={2.5} />,
+		gradient: 'from-blue-400 to-blue-600',
+		shadow: 'shadow-blue-200',
 		operationKey: 'delivery_note',
 	},
 	{
 		id: 'manufacturing',
-		label: 'Manufacturing',
-		icon: <Factory className="w-8 h-8" />,
-		color: 'from-violet-500 to-violet-600',
+		label: 'Manufact-\nuring',
+		icon: <Factory strokeWidth={2.5} />,
+		gradient: 'from-purple-400 to-purple-600',
+		shadow: 'shadow-purple-200',
 		operationKey: 'manufacturing',
 	},
 	{
 		id: 'repack',
 		label: 'Repack',
-		icon: <PackageOpen className="w-8 h-8" />,
-		color: 'from-amber-500 to-amber-600',
+		icon: <PackageOpen strokeWidth={2.5} />,
+		gradient: 'from-amber-400 to-amber-600',
+		shadow: 'shadow-amber-200',
 		operationKey: 'repack',
 	},
 ]
@@ -88,22 +97,28 @@ export default function ActionGrid({ operations, onAction }: ActionGridProps) {
 	})
 
 	return (
-		<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+		<div className="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-4">
 			{visibleActions.map(action => (
 				<button
 					key={action.id}
 					onClick={() => onAction(action.id)}
 					className={`
-						aspect-square rounded-2xl bg-gradient-to-br ${action.color}
-						text-white flex flex-col items-center justify-center gap-2
-						shadow-lg hover:shadow-xl hover:-translate-y-1
-						active:translate-y-0 active:shadow-md
-						transition-all duration-200 cursor-pointer
-						focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+						group relative aspect-square rounded-2xl sm:rounded-3xl
+						bg-gradient-to-br ${action.gradient}
+						text-white flex flex-col items-center justify-center gap-1.5 sm:gap-2.5
+						shadow-lg ${action.shadow}
+						active:scale-95 active:shadow-md
+						transition-all duration-150 cursor-pointer
+						focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500
+						overflow-hidden
+						touch-manipulation
 					`}
 				>
-					{action.icon}
-					<span className="text-sm font-semibold text-center leading-tight px-2">
+					<div className="absolute inset-0 bg-white/0 group-active:bg-white/10 transition-colors" />
+					<div className="relative w-7 h-7 sm:w-9 sm:h-9">
+						{action.icon}
+					</div>
+					<span className="relative text-[11px] sm:text-sm font-bold text-center leading-tight whitespace-pre-line drop-shadow-sm">
 						{action.label}
 					</span>
 				</button>
