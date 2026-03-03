@@ -122,7 +122,7 @@ export default function Dashboard() {
 									>
 										<option value="" className="text-gray-900">Select warehouse...</option>
 										{warehouses.source_warehouses.map(wh => (
-											<option key={wh} value={wh} className="text-gray-900">{wh}</option>
+											<option key={wh.warehouse} value={wh.warehouse} className="text-gray-900">{wh.warehouse_name || wh.warehouse}</option>
 										))}
 									</select>
 								</div>
@@ -168,7 +168,7 @@ export default function Dashboard() {
 				<ItemInquiryModal
 					open={true}
 					onClose={() => setActiveModal(null)}
-					allowedWarehouses={warehouses.source_warehouses}
+					allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)}
 				/>
 			)}
 		</div>

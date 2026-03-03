@@ -11,9 +11,13 @@
 <body>
   <div id="root"></div>
   <script>
-    window.csrf_token = '{{ csrf_token }}';
-    if (!window.frappe) window.frappe = {};
-    frappe.boot = JSON.parse({{ boot }});
+    try {
+      window.csrf_token = '{{ csrf_token }}';
+      if (!window.frappe) window.frappe = {};
+      frappe.boot = JSON.parse({{ boot }});
+    } catch(e) {
+      // In Vite dev mode, Jinja vars are not replaced — boot data is fetched via API instead
+    }
   </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>

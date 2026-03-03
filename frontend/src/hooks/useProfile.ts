@@ -45,24 +45,27 @@ export function useSelectedProfile() {
 	}
 }
 
-export function useProfileOperations(profileName: string | null) {
+const OPERATIONS_METHOD = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_operations'
+const WAREHOUSES_METHOD = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_warehouses'
+
+export function useProfileOperations(profileName: string | null): ProfileOperations | null {
 	const { data } = useFrappeGetCall<{ message: ProfileOperations }>(
-		profileName
-			? 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_operations'
-			: null,
-		profileName ? { pow_profile: profileName } : undefined
+		OPERATIONS_METHOD,
+		profileName ? { pow_profile: profileName } : undefined,
+		profileName ? undefined : null
 	)
 
+	if (!profileName) return null
 	return data?.message ?? null
 }
 
-export function useProfileWarehouses(profileName: string | null) {
+export function useProfileWarehouses(profileName: string | null): ProfileWarehouses | null {
 	const { data } = useFrappeGetCall<{ message: ProfileWarehouses }>(
-		profileName
-			? 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_pow_profile_warehouses'
-			: null,
-		profileName ? { pow_profile: profileName } : undefined
+		WAREHOUSES_METHOD,
+		profileName ? { pow_profile: profileName } : undefined,
+		profileName ? undefined : null
 	)
 
+	if (!profileName) return null
 	return data?.message ?? null
 }
