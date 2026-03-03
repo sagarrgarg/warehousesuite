@@ -55,26 +55,33 @@ export default function StockCountModal({ open, onClose, warehouses, company }: 
 
 			const hasDifferences = countItems.some(ci => ci.physical_qty !== ci.current_qty)
 
+			let res: any
 			if (hasDifferences) {
-				await submitCount({
+				res = await submitCount({
 					warehouse: selectedWarehouse,
 					company,
 					session_name: '',
 					items_data: JSON.stringify(countItems),
 				})
-				toast.success('Stock count submitted with differences')
 			} else {
-				await submitMatch({
+				res = await submitMatch({
 					warehouse: selectedWarehouse,
 					company,
 					session_name: '',
 					items_count: countItems.length,
 				})
-				toast.success('All quantities match!')
 			}
-			onClose()
+
+			const result = res?.message ?? res
+			if (result?.status === 'error') {
+				toast.error(result.message || 'Stock count failed')
+			} else {
+				toast.success(result?.message || 'Stock count submitted!')
+				onClose()
+			}
 		} catch (err: any) {
-			toast.error(err?.message || 'Failed to submit stock count')
+			const msg = err?.message || err?._server_messages
+			toast.error(typeof msg === 'string' ? msg : 'Stock count failed')
 		} finally {
 			setSubmitting(false)
 		}

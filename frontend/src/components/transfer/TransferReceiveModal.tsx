@@ -62,16 +62,22 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse, 
 
 		setSubmitting(true)
 		try {
-			await receiveTransfer({
+			const res = await receiveTransfer({
 				stock_entry_name: stockEntryName,
 				items_data: JSON.stringify(receiveItems),
 				company,
 			})
-			toast.success('Transfer received!')
-			mutate()
-			clearAll(stockEntryName)
+			const result = (res as any)?.message ?? res
+			if (result?.status === 'error') {
+				toast.error(result.message || 'Receive failed')
+			} else {
+				toast.success(`Received: ${result?.stock_entry || 'done'}`)
+				mutate()
+				clearAll(stockEntryName)
+			}
 		} catch (err: any) {
-			toast.error(err?.message || 'Failed to receive transfer')
+			const msg = err?.message || err?._server_messages
+			toast.error(typeof msg === 'string' ? msg : 'Receive failed')
 		} finally {
 			setSubmitting(false)
 		}
