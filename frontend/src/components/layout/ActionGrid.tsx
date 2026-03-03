@@ -74,7 +74,7 @@ const ALL_ACTIONS: ActionButton[] = [
 	},
 	{
 		id: 'manufacturing',
-		label: 'Manufact-\nuring',
+		label: 'Manufac-\nturing',
 		icon: <Factory strokeWidth={2.5} />,
 		gradient: 'from-purple-400 to-purple-600',
 		shadow: 'shadow-purple-200',
@@ -115,10 +115,10 @@ export default function ActionGrid({ operations, onAction }: ActionGridProps) {
 					`}
 				>
 					<div className="absolute inset-0 bg-white/0 group-active:bg-white/10 transition-colors" />
-					<div className="relative w-7 h-7 sm:w-9 sm:h-9">
+					<div className="relative w-8 h-8 sm:w-10 sm:h-10">
 						{action.icon}
 					</div>
-					<span className="relative text-[11px] sm:text-sm font-bold text-center leading-tight whitespace-pre-line drop-shadow-sm">
+					<span className="relative text-xs sm:text-sm font-bold text-center leading-tight whitespace-pre-line drop-shadow-sm">
 						{action.label}
 					</span>
 				</button>

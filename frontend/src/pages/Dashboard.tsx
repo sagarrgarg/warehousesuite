@@ -88,8 +88,8 @@ export default function Dashboard() {
 				<div className="relative px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-5 sm:px-6 sm:pb-6 max-w-2xl mx-auto">
 					<div className="flex items-center justify-between mb-4">
 						<div>
-							<h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">POW</h1>
-							<p className="text-indigo-200 text-sm mt-0.5">Point of Work</p>
+							<h1 className="text-3xl font-extrabold tracking-tight">POW</h1>
+							<p className="text-indigo-200 text-base mt-0.5">Point of Work</p>
 						</div>
 						{profiles.length > 1 && (
 							<ProfileSwitcher
@@ -102,25 +102,25 @@ export default function Dashboard() {
 
 					{selectedProfile && (
 						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								<span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium">
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-sm font-medium">
 									{selectedProfile.name1}
 								</span>
-								<span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-xs">
+								<span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-sm">
 									{selectedProfile.company}
 								</span>
 							</div>
 
 							{warehouses && (
 								<div className="relative inline-block">
-									<Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
-									<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60 pointer-events-none" />
+									<Warehouse className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+									<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60 pointer-events-none" />
 									<select
-										className="appearance-none bg-white/10 backdrop-blur-sm text-white text-sm rounded-xl pl-9 pr-9 py-2.5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 w-full sm:w-auto min-w-[200px] cursor-pointer"
+										className="appearance-none bg-white/10 backdrop-blur-sm text-white text-base rounded-xl pl-10 pr-10 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 w-full sm:w-auto min-w-[220px] cursor-pointer"
 										value={defaultWarehouse ?? ''}
 										onChange={(e) => setDefaultWarehouse(e.target.value || null)}
 									>
-										<option value="" className="text-gray-900">Select warehouse...</option>
+										<option value="" className="text-gray-900">Your Warehouse...</option>
 										{warehouses.source_warehouses.map(wh => (
 											<option key={wh.warehouse} value={wh.warehouse} className="text-gray-900">{wh.warehouse_name || wh.warehouse}</option>
 										))}

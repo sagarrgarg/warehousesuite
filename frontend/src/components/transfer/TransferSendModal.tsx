@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { X, Plus, Trash2, ArrowUpFromLine, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, ArrowUpFromLine, ArrowRight } from 'lucide-react'
 import type { ProfileWarehouses } from '@/types'
 
 interface TransferSendModalProps {
@@ -18,13 +18,7 @@ interface TransferLine {
 	uom: string
 }
 
-export default function TransferSendModal({
-	open,
-	onClose,
-	warehouses,
-	company,
-	showOnlyStockItems,
-}: TransferSendModalProps) {
+export default function TransferSendModal({ open, onClose, warehouses, company, showOnlyStockItems }: TransferSendModalProps) {
 	const [sourceWarehouse, setSourceWarehouse] = useState(warehouses.source_warehouses[0]?.warehouse ?? '')
 	const [targetWarehouse, setTargetWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
 	const [lines, setLines] = useState<TransferLine[]>([{ item_code: '', qty: 1, uom: '' }])
@@ -61,15 +55,19 @@ export default function TransferSendModal({
 				qty: l.qty,
 				uom: l.uom || items.find((i: any) => i.item_code === l.item_code)?.stock_uom || 'Nos',
 			}))
+			const inTransit = typeof warehouses.in_transit_warehouse === 'object'
+				? warehouses.in_transit_warehouse.warehouse
+				: warehouses.in_transit_warehouse
+
 			await createTransfer({
 				source_warehouse: sourceWarehouse,
 				target_warehouse: targetWarehouse,
-				in_transit_warehouse: warehouses.in_transit_warehouse?.warehouse ?? warehouses.in_transit_warehouse,
+				in_transit_warehouse: inTransit,
 				items: JSON.stringify(transferItems),
 				company,
 				remarks,
 			})
-			toast.success('Transfer created successfully')
+			toast.success('Transfer created!')
 			onClose()
 		} catch (err: any) {
 			toast.error(err?.message || 'Failed to create transfer')
@@ -87,17 +85,14 @@ export default function TransferSendModal({
 				onClick={e => e.stopPropagation()}
 			>
 				{/* Header */}
-				<div className="flex items-center gap-3 px-4 sm:px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 border-b border-border shrink-0">
-					<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white">
-						<ArrowUpFromLine className="w-5 h-5" strokeWidth={2.5} />
-					</div>
+				<div className="flex items-center gap-3 px-4 sm:px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-border shrink-0">
+					<button onClick={onClose} className="w-11 h-11 flex items-center justify-center hover:bg-secondary rounded-xl transition-colors touch-manipulation">
+						<ArrowLeft className="w-6 h-6 text-foreground" />
+					</button>
 					<div className="flex-1">
 						<h2 className="text-lg font-bold text-foreground">Transfer Send</h2>
-						<p className="text-xs text-muted-foreground">Create a warehouse transfer</p>
+						<p className="text-sm text-muted-foreground">Send items to another warehouse</p>
 					</div>
-					<button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-secondary rounded-xl transition-colors touch-manipulation">
-						<X className="w-5 h-5 text-muted-foreground" />
-					</button>
 				</div>
 
 				{/* Body */}
@@ -105,16 +100,20 @@ export default function TransferSendModal({
 					{/* Warehouses */}
 					<div className="flex items-center gap-2">
 						<div className="flex-1">
-							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">From</label>
-							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={sourceWarehouse} onChange={(e) => setSourceWarehouse(e.target.value)}>
-								{warehouses.source_warehouses.map(wh => <option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>)}
+							<label className="text-sm font-bold text-foreground mb-1.5 block">From</label>
+							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3.5 text-base font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={sourceWarehouse} onChange={(e) => setSourceWarehouse(e.target.value)}>
+								{warehouses.source_warehouses.map(wh => (
+									<option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>
+								))}
 							</select>
 						</div>
-						<ArrowRight className="w-5 h-5 text-muted-foreground mt-6 shrink-0" />
+						<ArrowRight className="w-6 h-6 text-muted-foreground mt-7 shrink-0" />
 						<div className="flex-1">
-							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">To</label>
-							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={targetWarehouse} onChange={(e) => setTargetWarehouse(e.target.value)}>
-								{warehouses.target_warehouses.map(wh => <option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>)}
+							<label className="text-sm font-bold text-foreground mb-1.5 block">To</label>
+							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3.5 text-base font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={targetWarehouse} onChange={(e) => setTargetWarehouse(e.target.value)}>
+								{warehouses.target_warehouses.map(wh => (
+									<option key={wh.warehouse} value={wh.warehouse}>{wh.warehouse_name || wh.warehouse}</option>
+								))}
 							</select>
 						</div>
 					</div>
@@ -122,29 +121,44 @@ export default function TransferSendModal({
 					{/* Items */}
 					<div>
 						<div className="flex items-center justify-between mb-3">
-							<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Items</label>
-							<button onClick={addLine} className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary/80 touch-manipulation">
-								<Plus className="w-4 h-4" /> Add
+							<label className="text-sm font-bold text-foreground">Items to transfer</label>
+							<button onClick={addLine} className="flex items-center gap-1 text-sm font-bold text-primary hover:text-primary/80 touch-manipulation py-1">
+								<Plus className="w-5 h-5" /> Add
 							</button>
 						</div>
 						<div className="space-y-3">
 							{lines.map((line, index) => (
 								<div key={index} className="bg-secondary rounded-xl p-3 space-y-2.5">
-									<select className="w-full bg-white border border-border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" value={line.item_code} onChange={(e) => updateLine(index, 'item_code', e.target.value)}>
-										<option value="">Select item...</option>
+									<select
+										className="w-full bg-white border border-border rounded-xl px-3 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+										value={line.item_code}
+										onChange={(e) => updateLine(index, 'item_code', e.target.value)}
+									>
+										<option value="">Pick an item...</option>
 										{items.map((item: any) => (
 											<option key={item.item_code} value={item.item_code}>
 												{item.item_code} — {item.item_name}
-												{item.actual_qty !== undefined ? ` (${item.actual_qty})` : ''}
+												{item.stock_qty ? ` (${item.stock_qty})` : ''}
 											</option>
 										))}
 									</select>
 									<div className="flex items-center gap-2">
 										<div className="flex-1">
-											<input type="number" min="0" step="1" placeholder="Qty" className="w-full bg-white border border-border rounded-xl px-3 py-3 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-primary" value={line.qty || ''} onChange={(e) => updateLine(index, 'qty', parseFloat(e.target.value) || 0)} />
+											<input
+												type="number"
+												min="0"
+												step="1"
+												placeholder="Quantity"
+												className="w-full bg-white border border-border rounded-xl px-3 py-3.5 text-base text-center font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+												value={line.qty || ''}
+												onChange={(e) => updateLine(index, 'qty', parseFloat(e.target.value) || 0)}
+											/>
 										</div>
 										{lines.length > 1 && (
-											<button onClick={() => removeLine(index)} className="w-11 h-11 flex items-center justify-center text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors touch-manipulation">
+											<button
+												onClick={() => removeLine(index)}
+												className="w-12 h-12 flex items-center justify-center text-destructive/60 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors touch-manipulation"
+											>
 												<Trash2 className="w-5 h-5" />
 											</button>
 										)}
@@ -156,15 +170,25 @@ export default function TransferSendModal({
 
 					{/* Remarks */}
 					<div>
-						<label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Remarks</label>
-						<textarea className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary" rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Optional..." />
+						<label className="text-sm font-bold text-foreground mb-1.5 block">Notes (optional)</label>
+						<textarea
+							className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-base resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+							rows={2}
+							value={remarks}
+							onChange={(e) => setRemarks(e.target.value)}
+							placeholder="Any notes about this transfer..."
+						/>
 					</div>
 				</div>
 
 				{/* Footer */}
 				<div className="px-4 sm:px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border shrink-0">
-					<button onClick={handleSubmit} disabled={submitting} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 active:scale-[0.98] touch-manipulation text-base shadow-lg shadow-orange-200">
-						{submitting ? 'Creating...' : 'Send Transfer'}
+					<button
+						onClick={handleSubmit}
+						disabled={submitting}
+						className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 active:scale-[0.98] touch-manipulation text-lg shadow-lg shadow-orange-200"
+					>
+						{submitting ? 'Sending...' : 'Send Transfer'}
 					</button>
 				</div>
 			</div>
