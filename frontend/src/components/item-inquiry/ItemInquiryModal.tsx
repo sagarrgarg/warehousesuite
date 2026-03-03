@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFrappeGetCall } from 'frappe-react-sdk'
 import { ArrowLeft, Search, Barcode, Ruler, Warehouse, Tag, Users } from 'lucide-react'
+import { API } from '@/lib/api'
 
 interface ItemInquiryModalProps {
 	open: boolean
@@ -17,7 +18,7 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses }: I
 
 	const { data: inquiryRaw, isLoading } = useFrappeGetCall<{ message: any }>(
 		selectedItem
-			? 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_inquiry_data'
+			? API.getItemInquiryData
 			: undefined as any,
 		selectedItem
 			? { item_code: selectedItem, allowed_warehouses: JSON.stringify(allowedWarehouses) }
@@ -30,9 +31,9 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses }: I
 
 	const { data: itemsSearch } = useFrappeGetCall<{ message: any[] }>(
 		searchTerm.length >= 2
-			? 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_items_for_dropdown'
+			? API.getItemsForDropdown
 			: undefined as any,
-		searchTerm.length >= 2 ? { warehouse: '', show_only_stock_items: false } : undefined,
+		searchTerm.length >= 2 ? { show_only_stock_items: false } : undefined,
 		searchTerm.length >= 2 ? undefined : null,
 	)
 

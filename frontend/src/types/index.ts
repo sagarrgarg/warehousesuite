@@ -1,3 +1,5 @@
+// ─── POW Profile ───────────────────────────────────────────
+
 export interface POWProfile {
 	name: string
 	name1: string
@@ -11,19 +13,9 @@ export interface POWProfile {
 	delivery_note: 0 | 1
 	stock_count: 0 | 1
 	show_only_stock_items: 0 | 1
-	source_warehouse: SelectWarehouse[]
-	target_warehouse: SelectWarehouse[]
-	applicable_users: POWProfileUser[]
-}
-
-export interface SelectWarehouse {
-	name: string
-	warehouse: string
-}
-
-export interface POWProfileUser {
-	name: string
-	user: string
+	source_warehouse: { name: string; warehouse: string }[]
+	target_warehouse: { name: string; warehouse: string }[]
+	applicable_users: { name: string; user: string }[]
 }
 
 export interface ProfileOperations {
@@ -33,7 +25,6 @@ export interface ProfileOperations {
 	repack: boolean
 	delivery_note: boolean
 	stock_count: boolean
-	show_only_stock_items: boolean
 }
 
 export interface WarehouseOption {
@@ -44,88 +35,84 @@ export interface WarehouseOption {
 export interface ProfileWarehouses {
 	source_warehouses: WarehouseOption[]
 	target_warehouses: WarehouseOption[]
-	in_transit_warehouse: WarehouseOption
+	in_transit_warehouse: WarehouseOption | null
 }
 
-export interface TransferItem {
+// ─── Items ─────────────────────────────────────────────────
+
+export interface DropdownItem {
 	item_code: string
 	item_name: string
-	qty: number
-	uom: string
 	stock_qty: number
 	stock_uom: string
-	conversion_factor: number
-	available_qty: number
 }
 
-export interface PendingTransfer {
-	name: string
-	items: PendingTransferItem[]
+// ─── Transfer ──────────────────────────────────────────────
+
+export interface TransferReceiveGroup {
+	stock_entry: string
 	posting_date: string
-	pow_session_id?: string
 	source_warehouse: string
-	custom_for_which_warehouse_to_transfer?: string
+	in_transit_warehouse: string
+	dest_warehouse: string
+	created_by: string
+	remarks: string
+	has_open_concerns: boolean
+	concern_count: number
+	open_concerns: any[]
+	completion_percentage: number
+	status: 'Complete' | 'Partial' | 'Pending'
+	items: TransferReceiveItem[]
 }
 
-export interface PendingTransferItem {
+export interface TransferReceiveItem {
+	ste_detail: string
 	item_code: string
 	item_name: string
 	qty: number
 	uom: string
 	stock_uom: string
-	already_received: number
+	conversion_factor: number
+	transferred_qty: number
 	remaining_qty: number
 }
 
-export interface ItemInquiryData {
+export interface PendingSentTransfer {
+	name: string
+	posting_date: string
+	to_warehouse: string
+	final_destination: string
+	remarks: string
+	items: {
+		item_code: string
+		item_name: string
+		qty: number
+		remaining_qty: number
+		uom: string
+	}[]
+	total_items: number
+	pending_items: number
+}
+
+// ─── Stock Count ───────────────────────────────────────────
+
+export interface StockCountWarehouseItem {
 	item_code: string
 	item_name: string
-	description: string
-	item_group: string
 	stock_uom: string
-	image: string
-	barcodes: ItemBarcode[]
-	uoms: ItemUOM[]
-	stock_info: StockInfo[]
-	attributes: ItemAttribute[]
-	suppliers: ItemSupplier[]
-}
-
-export interface ItemBarcode {
-	barcode: string
-	barcode_type: string
-}
-
-export interface ItemUOM {
-	uom: string
-	conversion_factor: number
-}
-
-export interface StockInfo {
-	warehouse: string
-	actual_qty: number
-	reserved_qty: number
-	projected_qty: number
-}
-
-export interface ItemAttribute {
-	attribute: string
-	attribute_value: string
-}
-
-export interface ItemSupplier {
-	supplier: string
-	supplier_part_no: string
-}
-
-export interface StockCountItem {
-	item_code: string
-	item_name: string
-	warehouse: string
 	current_qty: number
-	stock_uom: string
-	physical_qty?: number
 }
+
+// ─── Concern ───────────────────────────────────────────────
+
+export interface ConcernData {
+	concern_type: string
+	concern_description: string
+	priority: string
+	receiver_notes: string
+}
+
+// ─── WMSuite Settings ──────────────────────────────────────
 
 export interface WMSuiteSettings {
 	auto_set_transit: 0 | 1
