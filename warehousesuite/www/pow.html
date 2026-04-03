@@ -1,0 +1,12 @@
+{% extends "templates/web.html" %}
+
+{% block title %}POW — Point of Work{% endblock %}
+
+{% block page_content %}
+<section class="container my-4">
+	<p class="text-muted small">WarehouseSuite · Point of Work</p>
+	<div id="pow-dashboard-root"></div>
+	<link rel="stylesheet" href="/assets/warehousesuite/pow_dashboard_react/assets/pow-dashboard.css" />
+	<script type="module" src="/assets/warehousesuite/pow_dashboard_react/assets/pow-dashboard.js"></script>
+</section>
+{% endblock %}

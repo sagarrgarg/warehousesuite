@@ -68,6 +68,12 @@ doctype_js = {"Item" : "public/js/item.js"}
 # 	"Role": "home_page"
 # }
 
+# Public website route for POW (e.g. https://erp.example.com/pow) — serves the React shell
+# mounted from `public/pow_dashboard_react/` (see `frontend/pow-dashboard`).
+website_route_rules = [
+	{"from_route": "/pow", "to_route": "pow"},
+]
+
 # Generators
 # ----------
 
