@@ -15,6 +15,7 @@ Architectural intent, business reasoning, and anti-patterns. This complements `t
 3. **Fail closed on doubt**: Validations (transit, value difference, permissions) should block ambiguous postings rather than “best guess” adjustments.
 4. **Operator empathy**: Mobile/tablet, glare, gloves, interruption—UI choices favor large targets, obvious state, and resume-friendly drafts (e.g. stock count).
 5. **Slice delivery**: Ship thin vertical slices (one workflow end-to-end) instead of large horizontal refactors.
+6. **Short path to work**: The **`/pow` website** route is the preferred bookmark for floor staff (hostname + `/pow`), not hunting inside Desk `/app`—same permissions and APIs, less navigation friction.
 
 ## AI-native stance (when added)
 
