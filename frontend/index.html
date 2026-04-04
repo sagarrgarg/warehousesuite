@@ -10,9 +10,14 @@
 </head>
 <body>
   <div id="root"></div>
+  <!-- csrf_token -->
   <script>
     try {
-      window.csrf_token = '{{ csrf_token }}';
+      // frappe.csrf_token is injected by Frappe's <!-- csrf_token --> replacement.
+      // frappe-react-sdk reads window.csrf_token, so we copy it here.
+      if (typeof frappe !== 'undefined' && frappe.csrf_token) {
+        window.csrf_token = frappe.csrf_token;
+      }
       if (!window.frappe) window.frappe = {};
       frappe.boot = JSON.parse({{ boot }});
     } catch(e) {
