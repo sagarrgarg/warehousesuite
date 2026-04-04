@@ -54,15 +54,21 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
   const { call: fetchDefaultWh } = useFrappePostCall(API.getMfgDefaultWarehouses)
   const { call: submitWO } = useFrappePostCall(API.createWorkOrder)
 
-  // Pre-fill from Manufacturing Settings on mount
+  // Pre-fill from Manufacturing Settings on mount — only accept if within profile target warehouses
   useEffect(() => {
     if (!company) return
     fetchDefaultWh({ company }).then((res: any) => {
       const d = unwrap(res)
-      if (d?.wip_warehouse) setWipWarehouse(d.wip_warehouse)
-      // Only override fg_warehouse if we don't have a profile target warehouse
-      if (d?.fg_warehouse && !warehouses.target_warehouses[0]?.warehouse) setFgWarehouse(d.fg_warehouse)
-    }).catch(() => { /* ignore — settings may not be configured */ })
+      const targetWhs = warehouses.target_warehouses.map(w => w.warehouse)
+      if (d?.wip_warehouse && targetWhs.includes(d.wip_warehouse)) {
+        setWipWarehouse(d.wip_warehouse)
+      } else if (targetWhs.length > 0 && !wipWarehouse) {
+        setWipWarehouse(targetWhs[0])
+      }
+      if (d?.fg_warehouse && targetWhs.includes(d.fg_warehouse) && !warehouses.target_warehouses[0]?.warehouse) {
+        setFgWarehouse(d.fg_warehouse)
+      }
+    }).catch(() => { /* ignore */ })
   }, [company])
 
   const handleItemSelect = useCallback(async (itemCode: string) => {
@@ -172,6 +178,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     ...warehouses.source_warehouses.map(w => w.warehouse),
     ...warehouses.target_warehouses.map(w => w.warehouse),
   ]
+  const targetWhs = warehouses.target_warehouses.map(w => w.warehouse)
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col overflow-hidden">
@@ -247,7 +254,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                 className="w-full bg-slate-700 border border-slate-600 rounded text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500"
               >
                 <option value="">— Use Manufacturing Settings default —</option>
-                {allWh.map(w => (
+                {targetWhs.map(w => (
                   <option key={w} value={w}>{shortWh(w)}</option>
                 ))}
               </select>
@@ -265,7 +272,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                 className={`w-full bg-slate-700 border rounded text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500 ${!fgWarehouse ? 'border-red-600' : 'border-slate-600'}`}
               >
                 <option value="">— Select —</option>
-                {allWh.map(w => (
+                {targetWhs.map(w => (
                   <option key={w} value={w}>{shortWh(w)}</option>
                 ))}
               </select>
