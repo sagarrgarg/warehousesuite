@@ -8,7 +8,7 @@
     "build": "vite build --base=/assets/warehousesuite/pow/ && yarn copy-html-entry",
     "lint": "eslint .",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../warehousesuite/public/pow/index.html ../warehousesuite/www/pow.html"
+    "copy-html-entry": "cp ../warehousesuite/public/pow/index.html ../warehousesuite/www/pow.html && sed -i 's@POW_BOOT_JSON_PLACEHOLDER@{{ boot | json }}@g' ../warehousesuite/www/pow.html"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

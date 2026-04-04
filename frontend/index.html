@@ -10,19 +10,26 @@
 </head>
 <body>
   <div id="root"></div>
+  <script type="application/json" id="pow-boot-data">POW_BOOT_JSON_PLACEHOLDER</script>
+  <script>
+    window.frappe = window.frappe || {};
+  </script>
   <!-- csrf_token -->
   <script>
-    try {
-      // frappe.csrf_token is injected by Frappe's <!-- csrf_token --> replacement.
-      // frappe-react-sdk reads window.csrf_token, so we copy it here.
+    (function () {
+      try {
+        var el = document.getElementById('pow-boot-data');
+        var raw = el && el.textContent ? el.textContent.trim() : '';
+        if (raw) {
+          frappe.boot = JSON.parse(raw);
+        }
+      } catch (_e) {
+        /* Invalid JSON (e.g. dev placeholder) — main.tsx loads boot via get_context_for_dev */
+      }
       if (typeof frappe !== 'undefined' && frappe.csrf_token) {
         window.csrf_token = frappe.csrf_token;
       }
-      if (!window.frappe) window.frappe = {};
-      frappe.boot = JSON.parse({{ boot }});
-    } catch(e) {
-      // In Vite dev mode, Jinja vars are not replaced — boot data is fetched via API instead
-    }
+    })();
   </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>

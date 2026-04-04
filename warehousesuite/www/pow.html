@@ -7,24 +7,31 @@
   <meta name="description" content="Point of Work - Mobile-first warehouse management">
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes">
-  <script type="module" crossorigin src="/assets/warehousesuite/pow/assets/index-DYuogZMf.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/warehousesuite/pow/assets/index-Co4vhH8t.css">
+  <script type="module" crossorigin src="/assets/warehousesuite/pow/assets/index-lXGGKO8N.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/warehousesuite/pow/assets/index-C_NBX0iN.css">
 </head>
 <body>
   <div id="root"></div>
+  <script type="application/json" id="pow-boot-data">{{ boot | json }}</script>
+  <script>
+    window.frappe = window.frappe || {};
+  </script>
   <!-- csrf_token -->
   <script>
-    try {
-      // frappe.csrf_token is injected by Frappe's <!-- csrf_token --> replacement.
-      // frappe-react-sdk reads window.csrf_token, so we copy it here.
+    (function () {
+      try {
+        var el = document.getElementById('pow-boot-data');
+        var raw = el && el.textContent ? el.textContent.trim() : '';
+        if (raw) {
+          frappe.boot = JSON.parse(raw);
+        }
+      } catch (_e) {
+        /* Invalid JSON (e.g. dev placeholder) — main.tsx loads boot via get_context_for_dev */
+      }
       if (typeof frappe !== 'undefined' && frappe.csrf_token) {
         window.csrf_token = frappe.csrf_token;
       }
-      if (!window.frappe) window.frappe = {};
-      frappe.boot = JSON.parse({{ boot }});
-    } catch(e) {
-      // In Vite dev mode, Jinja vars are not replaced — boot data is fetched via API instead
-    }
+    })();
   </script>
 </body>
 </html>

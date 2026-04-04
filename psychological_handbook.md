@@ -1,5 +1,9 @@
 # Psychological Handbook
 
+## Decision note (2026-04-05, POW boot parity)
+- The POW React app must behave like a first-class logged-in Frappe surface: same session, CSRF, and boot signals as Desk so API calls do not “mysteriously” fail only on the hosted `/pow` page.
+- Production therefore injects real `frappe.boot` and ensures `frappe` exists before CSRF injection; dev keeps using an explicit boot API behind `developer_mode` instead of pretending Jinja ran in Vite.
+
 ## Product intent
 - Warehouse operations must remain fast and safe under floor conditions (one-handed use, small screens, unstable attention windows).
 - Critical actions (send, receive, count, print) should feel consistent regardless of screen size.

@@ -5,9 +5,10 @@ app_description = "WarehouseSuite is a mobile-first warehouse management solutio
 app_email = "sagar1ratan1garg1@gmail.com"
 app_license = "Commercial"
 
-# SPA Route for React POW Dashboard
+# SPA routes for React POW — keep both so deep links and `/pow` resolve to the same page
 website_route_rules = [
 	{"from_route": "/pow/<path:app_path>", "to_route": "pow"},
+	{"from_route": "/pow", "to_route": "pow"},
 ]
 
 add_to_apps_screen = [
@@ -81,12 +82,6 @@ doctype_js = {"Item" : "public/js/item.js"}
 # role_home_page = {
 # 	"Role": "home_page"
 # }
-
-# Public website route for POW (e.g. https://erp.example.com/pow) — serves the React shell
-# mounted from `public/pow_dashboard_react/` (see `frontend/pow-dashboard`).
-website_route_rules = [
-	{"from_route": "/pow", "to_route": "pow"},
-]
 
 # Generators
 # ----------
