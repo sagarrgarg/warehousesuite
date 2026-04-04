@@ -1,12 +1,25 @@
-{% extends "templates/web.html" %}
-
-{% block title %}POW — Point of Work{% endblock %}
-
-{% block page_content %}
-<section class="container my-4">
-	<p class="text-muted small">WarehouseSuite · Point of Work</p>
-	<div id="pow-dashboard-root"></div>
-	<link rel="stylesheet" href="/assets/warehousesuite/pow_dashboard_react/assets/pow-dashboard.css" />
-	<script type="module" src="/assets/warehousesuite/pow_dashboard_react/assets/pow-dashboard.js"></script>
-</section>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>POW - WarehouseSuite</title>
+  <meta name="description" content="Point of Work - Mobile-first warehouse management">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <script type="module" crossorigin src="/assets/warehousesuite/pow/assets/index-C0kIbhzF.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/warehousesuite/pow/assets/index-D7f-8Wzj.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    try {
+      window.csrf_token = '{{ csrf_token }}';
+      if (!window.frappe) window.frappe = {};
+      frappe.boot = JSON.parse({{ boot }});
+    } catch(e) {
+      // In Vite dev mode, Jinja vars are not replaced — boot data is fetched via API instead
+    }
+  </script>
+</body>
+</html>

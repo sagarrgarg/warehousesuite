@@ -117,7 +117,10 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
 
                 return (
                 <div key={item.ste_detail} className="flex items-center gap-1.5 text-[10px]">
-                  <span className="text-slate-600 truncate flex-1 min-w-0">{item.item_code}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-slate-700 font-semibold truncate block leading-tight">{item.item_name || item.item_code}</span>
+                    <span className="text-[8px] text-slate-400 font-mono truncate block leading-tight">{item.item_code}</span>
+                  </div>
                   <span className="text-right tabular-nums shrink-0">
                     <span className="text-slate-400">{item.remaining_qty} {item.uom}</span>
                     {stockRemaining != null && (

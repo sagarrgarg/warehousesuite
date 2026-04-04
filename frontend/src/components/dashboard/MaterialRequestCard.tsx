@@ -48,7 +48,10 @@ export default function MaterialRequestCard({ mr, onFulfill }: MaterialRequestCa
 
             return (
               <div key={line.name} className="flex items-center justify-between gap-2 text-[10px]">
-                <span className="text-slate-600 truncate">{line.item_code}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="text-slate-700 font-semibold truncate block leading-tight">{line.item_name || line.item_code}</span>
+                  <span className="text-[8px] text-slate-400 font-mono truncate block leading-tight">{line.item_code}</span>
+                </div>
                 <span className="text-right shrink-0">
                   <span className="text-slate-800 font-bold tabular-nums">
                     {line.remaining_in_uom ?? line.remaining_qty}{' '}
