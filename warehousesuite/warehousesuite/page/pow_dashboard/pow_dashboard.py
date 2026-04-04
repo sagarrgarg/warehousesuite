@@ -10,7 +10,7 @@ def get_applicable_pow_profiles():
     profiles = frappe.get_all(
         "POW Profile",
         filters={"disabled": 0},
-        fields=["name", "company"],
+        fields=["name", "name1", "company"],
     )
     # Filter profiles where user is in applicable_users
     result = []
@@ -196,6 +196,7 @@ def get_pow_profile_operations(pow_profile):
 def get_items_for_dropdown(warehouse=None, show_only_stock_items=False):
     """Get items for dropdown with item_code:item_name format and optional stock filtering"""
     try:
+        show_only_stock_items = show_only_stock_items in (True, 1, "1", "true", "True")
         if warehouse and show_only_stock_items:
             # Use efficient JOIN query for items with stock (like stock count)
             items = frappe.db.sql("""
@@ -254,16 +255,49 @@ def get_items_for_dropdown(warehouse=None, show_only_stock_items=False):
 
 @frappe.whitelist()
 def get_item_uoms(item_code):
-    """Get available UOMs for an item"""
+    """Get available UOMs for an item with conversion factors."""
     item = frappe.get_doc("Item", item_code)
     allowed_uoms = [item.stock_uom]
-    
+    uom_conversions = {item.stock_uom: 1}
+
     if item.uoms:
         for uom_entry in item.uoms:
             if uom_entry.uom and uom_entry.uom not in allowed_uoms:
                 allowed_uoms.append(uom_entry.uom)
-    
-    return allowed_uoms
+                uom_conversions[uom_entry.uom] = uom_entry.conversion_factor or 1
+
+    return {"uoms": allowed_uoms, "uom_conversions": uom_conversions, "stock_uom": item.stock_uom}
+
+@frappe.whitelist()
+def get_item_availability(item_code):
+    """Return available UOMs with conversion factors and warehouse-wise stock for an item."""
+    item = frappe.get_doc("Item", item_code)
+
+    uoms = [item.stock_uom]
+    uom_conversions = [{"uom": item.stock_uom, "conversion_factor": 1}]
+    for row in item.uoms or []:
+        if row.uom and row.uom not in uoms:
+            uoms.append(row.uom)
+            uom_conversions.append({"uom": row.uom, "conversion_factor": row.conversion_factor or 1})
+
+    bins = frappe.db.sql("""
+        SELECT b.warehouse, w.warehouse_name, b.actual_qty
+        FROM `tabBin` b
+        LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
+        WHERE b.item_code = %s AND b.actual_qty > 0
+        ORDER BY b.actual_qty DESC
+    """, item_code, as_dict=True)
+
+    return {
+        "uoms": uoms,
+        "stock_uom": item.stock_uom,
+        "uom_conversions": uom_conversions,
+        "availability": [
+            {"warehouse": r.warehouse, "warehouse_name": r.warehouse_name or r.warehouse, "qty": r.actual_qty}
+            for r in bins
+        ],
+    }
+
 
 @frappe.whitelist()
 def get_item_stock_info(item_code, warehouse):
@@ -609,12 +643,36 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
             "message": "An error occurred while preparing the transfer data. Please try again."
         }
 
+def _get_warehouses_for_receive_filter(warehouse):
+    """Get list of warehouses to match: the warehouse itself, its children, and its parent.
+    This ensures we match when:
+    - dest = selected (e.g. Finished Goods - RKCW)
+    - dest = child of selected (e.g. a sub-warehouse)
+    - dest = parent of selected (e.g. Finished Goods when user selected Finished Goods - RKCW)
+    """
+    if not warehouse:
+        return []
+    warehouses = [warehouse]
+    children = get_all_child_warehouses(warehouse)
+    warehouses.extend(c["name"] for c in children)
+    # Add parent so we match transfers destined to parent warehouse
+    parent = frappe.db.get_value("Warehouse", warehouse, "parent_warehouse")
+    if parent:
+        warehouses.append(parent)
+    return list(dict.fromkeys(warehouses))  # dedupe preserving order
+
+
 @frappe.whitelist()
-def get_transfer_receive_data(default_warehouse=None):
-    """Get transfer receive data for the given default warehouse"""
+def get_transfer_receive_data(default_warehouse=None, warehouses=None):
+    """Get transfer receive data filtered by warehouse(s).
+
+    Args:
+        default_warehouse: Single warehouse (legacy, expands to include children/parent).
+        warehouses: JSON list of warehouse names. Each is expanded via
+                    ``_get_warehouses_for_receive_filter`` so children/parents are included.
+                    Takes precedence over ``default_warehouse`` when both are provided.
+    """
     try:
-        frappe.logger().info(f"get_transfer_receive_data called with warehouse: {default_warehouse}")
-        # Build the SQL query
         sql_query = """
         SELECT
             se.posting_date AS posting_date,
@@ -628,7 +686,6 @@ def get_transfer_receive_data(default_warehouse=None):
             sei.qty,
             sei.uom,
             IFNULL(sei.transferred_qty, 0) AS transferred_qty,
-            se.custom_sales_order AS ref_so,
             u.full_name AS created_by,
             se.custom_pow_session_id AS pow_session_id,
             se.remarks AS remarks
@@ -644,21 +701,32 @@ def get_transfer_receive_data(default_warehouse=None):
             AND se.docstatus = 1
             AND (sei.qty > IFNULL(sei.transferred_qty, 0))
         """
-        
-        # Add warehouse filter if provided
-        if default_warehouse:
-            sql_query += " AND se.custom_for_which_warehouse_to_transfer = %s"
+
+        params = []
+        wh_list = None
+        if warehouses:
+            wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
+        if wh_list:
+            all_dest = []
+            for wh in wh_list:
+                all_dest.extend(_get_warehouses_for_receive_filter(wh))
+            all_dest = list(dict.fromkeys(w.strip() for w in all_dest if w and w.strip()))
+            if all_dest:
+                placeholders = ", ".join(["%s"] * len(all_dest))
+                sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
+                params = all_dest
+        elif default_warehouse:
+            dest_warehouses = _get_warehouses_for_receive_filter(default_warehouse)
+            dest_warehouses = [w.strip() for w in dest_warehouses if w and w.strip()]
+            if dest_warehouses:
+                placeholders = ", ".join(["%s"] * len(dest_warehouses))
+                sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
+                params = dest_warehouses
         
         sql_query += " ORDER BY se.posting_date DESC"
         
         # Execute the query
-        params = (default_warehouse,) if default_warehouse else ()
-        result = frappe.db.sql(sql_query, params, as_dict=True)
-        
-        # Log the results for debugging
-        frappe.logger().info(f"Found {len(result)} transfer rows")
-        for row in result[:3]:  # Log first 3 rows
-            frappe.logger().info(f"Stock Entry: {row['stock_entry']}, POW Session: {row['pow_session_id']}, Remarks: {repr(row['remarks'])}")
+        result = frappe.db.sql(sql_query, params or (), as_dict=True)
         
         # Group by stock entry for better organization
         grouped_data = {}
@@ -671,7 +739,7 @@ def get_transfer_receive_data(default_warehouse=None):
                     'source_warehouse': row['source_warehouse'],
                     'in_transit_warehouse': row['in_transit_warehouse'],
                     'dest_warehouse': row['dest_warehouse'],
-                    'ref_so': row['ref_so'],
+                    'ref_so': row.get('ref_so'),
                     'created_by': row['created_by'],
                     'pow_session_id': row['pow_session_id'],
                     'remarks': row['remarks'],
@@ -748,69 +816,62 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         
         items_data = frappe.parse_json(items_data)
         
-        # Get the original stock entry
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
-        
-        # Create a map of item_code -> ste_detail -> qty to receive
+
         items_to_receive = {}
         for item in items_data:
             if item.get('qty', 0) > 0:
-                # Find the matching stock entry detail by both item code and ste_detail if provided
                 for se_item in original_se.items:
                     if se_item.item_code == item['item_code']:
-                        # Use ste_detail if provided, otherwise use the first matching item
                         ste_detail = item.get('ste_detail', se_item.name)
                         if ste_detail == se_item.name:
+                            pending = flt(se_item.qty) - flt(se_item.transferred_qty)
+                            if pending <= 0:
+                                continue
                             items_to_receive[ste_detail] = {
-                                'qty': float(item['qty']),
+                                'qty': min(float(item['qty']), pending),
                                 'item_code': item['item_code'],
                                 'original_qty': se_item.qty,
                                 'transferred_qty': se_item.transferred_qty or 0
                             }
                             break
-        
-        # Validate quantities
-        errors = []
-        for ste_detail, item_data in items_to_receive.items():
-            pending_qty = item_data['original_qty'] - item_data['transferred_qty']
-            if item_data['qty'] > pending_qty:
-                errors.append(f"Item {item_data['item_code']}: Requested qty {item_data['qty']} exceeds pending qty {pending_qty}")
-        
-        if errors:
+
+        if not items_to_receive:
             return {
                 "status": "error",
-                "message": "Validation errors: " + ", ".join(errors)
+                "error_type": "already_received",
+                "message": "All items have already been received for this transfer."
             }
-        
-        # Use ERPNext's standard make_stock_in_entry function
+
         new_se = make_stock_in_entry(stock_entry_name)
-        
-        # Update quantities based on what user wants to receive
+
         items_to_remove = []
         for item in new_se.items:
             if item.ste_detail in items_to_receive:
-                # Update the quantity to what user wants to receive
                 item.qty = items_to_receive[item.ste_detail]['qty']
                 item.transfer_qty = item.qty * item.conversion_factor
             else:
-                # Mark items not in the receive list for removal
                 items_to_remove.append(item)
-        
-        # Remove items that are not being received
+
         for item in items_to_remove:
             new_se.items.remove(item)
-        
-        # Set custom fields
+
+        if not new_se.items:
+            return {
+                "status": "error",
+                "error_type": "already_received",
+                "message": "All items have already been received for this transfer."
+            }
+
         if session_name:
             new_se.custom_pow_session_id = session_name
-        
-        # Get destination warehouse from custom field
+
         dest_warehouse = getattr(original_se, 'custom_for_which_warehouse_to_transfer', None)
         if dest_warehouse:
             new_se.to_warehouse = dest_warehouse
-            # Update all items' target warehouse
             for item in new_se.items:
-                item.t_warehouse = dest_warehouse
+                if item.s_warehouse != dest_warehouse:
+                    item.t_warehouse = dest_warehouse
         
         # Validate and submit with transaction handling
         try:
@@ -2176,26 +2237,31 @@ def debug_stock_entry_warehouses(stock_entry_name):
 
 
 @frappe.whitelist()
-def get_pending_sent_transfers(source_warehouse=None):
-    """Get pending sent transfers for a warehouse that:
-    1. Were sent by the current user
-    2. Have add_to_transit ticked
-    3. Are not fully delivered
+def get_pending_sent_transfers(source_warehouse=None, warehouses=None):
+    """Get pending sent transfers for one or more warehouses.
+
+    Args:
+        source_warehouse: Single warehouse name (legacy).
+        warehouses: JSON list of warehouse names. Takes precedence over
+                    ``source_warehouse`` when both are provided.
     """
     try:
-        if not source_warehouse:
+        wh_list = None
+        if warehouses:
+            wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
+        if not wh_list and source_warehouse:
+            wh_list = [source_warehouse]
+        if not wh_list:
             return []
-            
+
         current_user = frappe.session.user
-        
-        # Get all stock entries that match our base criteria
-        # Show ALL pending transfers from this warehouse, not just those created by current user
+
         stock_entries = frappe.get_all(
             "Stock Entry",
             filters={
                 "add_to_transit": 1,
                 "docstatus": 1,
-                "from_warehouse": source_warehouse
+                "from_warehouse": ["in", wh_list],
             },
             fields=[
                 "name",

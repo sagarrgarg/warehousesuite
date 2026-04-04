@@ -112,6 +112,173 @@ export interface ConcernData {
 	receiver_notes: string
 }
 
+// ─── Material Request (Transfer) ────────────────────────────
+
+export interface PendingMaterialRequestLine {
+	name: string
+	item_code: string
+	item_name: string
+	qty: number
+	stock_qty: number
+	ordered_qty: number
+	remaining_qty: number
+	remaining_in_uom: number
+	uom: string
+	stock_uom: string
+	warehouse: string
+	from_warehouse: string | null
+	conversion_factor: number
+	schedule_date: string | null
+}
+
+export interface PendingMaterialRequest {
+	name: string
+	title: string
+	transaction_date: string
+	schedule_date: string | null
+	set_from_warehouse: string | null
+	set_warehouse: string | null
+	status: string
+	per_ordered: number
+	owner: string
+	company: string
+	line_count: number
+	total_remaining_qty: number
+	lines: PendingMaterialRequestLine[]
+}
+
+export interface FulfillmentWarehouseOption {
+	warehouse: string
+	warehouse_name: string
+	available_qty: number
+}
+
+export interface FulfillmentLineOption {
+	mr_item_name: string
+	item_code: string
+	item_name: string
+	remaining_qty: number
+	remaining_in_uom: number
+	uom: string
+	stock_uom: string
+	conversion_factor: number
+	target_warehouse: string
+	from_warehouse: string | null
+	candidates: FulfillmentWarehouseOption[]
+}
+
+export interface MaterialRequestFulfillmentPayload {
+	mr_item_name: string
+	item_code: string
+	qty: number
+	uom: string
+}
+
+export interface RaiseMRItemPayload {
+	item_code: string
+	qty: number
+	uom: string
+}
+
+// ─── Work Order ────────────────────────────────────────────
+
+export interface PendingWorkOrder {
+	name: string
+	production_item: string
+	item_name: string
+	qty: number
+	produced_qty: number
+	material_transferred_for_manufacturing: number
+	status: 'Not Started' | 'In Process' | 'Completed' | 'Stopped'
+	fg_warehouse: string
+	source_warehouse: string
+	wip_warehouse: string
+	bom_no: string
+	planned_start_date: string | null
+	planned_end_date: string | null
+	company: string
+	creation: string
+	per_available: number
+	per_completed: number
+	required_items_count: number
+	shortfall_count: number
+	amber_count: number
+}
+
+export interface WORequiredItem {
+	name: string
+	item_code: string
+	item_name: string
+	required_qty: number
+	transferred_qty: number
+	consumed_qty: number
+	remaining_transfer_qty: number
+	remaining_consume_qty: number
+	stock_uom: string
+	uom: string
+	conversion_factor: number
+	available_qty: number
+	stock_status: 'green' | 'amber' | 'red'
+	allow_alternative_item: 0 | 1
+	alternatives: { item_code: string; item_name: string; stock_uom: string }[]
+	warehouse_availability: { warehouse: string; warehouse_name: string; qty: number }[]
+}
+
+export interface WODetail {
+	name: string
+	production_item: string
+	item_name: string
+	qty: number
+	produced_qty: number
+	material_transferred_for_manufacturing: number
+	status: string
+	fg_warehouse: string
+	wip_warehouse: string
+	bom_no: string
+	company: string
+	allow_alternative_item: 0 | 1
+	per_available: number
+	per_completed: number
+	required_items: WORequiredItem[]
+}
+
+export interface BOMItem {
+	item_code: string
+	item_name: string
+	qty: number
+	stock_qty: number
+	uom: string
+	stock_uom: string
+	conversion_factor: number
+	source_warehouse: string | null
+	allow_alternative_item: 0 | 1
+	availability: { warehouse: string; warehouse_name: string; qty: number }[]
+}
+
+export interface BOMDetails {
+	bom_no: string
+	item_code: string
+	item_name: string
+	qty: number
+	stock_uom: string
+	allow_alternative_item: 0 | 1
+	items: BOMItem[]
+	scrap_items: { item_code: string; item_name: string; stock_qty: number; stock_uom: string }[]
+}
+
+export interface WOShortfallItem {
+	wo_item_name: string
+	item_code: string
+	item_name: string
+	required_qty: number
+	transferred_qty: number
+	needed_qty: number
+	available_qty: number
+	shortfall_qty: number
+	stock_uom: string
+	has_shortfall: boolean
+}
+
 // ─── WMSuite Settings ──────────────────────────────────────
 
 export interface WMSuiteSettings {

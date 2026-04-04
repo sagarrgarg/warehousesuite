@@ -28,8 +28,9 @@ function convert_to_stock_reconciliation(frm) {
     frappe.confirm(
         __('Are you sure you want to convert this stock count to a Stock Reconciliation? This action cannot be undone.'),
         function() {
-            frm.call({
-                method: 'convert_to_stock_reconciliation',
+            frappe.call({
+                method: 'warehousesuite.warehousesuite.doctype.pow_stock_count.pow_stock_count.convert_to_stock_reconciliation',
+                args: { stock_count: frm.doc.name },
                 callback: function(r) {
                     if (r.exc) {
                         frappe.msgprint(__('Error: ') + r.exc);

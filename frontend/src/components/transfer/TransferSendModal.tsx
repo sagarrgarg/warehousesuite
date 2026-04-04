@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, Plus, Trash2, ArrowRight, AlertTriangle, Truck, ChevronDown, ChevronUp, FileText, Calendar } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Truck, ChevronDown, ChevronUp, FileText, Calendar } from 'lucide-react'
 import { API, unwrap, isError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import ItemSearchInput from '@/components/shared/ItemSearchInput'
 import type { ProfileWarehouses, DropdownItem, PendingSentTransfer } from '@/types'
 
 interface Props {
@@ -23,10 +25,17 @@ interface Line {
 	stock_uom: string
 	available_qty: number
 	uom_options: string[]
+	uom_conversions: Record<string, number>
 }
 
 function newLine(): Line {
-	return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [] }
+	return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [], uom_conversions: {} }
+}
+
+function lineStockQty(line: Line): number {
+	if (!line.uom || line.uom === line.stock_uom) return line.qty
+	const cf = line.uom_conversions[line.uom] ?? 1
+	return +(line.qty * cf).toFixed(3)
 }
 
 export default function TransferSendModal({ open, onClose, warehouses, defaultWarehouse, showOnlyStockItems }: Props) {
@@ -37,13 +46,15 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const [remarks, setRemarks] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 	const [showPending, setShowPending] = useState(false)
+	const [showOverstockConfirm, setShowOverstockConfirm] = useState(false)
+	const [overstockItems, setOverstockItems] = useState<Line[]>([])
 
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
 
 	const { data: itemsData, mutate: refreshItems } = useFrappeGetCall<{ message: DropdownItem[] }>(
 		API.getItemsForDropdown,
-		{ warehouse: sourceWarehouse, show_only_stock_items: showOnlyStockItems },
+		{ warehouse: sourceWarehouse, show_only_stock_items: showOnlyStockItems ? 1 : 0 },
 	)
 	const items = itemsData?.message ?? []
 
@@ -65,16 +76,24 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 		if (!item) return
 
 		let uomOptions = [item.stock_uom]
+		let uomConversions: Record<string, number> = { [item.stock_uom]: 1 }
 		try {
 			const res = await fetch(`/api/method/${API.getItemUoms}?item_code=${encodeURIComponent(itemCode)}`, { credentials: 'include' })
 			const data = await res.json()
-			if (data?.message) uomOptions = data.message
+			const msg = data?.message
+			if (msg?.uoms) {
+				uomOptions = msg.uoms
+				uomConversions = msg.uom_conversions ?? uomConversions
+			} else if (Array.isArray(msg)) {
+				uomOptions = msg
+			}
 		} catch { /* keep default */ }
 
 		setLines(prev => prev.map(l => l.id === lineId ? {
 			...l, item_code: item.item_code, item_name: item.item_name,
 			uom: item.stock_uom, stock_uom: item.stock_uom,
 			available_qty: item.stock_qty ?? 0, uom_options: uomOptions,
+			uom_conversions: uomConversions,
 		} : l))
 	}, [items])
 
@@ -84,17 +103,11 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const addLine = () => setLines(prev => [...prev, newLine()])
 	const removeLine = (id: string) => { if (lines.length > 1) setLines(prev => prev.filter(l => l.id !== id)) }
 
-	const handleSubmit = async () => {
+	const doSubmit = useCallback(async () => {
 		const valid = lines.filter(l => l.item_code && l.qty > 0)
 		if (!valid.length) { toast.error('Add at least one item'); return }
 		if (!sourceWarehouse || !targetWarehouse) { toast.error('Select both warehouses'); return }
 		if (!inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
-
-		const seen = new Set<string>()
-		for (const l of valid) { if (seen.has(l.item_code)) { toast.error(`Duplicate: ${l.item_code}`); return }; seen.add(l.item_code) }
-
-		const overStock = valid.filter(l => l.qty > l.available_qty && l.available_qty > 0)
-		if (overStock.length > 0 && !confirm(`Some items exceed stock:\n${overStock.map(l => `${l.item_code}: ${l.qty} > ${l.available_qty}`).join('\n')}\n\nProceed?`)) return
 
 		setSubmitting(true)
 		try {
@@ -104,62 +117,74 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 			if (isError(result)) toast.error(result.message || 'Transfer failed')
 			else { toast.success(`Transfer created: ${result.stock_entry}`); onClose() }
 		} catch (err: any) { toast.error(err?.message || 'Transfer failed') }
-		finally { setSubmitting(false) }
+		finally { setSubmitting(false); setShowOverstockConfirm(false); setOverstockItems([]) }
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks])
+
+	const handleSubmit = () => {
+		const valid = lines.filter(l => l.item_code && l.qty > 0)
+		if (!valid.length) { toast.error('Add at least one item'); return }
+		if (!sourceWarehouse || !targetWarehouse) { toast.error('Select both warehouses'); return }
+		if (!inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
+
+		const seen = new Set<string>()
+		for (const l of valid) { if (seen.has(l.item_code)) { toast.error(`Duplicate: ${l.item_code}`); return }; seen.add(l.item_code) }
+
+		const overStock = valid.filter(l => lineStockQty(l) > l.available_qty && l.available_qty > 0)
+		if (overStock.length > 0) {
+			setOverstockItems(overStock)
+			setShowOverstockConfirm(true)
+			return
+		}
+		doSubmit()
 	}
 
 	if (!open) return null
 
 	return (
-		<div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-			<div className="absolute inset-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white sm:rounded-2xl sm:max-w-lg sm:w-[calc(100%-2rem)] sm:max-h-[90vh] flex flex-col animate-slide-up sm:animate-scale-in" onClick={e => e.stopPropagation()}>
-				{/* Header */}
-				<div className="px-4 sm:px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b border-border shrink-0">
-					<div className="flex items-center gap-3 mb-2">
-						<button onClick={onClose} className="w-11 h-11 flex items-center justify-center hover:bg-secondary rounded-xl touch-manipulation"><ArrowLeft className="w-6 h-6" /></button>
-						<h2 className="text-lg font-bold flex-1">Transfer Send</h2>
+		<div className="fixed inset-0 z-50 bg-white flex flex-col animate-fade-in">
+			{/* Header */}
+			<header className="bg-slate-900 text-white shrink-0">
+				<div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded touch-manipulation">
+						<ArrowLeft className="w-5 h-5" />
+					</button>
+					<div className="flex-1 min-w-0">
+						<h2 className="text-sm font-bold">Transfer Send</h2>
+						{inTransitName && (
+							<p className="text-[10px] text-slate-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Via {inTransitName}</p>
+						)}
 					</div>
-					{/* Via transit info */}
-					{inTransitName && (
-						<div className="flex items-center gap-2 text-sm bg-indigo-50 text-indigo-700 rounded-lg px-3 py-2">
-							<Truck className="w-4 h-4 shrink-0" />
-							<span className="font-medium">Via: {inTransitName}</span>
-						</div>
-					)}
 				</div>
+			</header>
 
-				{/* Body */}
-				<div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 space-y-4">
-					{/* Pending Transfers collapsible */}
+			{/* Body */}
+			<div className="flex-1 overflow-y-auto overscroll-contain bg-slate-50">
+				<div className="max-w-3xl mx-auto px-3 py-3 space-y-3">
+					{/* Pending Transfers */}
 					{pendingTransfers.length > 0 && (
-						<div className="border border-border rounded-xl overflow-hidden">
-							<button onClick={() => setShowPending(!showPending)} className="w-full flex items-center justify-between p-3 bg-secondary/50 hover:bg-secondary touch-manipulation">
-								<span className="font-bold text-sm">Pending Transfers</span>
+						<div className="border border-slate-200 rounded overflow-hidden bg-white">
+							<button onClick={() => setShowPending(!showPending)} className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 hover:bg-slate-200 touch-manipulation">
+								<span className="text-xs font-bold text-slate-700">Pending Transfers</span>
 								<div className="flex items-center gap-2">
-									<span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-bold">{pendingTransfers.length}</span>
-									{showPending ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+									<span className="bg-red-500 text-white rounded px-1.5 py-px text-[10px] font-bold">{pendingTransfers.length}</span>
+									{showPending ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
 								</div>
 							</button>
 							{showPending && (
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 max-h-60 overflow-y-auto">
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 max-h-60 overflow-y-auto">
 									{pendingTransfers.map(t => (
-										<div key={t.name} className="border border-border rounded-xl p-3 text-sm space-y-1.5">
+										<div key={t.name} className="border border-slate-200 rounded p-2.5 text-sm space-y-1">
 											<div className="flex items-center justify-between">
-												<span className="font-bold flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> {t.name}</span>
-												<span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" /> {t.posting_date}</span>
+												<span className="font-bold text-xs flex items-center gap-1"><FileText className="w-3 h-3" /> {t.name}</span>
+												<span className="text-[10px] text-slate-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> {t.posting_date}</span>
 											</div>
-											<p className="text-xs text-muted-foreground">IN-TRANSIT TO</p>
-											<p className="text-xs font-medium">{t.to_warehouse}</p>
-											{t.final_destination && (
-												<>
-													<p className="text-xs text-muted-foreground">FINAL DESTINATION</p>
-													<p className="text-xs font-medium">{t.final_destination}</p>
-												</>
-											)}
-											<div className="pt-1 border-t border-border/50">
+											<p className="text-[10px] text-slate-500">TO: <span className="text-slate-700 font-medium">{t.final_destination || t.to_warehouse}</span></p>
+											<div className="pt-1 border-t border-slate-100">
 												{t.items.slice(0, 3).map((item, i) => (
-													<p key={i} className="text-xs text-muted-foreground">{item.item_name} — <span className="font-medium text-foreground">{item.remaining_qty} {item.uom}</span></p>
+													<p key={i} className="text-[10px] text-slate-500">{item.item_name} — <span className="font-medium text-slate-700">{item.remaining_qty} {item.uom}</span></p>
 												))}
-												{t.items.length > 3 && <p className="text-xs text-muted-foreground">+{t.items.length - 3} more</p>}
+												{t.items.length > 3 && <p className="text-[10px] text-slate-400">+{t.items.length - 3} more</p>}
 											</div>
 										</div>
 									))}
@@ -169,83 +194,115 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 					)}
 
 					{/* Warehouses */}
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white border border-slate-200 rounded p-3">
 						<div>
-							<label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">FROM</label>
-							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-base font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={sourceWarehouse} onChange={e => setSourceWarehouse(e.target.value)}>
+							<label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">From</label>
+							<select className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" value={sourceWarehouse} onChange={e => setSourceWarehouse(e.target.value)}>
 								{warehouses.source_warehouses.map(w => <option key={w.warehouse} value={w.warehouse}>{w.warehouse_name}</option>)}
 							</select>
 						</div>
 						<div>
-							<label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">TO</label>
-							<select className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-base font-medium focus:outline-none focus:ring-2 focus:ring-primary" value={targetWarehouse} onChange={e => setTargetWarehouse(e.target.value)}>
+							<label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">To</label>
+							<select className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" value={targetWarehouse} onChange={e => setTargetWarehouse(e.target.value)}>
 								{warehouses.target_warehouses.map(w => <option key={w.warehouse} value={w.warehouse}>{w.warehouse_name}</option>)}
 							</select>
 						</div>
 					</div>
 
-					{/* Items header */}
-					<div className="flex items-center justify-between">
-						<span className="text-sm font-bold">Items</span>
-						<button onClick={addLine} className="flex items-center gap-1 text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 touch-manipulation">
-							<Plus className="w-4 h-4" /> Add
-						</button>
-					</div>
+					{/* Items */}
+					<div className="bg-white border border-slate-200 rounded">
+						<div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
+							<span className="text-xs font-bold text-slate-700">Items</span>
+							<button onClick={addLine} className="flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2 py-1 touch-manipulation">
+								<Plus className="w-3 h-3" /> Add
+							</button>
+						</div>
 
-					{/* Item column headers */}
-					<div className="grid grid-cols-[1fr_70px_80px_60px_32px] gap-2 text-xs font-bold text-muted-foreground uppercase px-1">
-						<span>Item</span><span className="text-center">Qty</span><span className="text-center">UOM</span><span className="text-center">Stock</span><span />
-					</div>
-
-					{/* Item rows */}
-					<div className="space-y-2">
-						{lines.map(line => {
-							const exceedsStock = line.qty > line.available_qty && line.available_qty > 0
-							return (
-								<div key={line.id} className={`grid grid-cols-[1fr_70px_80px_60px_32px] gap-2 items-center p-2 rounded-xl border ${exceedsStock ? 'border-red-400 bg-red-50' : 'border-border bg-secondary/30'}`}>
-									{/* Item select */}
-									<select className="bg-white border border-border rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary truncate" value={line.item_code} onChange={e => selectItem(line.id, e.target.value)}>
-										<option value="">Search item...</option>
-										{items.map(it => (
-											<option key={it.item_code} value={it.item_code}>
-												{it.item_code}: {it.item_name}
-											</option>
-										))}
-									</select>
-									{/* Qty */}
-									<input type="number" min="0" step="1" className="bg-white border border-border rounded-lg px-1 py-2 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-primary" value={line.qty || ''} onChange={e => updateLine(line.id, { qty: parseFloat(e.target.value) || 0 })} placeholder="0" />
-									{/* UOM */}
-									<select className="bg-white border border-border rounded-lg px-1 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" value={line.uom} onChange={e => updateLine(line.id, { uom: e.target.value })} disabled={!line.uom_options.length}>
-										{line.uom_options.length === 0 && <option value="">UOM</option>}
-										{line.uom_options.map(u => <option key={u} value={u}>{u}</option>)}
-									</select>
-									{/* Stock info */}
-									<span className={`text-sm text-center font-semibold ${exceedsStock ? 'text-red-600' : 'text-emerald-600'}`}>
-										{line.available_qty > 0 ? line.available_qty : '—'}
-									</span>
-									{/* Remove */}
-									{lines.length > 1 ? (
-										<button onClick={() => removeLine(line.id)} className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 rounded-lg touch-manipulation">
-											<Trash2 className="w-4 h-4" />
-										</button>
-									) : <div />}
-								</div>
-							)
-						})}
+						<div className="divide-y divide-slate-100">
+							{lines.map(line => {
+								const stockQty = lineStockQty(line)
+								const sameUom = !line.stock_uom || line.uom === line.stock_uom
+								const exceedsStock = stockQty > line.available_qty && line.available_qty > 0
+								return (
+									<div key={line.id} className={`px-3 py-2 space-y-1.5 ${exceedsStock ? 'bg-red-50' : ''}`}>
+										<div className="flex items-center gap-1.5">
+											<ItemSearchInput
+												items={items}
+												value={line.item_code}
+												onSelect={code => selectItem(line.id, code)}
+												placeholder="Search item..."
+											/>
+											{lines.length > 1 && (
+												<button onClick={() => removeLine(line.id)} className="p-1 hover:bg-red-50 rounded touch-manipulation shrink-0">
+													<Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
+												</button>
+											)}
+										</div>
+										{line.item_code && (
+											<div className="flex items-center gap-2 pl-0.5">
+												<div>
+													<input type="number" min="0" step="1" className={`w-20 bg-white border rounded px-2 py-1.5 text-xs text-center font-bold focus:outline-none focus:ring-1 ${exceedsStock ? 'border-red-300 focus:ring-red-400' : 'border-slate-200 focus:ring-blue-400'}`} value={line.qty || ''} onChange={e => updateLine(line.id, { qty: parseFloat(e.target.value) || 0 })} placeholder="Qty" />
+													{!sameUom && line.qty > 0 && (
+														<p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsStock ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+															= {stockQty} {line.stock_uom}
+														</p>
+													)}
+												</div>
+												<select className="w-20 bg-white border border-slate-200 rounded px-1.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400" value={line.uom} onChange={e => updateLine(line.id, { uom: e.target.value })} disabled={!line.uom_options.length}>
+													{line.uom_options.length === 0 && <option value="">UOM</option>}
+													{line.uom_options.map(u => <option key={u} value={u}>{u}</option>)}
+												</select>
+												<span className={`text-[10px] font-semibold tabular-nums ml-auto ${exceedsStock ? 'text-red-600' : 'text-emerald-600'}`}>
+													{line.available_qty > 0 ? `${line.available_qty} ${line.stock_uom}` : '—'}
+												</span>
+											</div>
+										)}
+									</div>
+								)
+							})}
+						</div>
 					</div>
 
 					{/* Remarks */}
-					<input type="text" className="w-full bg-secondary border-0 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary" maxLength={140} value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Add remarks for this transfer..." />
+					<input type="text" className="w-full bg-white border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" maxLength={140} value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Add remarks..." />
 				</div>
+			</div>
 
-				{/* Footer */}
-				<div className="px-4 sm:px-5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border shrink-0 space-y-2">
-					<button onClick={onClose} className="w-full bg-gray-400 text-white font-bold py-3 rounded-xl touch-manipulation text-base">Cancel</button>
-					<button onClick={handleSubmit} disabled={submitting} className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-4 rounded-xl disabled:opacity-50 active:scale-[0.98] touch-manipulation text-lg shadow-lg shadow-orange-200">
+			{/* Footer */}
+			<div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-3xl mx-auto w-full">
+				<div className="flex gap-2">
+					<button onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded touch-manipulation">Cancel</button>
+					<button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded disabled:opacity-50 active:opacity-80 touch-manipulation">
 						{submitting ? 'Sending...' : 'Send Transfer'}
 					</button>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={showOverstockConfirm}
+				title="Some items exceed stock"
+				message={
+					<>
+						<p className="text-xs text-slate-500 mb-3">The following items have quantities exceeding available stock:</p>
+						<ul className="text-xs font-mono space-y-1 mb-3">
+							{overstockItems.map(l => {
+								const sQty = lineStockQty(l)
+								return (
+									<li key={l.item_code} className="text-slate-700">
+										{l.item_code}: {l.qty} {l.uom}{l.uom !== l.stock_uom ? ` (${sQty} ${l.stock_uom})` : ''} {'>'} {l.available_qty} {l.stock_uom}
+									</li>
+								)
+							})}
+						</ul>
+						<p className="text-xs text-slate-500">Do you want to proceed anyway?</p>
+					</>
+				}
+				confirmLabel="Proceed"
+				cancelLabel="Cancel"
+				variant="danger"
+				onConfirm={doSubmit}
+				onCancel={() => { setShowOverstockConfirm(false); setOverstockItems([]) }}
+			/>
 		</div>
 	)
 }

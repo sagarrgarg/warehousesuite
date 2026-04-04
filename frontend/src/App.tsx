@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { FrappeProvider } from 'frappe-react-sdk'
 import { Toaster } from 'sonner'
+import ErrorBoundary from './components/ErrorBoundary'
 import Dashboard from './pages/Dashboard'
 
 function App() {
@@ -28,15 +29,17 @@ function App() {
 	return (
 		<FrappeProvider
 			swrConfig={{ errorRetryCount: 2 }}
-			socketPort={import.meta.env.VITE_SOCKET_PORT}
-			siteName={siteName}>
-			<BrowserRouter basename="/pow">
-				<Routes>
-					<Route index element={<Dashboard />} />
-					<Route path="*" element={<Navigate to="/" />} />
-				</Routes>
-			</BrowserRouter>
-			<Toaster richColors theme='light' position="top-center" />
+			siteName={siteName}
+			enableSocket={false}>
+			<ErrorBoundary>
+				<BrowserRouter basename="/pow">
+					<Routes>
+						<Route index element={<Dashboard />} />
+						<Route path="*" element={<Navigate to="/" />} />
+					</Routes>
+				</BrowserRouter>
+				<Toaster richColors theme='light' position="top-center" />
+			</ErrorBoundary>
 		</FrappeProvider>
 	)
 }
