@@ -140,7 +140,7 @@ export default function WORequestMaterialsModal({ open, wo, warehouses, onClose,
                 onClick={() => setRequestType(type)}
                 className={`flex-1 text-[10px] font-bold px-3 py-1.5 transition-colors cursor-pointer ${
                   requestType === type
-                    ? 'bg-amber-600 text-slate-900 dark:text-white'
+                    ? 'bg-amber-600 text-white'
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-200 dark:bg-slate-600'
                 }`}
               >
@@ -248,7 +248,7 @@ export default function WORequestMaterialsModal({ open, wo, warehouses, onClose,
           className={`w-full flex items-center justify-center gap-2 rounded text-sm font-bold py-2.5 transition-colors ${
             submitting || items.length === 0
               ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
-              : 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-900 dark:text-white cursor-pointer'
+              : 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white cursor-pointer'
           }`}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}

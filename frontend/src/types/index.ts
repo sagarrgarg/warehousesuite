@@ -12,6 +12,7 @@ export interface POWProfile {
 	repack: 0 | 1
 	delivery_note: 0 | 1
 	stock_count: 0 | 1
+	sales_order_pending_report?: 0 | 1
 	show_only_stock_items: 0 | 1
 	source_warehouse: { name: string; warehouse: string }[]
 	target_warehouse: { name: string; warehouse: string }[]
@@ -25,6 +26,49 @@ export interface ProfileOperations {
 	repack: boolean
 	delivery_note: boolean
 	stock_count: boolean
+	/** When omitted (older API), treated as false. */
+	sales_order_pending_report?: boolean
+}
+
+/** SO pending report — detail rows (Python service). */
+export interface SOPendingLineRow {
+	sales_order: string
+	order_status?: string
+	customer_name: string
+	customer_address?: string
+	shipping_address?: string
+	item_code: string
+	item_name: string
+	sale_qty: number
+	sale_uom: string
+	/** ERPNext conversion from sale UOM to stock UOM (1 sale_uom = factor × stock_uom). */
+	conversion_factor?: number
+	stock_qty?: number
+	stock_uom: string
+	delivered_qty: number
+	pending_qty: number
+	delivery_date?: string | null
+	transaction_date?: string | null
+	remark?: string | null
+	created_by: string
+	customer_no?: string
+}
+
+/** SO pending report — aggregated by item. */
+export interface SOPendingSummaryRow {
+	item_group: string
+	item_code: string
+	item_name: string
+	total_pending_qty: number
+	uom: string
+}
+
+/** Paginated SO pending API payload (lines or summary). */
+export interface SOPendingPaginated<T> {
+	rows: T[]
+	total: number
+	start: number
+	page_length: number
 }
 
 export interface WarehouseOption {
@@ -209,6 +253,8 @@ export interface WORequiredItem {
 	name: string
 	item_code: string
 	item_name: string
+	original_item_code?: string
+	is_substituted?: 0 | 1
 	required_qty: number
 	transferred_qty: number
 	consumed_qty: number
@@ -220,7 +266,12 @@ export interface WORequiredItem {
 	available_qty: number
 	stock_status: 'green' | 'amber' | 'red'
 	allow_alternative_item: 0 | 1
-	alternatives: { item_code: string; item_name: string; stock_uom: string }[]
+	alternatives: {
+		item_code: string
+		item_name: string
+		stock_uom: string
+		availability?: { warehouse: string; warehouse_name: string; qty: number }[]
+	}[]
 	warehouse_availability: { warehouse: string; warehouse_name: string; qty: number }[]
 }
 
@@ -252,6 +303,12 @@ export interface BOMItem {
 	conversion_factor: number
 	source_warehouse: string | null
 	allow_alternative_item: 0 | 1
+	alternatives: {
+		item_code: string
+		item_name: string
+		stock_uom: string
+		availability?: { warehouse: string; warehouse_name: string; qty: number }[]
+	}[]
 	availability: { warehouse: string; warehouse_name: string; qty: number }[]
 }
 
@@ -270,6 +327,8 @@ export interface WOShortfallItem {
 	wo_item_name: string
 	item_code: string
 	item_name: string
+	original_item_code?: string
+	is_substituted?: 0 | 1
 	required_qty: number
 	transferred_qty: number
 	needed_qty: number

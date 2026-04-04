@@ -11,9 +11,11 @@ interface PendingReceiveCardProps {
   group: TransferReceiveGroup
   company: string
   onReceived: () => void
+  /** Global list index for card-level zebra striping */
+  index?: number
 }
 
-export default function PendingReceiveCard({ group, company, onReceived }: PendingReceiveCardProps) {
+export default function PendingReceiveCard({ group, company, onReceived, index = 0 }: PendingReceiveCardProps) {
   const [qtys, setQtys] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [received, setReceived] = useState(false)
@@ -34,9 +36,11 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
     : group.status === 'Partial' ? 'Partial'
     : 'Pending'
 
-  const statusStyle = group.status === 'Complete' ? 'text-emerald-700 bg-emerald-50'
-    : group.status === 'Partial' ? 'text-amber-700 bg-amber-50'
-    : 'text-violet-700 bg-violet-50'
+  const statusStyle = group.status === 'Complete'
+    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/55'
+    : group.status === 'Partial'
+      ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50'
+      : 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/50'
 
   const setMax = useCallback(() => {
     const q: Record<string, number> = {}
@@ -80,14 +84,20 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
 
   if (received) return null
 
+  const cardStripe = index % 2 === 0
+    ? 'bg-white dark:bg-slate-800/90 hover:bg-violet-50 dark:hover:bg-slate-700 dark:hover:shadow-[inset_0_0_0_9999px_rgba(167,139,250,0.12)]'
+    : 'bg-slate-50 dark:bg-slate-900/95 hover:bg-violet-100/85 dark:hover:bg-slate-700 dark:hover:shadow-[inset_0_0_0_9999px_rgba(167,139,250,0.15)]'
+
   return (
-    <div className="border-b border-slate-100 last:border-b-0">
+    <div
+      className={`group border-b-2 border-slate-200 dark:border-slate-600 last:border-b-0 transition-all duration-150 hover:outline hover:outline-1 hover:outline-violet-400/45 dark:hover:outline-violet-300/55 hover:outline-offset-[-1px] ${cardStripe}`}
+    >
       <div className="flex items-stretch">
         <div className={`w-[3px] shrink-0 ${stripe}`} />
         <div className="flex-1 px-2.5 py-2 min-w-0">
           {/* Header row */}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold text-slate-900 truncate font-mono">{group.stock_entry}</span>
+            <span className="text-[11px] font-semibold text-slate-900 dark:text-slate-100 truncate font-mono">{group.stock_entry}</span>
             <span className={`text-[9px] font-semibold px-1 py-px rounded-sm shrink-0 ${statusStyle}`}>
               {statusLabel}
             </span>
@@ -98,7 +108,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
               {group.source_warehouse?.replace(/ - [A-Z0-9]+$/i, '')}
             </span>
             <ArrowRight className="w-2.5 h-2.5 text-slate-600 dark:text-slate-300 shrink-0" />
-            <span className="text-[10px] font-semibold text-violet-600 truncate shrink min-w-0">
+            <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 truncate shrink min-w-0">
               {group.dest_warehouse?.replace(/ - [A-Z0-9]+$/i, '')}
             </span>
             {group.has_open_concerns && (
@@ -110,19 +120,22 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
 
           {/* Item lines with receive inputs */}
           {pendingItems.length > 0 && !group.has_open_concerns && (
-            <div className="mt-1.5 space-y-1">
-              {pendingItems.map(item => {
+            <div className="mt-1.5 space-y-0.5">
+              {pendingItems.map((item, itemIdx) => {
                 const sameUom = item.uom === item.stock_uom
                 const stockRemaining = sameUom ? null : +(item.remaining_qty * (item.conversion_factor || 1)).toFixed(3)
+                const lineStripe = itemIdx % 2 === 0
+                  ? 'bg-white/90 dark:bg-slate-700/50 group-hover:bg-violet-100/80 dark:group-hover:bg-slate-600 dark:group-hover:shadow-[inset_0_0_0_9999px_rgba(167,139,250,0.1)]'
+                  : 'bg-slate-100/90 dark:bg-slate-950/85 group-hover:bg-violet-200/60 dark:group-hover:bg-slate-600 dark:group-hover:shadow-[inset_0_0_0_9999px_rgba(167,139,250,0.14)]'
 
                 return (
-                <div key={item.ste_detail} className="flex items-center gap-1.5 text-[10px]">
+                <div key={item.ste_detail} className={`flex items-center gap-1.5 text-[10px] rounded px-1.5 py-1 transition-colors duration-150 ${lineStripe}`}>
                   <div className="flex-1 min-w-0">
-                    <span className="text-slate-700 font-semibold truncate block leading-tight">{item.item_name || item.item_code}</span>
+                    <span className="text-slate-700 dark:text-slate-100 font-semibold truncate block leading-tight">{item.item_name || item.item_code}</span>
                     <span className="text-[8px] text-slate-500 dark:text-slate-400 font-mono truncate block leading-tight">{item.item_code}</span>
                   </div>
                   <span className="text-right tabular-nums shrink-0">
-                    <span className="text-slate-500 dark:text-slate-400">{item.remaining_qty} {item.uom}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{item.remaining_qty} {item.uom}</span>
                     {stockRemaining != null && (
                       <span className="block text-[8px] text-slate-500 dark:text-slate-400/70 leading-tight">{stockRemaining} {item.stock_uom}</span>
                     )}
@@ -135,7 +148,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
                     value={qtys[item.ste_detail] ?? ''}
                     onChange={e => setQtys(p => ({ ...p, [item.ste_detail]: Math.min(parseFloat(e.target.value) || 0, item.remaining_qty) }))}
                     placeholder="0"
-                    className="w-14 border border-slate-200 rounded px-1 py-0.5 text-[10px] text-center font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                    className="w-14 border border-slate-200 dark:border-slate-600 rounded px-1 py-0.5 text-[10px] text-center font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500"
                   />
                 </div>
                 )
@@ -143,15 +156,15 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
 
               {/* Inline actions */}
               <div className="flex items-center gap-1 pt-1">
-                <button onClick={setMax} className="text-[9px] font-bold px-1.5 py-0.5 border border-emerald-300 text-emerald-700 rounded active:bg-emerald-50 touch-manipulation">Max</button>
-                <button onClick={clearAll} className="text-[9px] font-bold px-1.5 py-0.5 border border-slate-300 text-slate-500 rounded active:bg-slate-50 touch-manipulation">Clear</button>
+                <button onClick={setMax} className="text-[9px] font-bold px-1.5 py-0.5 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded active:bg-emerald-50 dark:active:bg-emerald-950/50 touch-manipulation">Max</button>
+                <button onClick={clearAll} className="text-[9px] font-bold px-1.5 py-0.5 border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded active:bg-slate-50 dark:active:bg-slate-800 touch-manipulation">Clear</button>
                 <button onClick={() => setConcernFor(true)} className="text-[9px] font-bold px-1.5 py-0.5 text-amber-600 rounded active:bg-amber-50 touch-manipulation ml-auto">
                   <AlertTriangle className="w-2.5 h-2.5 inline" /> Concern
                 </button>
                 <button
                   onClick={handleReceive}
                   disabled={submitting || !hasAnyQty}
-                  className="text-[10px] font-bold px-2 py-1 bg-emerald-600 text-slate-900 dark:text-white rounded active:bg-emerald-700 disabled:opacity-40 touch-manipulation"
+                  className="text-[10px] font-bold px-2 py-1 bg-emerald-600 text-white rounded active:bg-emerald-700 disabled:opacity-40 touch-manipulation"
                 >
                   {submitting ? '...' : 'Receive'}
                 </button>
@@ -165,7 +178,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
 
           {/* Progress bar */}
           {pct > 0 && pct < 100 && (
-            <div className="mt-1.5 h-[2px] bg-slate-100 rounded-full overflow-hidden">
+            <div className="mt-1.5 h-[2px] bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct}%` }} />
             </div>
           )}
@@ -184,7 +197,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
               {['Quantity Mismatch', 'Quality Issue', 'Damaged Goods', 'Missing Items', 'Wrong Items', 'Other'].map(t => <option key={t}>{t}</option>)}
             </select>
             <textarea className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs resize-none" rows={2} value={concern.concern_description} onChange={e => setConcern(c => ({ ...c, concern_description: e.target.value }))} placeholder="Describe the issue... *" />
-            <button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-slate-900 dark:text-white font-bold py-2 rounded text-xs active:opacity-80 touch-manipulation">Submit</button>
+            <button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-white font-bold py-2 rounded text-xs active:opacity-80 touch-manipulation">Submit</button>
           </div>
         </div>
       )}

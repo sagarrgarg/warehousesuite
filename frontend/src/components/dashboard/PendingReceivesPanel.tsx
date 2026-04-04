@@ -33,14 +33,23 @@ export default function PendingReceivesPanel({
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
   }, [pendingReceives])
 
+  /** Global zebra index across all incoming-transfer cards */
+  const groupedWithStripe = useMemo(() => {
+    let n = 0
+    return grouped.map(([warehouse, entries]) => [
+      warehouse,
+      entries.map(g => ({ group: g, stripeIndex: n++ })),
+    ] as const)
+  }, [grouped])
+
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-slate-900">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shrink-0 border-b-2 border-slate-300 dark:border-slate-600">
         <div className="flex items-center gap-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wider">Incoming Transfers</h3>
           {pendingReceives.length > 0 && (
-            <span className="text-[9px] font-bold bg-violet-500 rounded px-1 py-px tabular-nums leading-none">
+            <span className="text-[9px] font-bold bg-violet-600 text-white rounded px-1 py-px tabular-nums leading-none">
               {pendingReceives.length}
             </span>
           )}
@@ -63,12 +72,12 @@ export default function PendingReceivesPanel({
             Nothing to receive
           </div>
         ) : (
-          grouped.map(([warehouse, entries]) => (
+          groupedWithStripe.map(([warehouse, entries]) => (
             <div key={warehouse}>
               {/* Warehouse subheading */}
-              <div className="sticky top-0 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-100 border-b border-slate-200">
+              <div className="sticky top-0 z-10 flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-600">
                 <MapPin className="w-3 h-3 text-violet-500 shrink-0" />
-                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wide truncate">
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">
                   {shortWarehouse(warehouse)}
                 </span>
                 <span className="text-[9px] text-slate-500 dark:text-slate-400 tabular-nums shrink-0">
@@ -76,12 +85,13 @@ export default function PendingReceivesPanel({
                 </span>
               </div>
 
-              {entries.map(group => (
+              {entries.map(({ group, stripeIndex }) => (
                 <PendingReceiveCard
                   key={group.stock_entry}
                   group={group}
                   company={company}
                   onReceived={onReceived}
+                  index={stripeIndex}
                 />
               ))}
             </div>

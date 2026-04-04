@@ -281,7 +281,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                   <button
                     onClick={handleSubmit}
                     disabled={!canSubmit}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-slate-900 dark:text-white text-xs font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...</>
@@ -435,7 +435,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-slate-900 dark:text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...</>

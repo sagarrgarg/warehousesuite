@@ -285,7 +285,7 @@ export default function MRFulfillmentModal({
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !selectedWarehouse || lineQtys.every(l => l.qty <= 0) || hasStockIssue}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-slate-900 dark:text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating Transfer...</>

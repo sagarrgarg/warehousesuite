@@ -31,6 +31,15 @@ Living reference for modules, integrations, and change discipline. Update this f
 
 ## Change Log (recent)
 
+### 2026-04-05 — SO pending report: exact filters, UOM display
+
+- **What changed**: Lines query returns `conversion_factor`. Report filters use **exact** `customer` and `item_code` (picker-backed on React); `sales_order` remains substring. New whitelisted methods `search_so_report_customers`, `search_so_report_items`. UI shows sale qty in **line UOM**, delivered/pending in **stock UOM**, with `1 {sale_uom} = {factor} {stock_uom}` under sale qty when UOMs differ.
+- **Why**: Avoid ambiguous substring customer/item filters; align quantities with ERPNext UOM semantics (`delivered_qty` / `stock_qty` are stock UOM).
+- **Item totals tab**: summary groups by **`item_code` + `stock_uom`** only (not SO line `item_name`), so variant descriptions merge; displayed name is **Item master** `item_name` from `tabItem`, with fallback to any line name.
+- **Warehouse scope**: Lines, summary, and typeahead only include SO rows where ``COALESCE(line.warehouse, order.set_warehouse)`` is in the POW Profile **source ∪ target** roots plus **non-group descendants** (same expansion as ``get_all_child_warehouses``, excluding in-transit). Empty profile warehouse config yields no rows.
+- **Impacted modules**: `warehousesuite/services/pow_so_pending_report_service.py`, `warehousesuite/api/pow_so_pending_report.py`, `frontend` (`SalesOrderPendingReportModal`, `SoReportAsyncPickers`, `api.ts`, types).
+- **Migrations**: None. Rebuild frontend bundle for `/pow`.
+
 ### 2026-04-03 — Website `/pow` route for React shell
 
 - **What changed**: Registered `website_route_rules` for `/pow` → `www/pow` (Jinja + `pow.py` context). Guests redirect to login with `redirect-to=/pow`. Page loads built React assets under `/assets/warehousesuite/pow_dashboard_react/`.

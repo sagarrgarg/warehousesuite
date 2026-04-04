@@ -22,6 +22,7 @@
   "column_break_lnbl",
   "delivery_note",
   "stock_count",
+  "sales_order_pending_report",
   "show_only_stock_items",
   "section_break_isnk",
   "applicable_users"
@@ -126,6 +127,12 @@
    "fieldname": "stock_count",
    "fieldtype": "Check",
    "label": "Stock Count"
+  },
+  {
+   "default": "0",
+   "fieldname": "sales_order_pending_report",
+   "fieldtype": "Check",
+   "label": "Sales Order Pending Delivery Report"
   },
   {
    "default": "1",

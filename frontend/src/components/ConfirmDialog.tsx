@@ -29,6 +29,10 @@ export default function ConfirmDialog({
 			? 'bg-slate-200 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-100 dark:bg-slate-700'
 			: 'bg-blue-600 hover:bg-blue-700'
 
+	const confirmTextClass = variant === 'neutral'
+		? 'text-slate-800 dark:text-white'
+		: 'text-white'
+
 	return (
 		<div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 animate-fade-in" onClick={onCancel}>
 			<div className="bg-white rounded w-full max-w-sm flex flex-col animate-scale-in" onClick={e => e.stopPropagation()}>
@@ -45,7 +49,7 @@ export default function ConfirmDialog({
 					<button onClick={onCancel} className="flex-1 py-2 border border-slate-300 rounded font-bold text-xs text-slate-700 touch-manipulation">
 						{cancelLabel}
 					</button>
-					<button onClick={onConfirm} className={`flex-1 py-2 text-slate-900 dark:text-white rounded font-bold text-xs touch-manipulation ${confirmBg}`}>
+					<button onClick={onConfirm} className={`flex-1 py-2 rounded font-bold text-xs touch-manipulation ${confirmBg} ${confirmTextClass}`}>
 						{confirmLabel}
 					</button>
 				</div>

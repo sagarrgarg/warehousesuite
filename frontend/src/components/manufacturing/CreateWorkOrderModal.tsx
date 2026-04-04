@@ -20,7 +20,7 @@ function shortWh(name: string) {
 function StockBadge({ qty, needed, uom }: { qty: number; needed: number; uom: string }) {
   const color = qty >= needed ? 'bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300' : qty > 0 ? 'bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300' : 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300'
   return (
-    <span className={`text-[9px] font-bold rounded px-1 py-px leading-none ${color}`}>
+    <span className={`text-[10px] font-bold rounded px-1 py-px leading-none ${color}`}>
       {qty.toFixed(3)} {uom}
     </span>
   )
@@ -39,6 +39,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
   const [plannedStartDate, setPlannedStartDate] = useState(today)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
+  const [itemSubstitutions, setItemSubstitutions] = useState<Record<string, string>>({})
 
   // BOM loading
   const [bom, setBom] = useState<BOMDetails | null>(null)
@@ -54,22 +55,62 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
   const { call: fetchDefaultWh } = useFrappePostCall(API.getMfgDefaultWarehouses)
   const { call: submitWO } = useFrappePostCall(API.createWorkOrder)
 
-  // Pre-fill from Manufacturing Settings on mount — only accept if within profile target warehouses
+  /** FG must be a profile *target* warehouse; WIP may be any warehouse listed on the POW profile (source ∪ target). */
+  const targetWhs = useMemo(
+    () => warehouses.target_warehouses.map(w => w.warehouse),
+    [warehouses.target_warehouses],
+  )
+  const allowedWipWhs = useMemo(() => {
+    const order: string[] = []
+    const seen = new Set<string>()
+    for (const row of warehouses.target_warehouses) {
+      if (!seen.has(row.warehouse)) {
+        seen.add(row.warehouse)
+        order.push(row.warehouse)
+      }
+    }
+    for (const row of warehouses.source_warehouses) {
+      if (!seen.has(row.warehouse)) {
+        seen.add(row.warehouse)
+        order.push(row.warehouse)
+      }
+    }
+    return order
+  }, [warehouses.source_warehouses, warehouses.target_warehouses])
+
+  const wipMatchesFg = wipWarehouse === fgWarehouse && Boolean(fgWarehouse)
+
+  // Pre-fill from Manufacturing Settings — only warehouses allowed by this POW profile
   useEffect(() => {
-    if (!company) return
+    if (!company || !open) return
+    let cancelled = false
     fetchDefaultWh({ company }).then((res: any) => {
-      const d = unwrap(res)
-      const targetWhs = warehouses.target_warehouses.map(w => w.warehouse)
-      if (d?.wip_warehouse && targetWhs.includes(d.wip_warehouse)) {
-        setWipWarehouse(d.wip_warehouse)
-      } else if (targetWhs.length > 0 && !wipWarehouse) {
-        setWipWarehouse(targetWhs[0])
+      if (cancelled) return
+      const d = unwrap(res) as { wip_warehouse?: string; fg_warehouse?: string }
+      const fgOk = (w: string | undefined) => !!w && targetWhs.includes(w)
+      const wipOk = (w: string | undefined) => !!w && allowedWipWhs.includes(w)
+
+      let fg = fgOk(d?.fg_warehouse) ? d!.fg_warehouse! : (targetWhs[0] ?? '')
+      let wip = wipOk(d?.wip_warehouse) ? d!.wip_warehouse! : fg
+
+      if (d?.wip_warehouse && d?.fg_warehouse && d.wip_warehouse === d.fg_warehouse && fgOk(d.fg_warehouse)) {
+        fg = d.fg_warehouse
+        wip = d.fg_warehouse
+      } else if (wipOk(d?.wip_warehouse) && fgOk(d?.fg_warehouse)) {
+        wip = d.wip_warehouse!
+        fg = d.fg_warehouse!
       }
-      if (d?.fg_warehouse && targetWhs.includes(d.fg_warehouse) && !warehouses.target_warehouses[0]?.warehouse) {
-        setFgWarehouse(d.fg_warehouse)
-      }
-    }).catch(() => { /* ignore */ })
-  }, [company])
+
+      setFgWarehouse(fg)
+      setWipWarehouse(wip)
+    }).catch(() => {
+      if (cancelled) return
+      const t0 = targetWhs[0] ?? ''
+      setFgWarehouse(t0)
+      setWipWarehouse(t0)
+    })
+    return () => { cancelled = true }
+  }, [company, open, fetchDefaultWh, targetWhs, allowedWipWhs])
 
   const handleItemSelect = useCallback(async (itemCode: string) => {
     const found = items.find(i => i.item_code === itemCode)
@@ -77,6 +118,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     setProductionItemName(found?.item_name ?? itemCode)
     setBom(null)
     setBomError(null)
+    setItemSubstitutions({})
     setBomLoading(true)
     try {
       const res = await fetchBom({ item_code: itemCode })
@@ -93,6 +135,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     setProductionItemName('')
     setBom(null)
     setBomError(null)
+    setItemSubstitutions({})
   }, [])
 
   /**
@@ -104,12 +147,22 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     needed_qty: number
     total_available: number
     status: 'green' | 'amber' | 'red'
+    effective_item_code: string
+    effective_item_name: string
+    effective_stock_uom: string
+    effective_availability: { warehouse: string; warehouse_name: string; qty: number }[]
   })[]>(() => {
     if (!bom) return []
     const bomBaseQty = bom.qty || 1
     return bom.items.map(item => {
       const needed_qty = (item.stock_qty / bomBaseQty) * qty
-      const total_available = item.availability.reduce((sum, a) => sum + (a.qty || 0), 0)
+      const selectedAltCode = itemSubstitutions[item.item_code]
+      const selectedAlt = item.alternatives?.find(alt => alt.item_code === selectedAltCode)
+      const effectiveItemCode = selectedAlt?.item_code || item.item_code
+      const effectiveItemName = selectedAlt?.item_name || item.item_name || item.item_code
+      const effectiveStockUom = selectedAlt?.stock_uom || item.stock_uom
+      const effectiveAvailability = (selectedAlt?.availability?.length ? selectedAlt.availability : item.availability) || []
+      const total_available = effectiveAvailability.reduce((sum, a) => sum + (a.qty || 0), 0)
 
       let status: 'green' | 'amber' | 'red'
       if (total_available >= needed_qty) {
@@ -120,9 +173,18 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
         status = 'red'
       }
 
-      return { ...item, needed_qty, total_available, status }
+      return {
+        ...item,
+        needed_qty,
+        total_available,
+        status,
+        effective_item_code: effectiveItemCode,
+        effective_item_name: effectiveItemName,
+        effective_stock_uom: effectiveStockUom,
+        effective_availability: effectiveAvailability,
+      }
     })
-  }, [bom, qty])
+  }, [bom, qty, itemSubstitutions])
 
   // fg_warehouse is required by ERPNext's Work Order doctype
   const canSubmit = !!(productionItem && bom && qty > 0 && fgWarehouse && company) && !submitting
@@ -131,14 +193,19 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     if (!canSubmit) return
     setSubmitting(true)
     try {
+      const substitutionPayload = Object.entries(itemSubstitutions).map(([originalItemCode, substituteItemCode]) => ({
+        original_item_code: originalItemCode,
+        substitute_item_code: substituteItemCode,
+      }))
       const res = await submitWO({
         production_item: productionItem,
         bom_no: bom!.bom_no,
         qty,
         company,
         fg_warehouse: fgWarehouse,
-        wip_warehouse: wipWarehouse || undefined,
+        wip_warehouse: wipWarehouse || fgWarehouse,
         planned_start_date: plannedStartDate,
+        item_substitutions: substitutionPayload.length ? JSON.stringify(substitutionPayload) : undefined,
       })
       const result = unwrap(res)
       if (result?.work_order) {
@@ -153,7 +220,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, productionItem, bom, qty, company, wipWarehouse, fgWarehouse, plannedStartDate, submitWO])
+  }, [canSubmit, productionItem, bom, qty, company, wipWarehouse, fgWarehouse, plannedStartDate, submitWO, itemSubstitutions])
 
   if (!open) return null
 
@@ -164,9 +231,9 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
           <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center mx-auto mb-4">
             <Check className="w-6 h-6 text-slate-900 dark:text-white" />
           </div>
-          <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">Work Order Created</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-mono">{success}</p>
-          <button onClick={onClose} className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white text-xs font-semibold rounded px-5 py-2 cursor-pointer">
+          <p className="text-base font-bold text-slate-900 dark:text-white mb-1">Work Order Created</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-mono">{success}</p>
+          <button onClick={onClose} className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white text-sm font-semibold rounded px-5 py-2 cursor-pointer">
             Close
           </button>
         </div>
@@ -174,11 +241,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     )
   }
 
-  const allWh = [
-    ...warehouses.source_warehouses.map(w => w.warehouse),
-    ...warehouses.target_warehouses.map(w => w.warehouse),
-  ]
-  const targetWhs = warehouses.target_warehouses.map(w => w.warehouse)
+  const selectBase =
+    'w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-sm px-2.5 py-2 focus:outline-none focus:border-purple-500'
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
@@ -188,7 +252,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
           <ArrowLeft className="w-5 h-5" />
         </button>
         <Factory className="w-4 h-4 text-purple-700 dark:text-purple-400" />
-        <h2 className="text-sm font-bold text-slate-900 dark:text-white">New Work Order</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">New Work Order</h2>
       </div>
 
       {/* Body: left config pane + right BOM preview */}
@@ -200,7 +264,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* Production item */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                 Production Item <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <ItemSearchInput
@@ -211,12 +275,12 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
               />
               {productionItem && (
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-600 dark:text-slate-300 truncate">{productionItemName || productionItem}</span>
-                  <button onClick={handleClearItem} className="text-[9px] text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300 ml-2 cursor-pointer shrink-0">Clear</button>
+                  <span className="text-xs text-slate-600 dark:text-slate-300 truncate">{productionItemName || productionItem}</span>
+                  <button onClick={handleClearItem} className="text-[10px] text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300 ml-2 cursor-pointer shrink-0">Clear</button>
                 </div>
               )}
               {bom && (
-                <div className="mt-0.5 text-[9px] text-slate-500 font-mono">
+                <div className="mt-0.5 text-[10px] text-slate-500 font-mono">
                   {bom.bom_no} — produces {bom.qty} {bom.stock_uom} per run
                 </div>
               )}
@@ -224,7 +288,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* Qty */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                 Qty to Manufacture <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
@@ -233,61 +297,101 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                 step={1}
                 value={qty}
                 onChange={e => setQty(Math.max(0.001, parseFloat(e.target.value) || 0))}
-                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-sm px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-base px-2.5 py-2 focus:outline-none focus:border-purple-500"
               />
               {bom && (
-                <p className="text-[9px] text-slate-500 mt-0.5">
+                <p className="text-[10px] text-slate-500 mt-0.5">
                   = {(qty / (bom.qty || 1)).toFixed(3)}× batch{(qty / (bom.qty || 1)) !== 1 ? 'es' : ''}
                 </p>
               )}
             </div>
 
-            {/* WIP Warehouse — primary */}
-            <div>
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                WIP Warehouse
-                <span className="ml-1 text-[9px] text-slate-500 normal-case font-normal">(in-process)</span>
-              </label>
-              <select
-                value={wipWarehouse}
-                onChange={e => setWipWarehouse(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500"
-              >
-                <option value="">— Use Manufacturing Settings default —</option>
-                {targetWhs.map(w => (
-                  <option key={w} value={w}>{shortWh(w)}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* FG Warehouse — required by ERPNext */}
-            <div>
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                FG Warehouse <span className="text-red-600 dark:text-red-400">*</span>
-                <span className="ml-1 text-[9px] text-slate-500 normal-case font-normal">(finished goods)</span>
-              </label>
-              <select
-                value={fgWarehouse}
-                onChange={e => setFgWarehouse(e.target.value)}
-                className={`w-full bg-slate-100 dark:bg-slate-700 border rounded text-slate-900 dark:text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500 ${!fgWarehouse ? 'border-red-600' : 'border-slate-300 dark:border-slate-600'}`}
-              >
-                <option value="">— Select —</option>
-                {targetWhs.map(w => (
-                  <option key={w} value={w}>{shortWh(w)}</option>
-                ))}
-              </select>
-            </div>
+            {wipMatchesFg ? (
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  WIP &amp; FG warehouse <span className="text-red-600 dark:text-red-400">*</span>
+                  <span className="ml-1 text-[10px] text-slate-500 normal-case font-normal">(same location)</span>
+                </label>
+                <select
+                  value={fgWarehouse}
+                  onChange={e => {
+                    const v = e.target.value
+                    setFgWarehouse(v)
+                    setWipWarehouse(v)
+                  }}
+                  className={`${selectBase} ${!fgWarehouse ? 'border-red-600' : ''}`}
+                >
+                  <option value="">— Select —</option>
+                  {targetWhs.map(w => (
+                    <option key={w} value={w}>{shortWh(w)}</option>
+                  ))}
+                </select>
+                {allowedWipWhs.filter(w => w !== fgWarehouse).length > 0 && (
+                  <button
+                    type="button"
+                    className="mt-1.5 text-xs text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
+                    onClick={() => {
+                      const alt = allowedWipWhs.find(w => w !== fgWarehouse)
+                      if (alt) setWipWarehouse(alt)
+                    }}
+                  >
+                    Use a different WIP warehouse…
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    WIP warehouse <span className="text-red-600 dark:text-red-400">*</span>
+                    <span className="ml-1 text-[10px] text-slate-500 normal-case font-normal">(profile only)</span>
+                  </label>
+                  <select
+                    value={wipWarehouse}
+                    onChange={e => setWipWarehouse(e.target.value)}
+                    className={selectBase}
+                  >
+                    {allowedWipWhs.map(w => (
+                      <option key={w} value={w}>{shortWh(w)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    FG warehouse <span className="text-red-600 dark:text-red-400">*</span>
+                    <span className="ml-1 text-[10px] text-slate-500 normal-case font-normal">(target warehouses)</span>
+                  </label>
+                  <select
+                    value={fgWarehouse}
+                    onChange={e => setFgWarehouse(e.target.value)}
+                    className={`${selectBase} ${!fgWarehouse ? 'border-red-600' : ''}`}
+                  >
+                    <option value="">— Select —</option>
+                    {targetWhs.map(w => (
+                      <option key={w} value={w}>{shortWh(w)}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
+                  onClick={() => setWipWarehouse(fgWarehouse)}
+                >
+                  Use same warehouse for WIP and FG
+                </button>
+              </>
+            )}
 
             {/* Planned Start Date — required by ERPNext */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                 Planned Start Date <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 type="date"
                 value={plannedStartDate}
                 onChange={e => setPlannedStartDate(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-xs px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
+                className={selectBase}
               />
             </div>
 
@@ -295,9 +399,9 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className={`w-full flex items-center justify-center gap-2 rounded text-sm font-bold py-2.5 transition-colors ${
+              className={`w-full flex items-center justify-center gap-2 rounded text-base font-bold py-2.5 transition-colors ${
                 canSubmit
-                  ? 'bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-slate-900 dark:text-white cursor-pointer'
+                  ? 'bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white cursor-pointer'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
               }`}
             >
@@ -311,9 +415,9 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 shrink-0">
             <Package className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Raw Materials Required</span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Raw Materials Required</span>
             {bom && (
-              <span className="text-[9px] text-slate-500">
+              <span className="text-[10px] text-slate-500">
                 — {bom.items.length} item{bom.items.length !== 1 ? 's' : ''}, producing {qty} {bom.stock_uom}
               </span>
             )}
@@ -323,26 +427,26 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
             {!productionItem ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2">
                 <Factory className="w-8 h-8" />
-                <p className="text-xs">Select an item to preview raw material requirements</p>
+                <p className="text-sm">Select an item to preview raw material requirements</p>
               </div>
             ) : bomLoading ? (
               <div className="flex items-center justify-center h-full">
                 <RefreshCw className="w-4 h-4 animate-spin text-slate-500 dark:text-slate-400 mr-2" />
-                <span className="text-xs text-slate-500 dark:text-slate-400">Loading BOM…</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">Loading BOM…</span>
               </div>
             ) : bomError ? (
               <div className="flex items-center gap-2 p-4 text-red-600 dark:text-red-400">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span className="text-xs">{bomError}</span>
+                <span className="text-sm">{bomError}</span>
               </div>
             ) : bom && bom.items.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-slate-500 text-xs">
+              <div className="flex items-center justify-center h-full text-slate-500 text-sm">
                 BOM has no raw material items
               </div>
             ) : bom ? (
               <div>
                 {/* Column header */}
-                <div className="grid grid-cols-12 gap-0 px-3 py-1 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky top-0">
+                <div className="grid grid-cols-12 gap-0 px-3 py-1 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky top-0">
                   <span className="col-span-5">Item</span>
                   <span className="col-span-3 text-right">Need</span>
                   <span className="col-span-2 text-right">Total</span>
@@ -355,30 +459,78 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                     item.status === 'amber' ? 'bg-amber-500' : 'bg-red-600'
 
                   return (
-                    <div key={item.item_code} className="flex items-start border-b border-slate-800 px-3 py-2 gap-2">
-                      <span className={`w-1 h-4 mt-0.5 rounded-full shrink-0 ${stripeColor}`} />
-                      <div className="grid grid-cols-12 gap-0 flex-1 min-w-0">
-                        <div className="col-span-5 min-w-0">
-                          <p className="text-[10px] font-semibold text-slate-900 dark:text-white truncate">{item.item_name || item.item_code}</p>
-                          <p className="text-[8px] text-slate-500 font-mono truncate">{item.item_code}</p>
-                        </div>
-                        <div className="col-span-3 text-right">
-                          <p className="text-[10px] tabular-nums text-slate-700 dark:text-slate-200">{item.needed_qty.toFixed(3)}</p>
-                          <p className="text-[8px] text-slate-500">{item.stock_uom}</p>
-                        </div>
-                        <div className="col-span-2 text-right">
-                          <StockBadge qty={item.total_available} needed={item.needed_qty} uom={item.stock_uom} />
-                        </div>
-                        <div className="col-span-2 text-right">
-                          {item.availability
-                            .slice(0, 2)
-                            .map(a => (
-                              <div key={a.warehouse} className="text-[8px] text-slate-500 tabular-nums">
-                                {a.qty.toFixed(2)} @ {shortWh(a.warehouse_name || a.warehouse)}
-                              </div>
-                            ))}
+                    <div key={item.item_code} className="border-b border-slate-800">
+                      <div className="flex items-start px-3 py-2 gap-2">
+                        <span className={`w-1 h-4 mt-0.5 rounded-full shrink-0 ${stripeColor}`} />
+                        <div className="grid grid-cols-12 gap-0 flex-1 min-w-0">
+                          <div className="col-span-5 min-w-0">
+                            <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{item.effective_item_name}</p>
+                            <p className="text-[10px] text-slate-500 font-mono truncate">{item.effective_item_code}</p>
+                            {item.effective_item_code !== item.item_code && (
+                              <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                                alt of {item.item_code}
+                              </p>
+                            )}
+                          </div>
+                          <div className="col-span-3 text-right">
+                            <p className="text-xs tabular-nums text-slate-700 dark:text-slate-200">{item.needed_qty.toFixed(3)}</p>
+                            <p className="text-[10px] text-slate-500">{item.effective_stock_uom}</p>
+                          </div>
+                          <div className="col-span-2 text-right">
+                            <StockBadge qty={item.total_available} needed={item.needed_qty} uom={item.effective_stock_uom} />
+                          </div>
+                          <div className="col-span-2 text-right">
+                            {item.effective_availability
+                              .slice(0, 2)
+                              .map(a => (
+                                <div key={a.warehouse} className="text-[10px] text-slate-500 tabular-nums">
+                                  {a.qty.toFixed(2)} @ {shortWh(a.warehouse_name || a.warehouse)}
+                                </div>
+                              ))}
+                          </div>
                         </div>
                       </div>
+                      {item.alternatives && item.alternatives.length > 0 && (
+                        <div className="px-6 pb-2.5">
+                          <p className="text-[10px] font-semibold text-slate-500 mb-1.5">Select alternative (same qty):</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setItemSubstitutions(prev => {
+                                  const next = { ...prev }
+                                  delete next[item.item_code]
+                                  return next
+                                })
+                              }}
+                              className={`text-[10px] font-semibold rounded px-2.5 py-1 cursor-pointer transition-colors ${
+                                !itemSubstitutions[item.item_code]
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+                              }`}
+                            >
+                              Use BOM item
+                            </button>
+                            {item.alternatives.map(alt => (
+                              <button
+                                type="button"
+                                key={alt.item_code}
+                                onClick={() => setItemSubstitutions(prev => ({
+                                  ...prev,
+                                  [item.item_code]: alt.item_code,
+                                }))}
+                                className={`text-[10px] font-semibold rounded px-2.5 py-1 cursor-pointer transition-colors ${
+                                  itemSubstitutions[item.item_code] === alt.item_code
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                }`}
+                              >
+                                {alt.item_name || alt.item_code}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}

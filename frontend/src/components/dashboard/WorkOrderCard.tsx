@@ -46,8 +46,9 @@ export default function WorkOrderCard({ wo, onClick }: WorkOrderCardProps) {
 
   return (
     <button
+      type="button"
       onClick={() => onClick(wo.name)}
-      className="w-full text-left flex items-stretch border-b border-slate-200 dark:border-slate-700 hover:bg-slate-750 active:bg-slate-200 dark:active:bg-slate-100 dark:bg-slate-700 transition-colors cursor-pointer touch-manipulation"
+      className="group w-full text-left flex items-stretch border-b-2 border-slate-300 dark:border-slate-600 hover:bg-purple-50 dark:hover:bg-slate-700 dark:hover:shadow-[inset_0_0_0_9999px_rgba(192,132,252,0.13)] active:bg-purple-100/90 dark:active:bg-slate-600 dark:active:shadow-[inset_0_0_0_9999px_rgba(192,132,252,0.2)] transition-all duration-150 cursor-pointer touch-manipulation hover:outline hover:outline-1 hover:outline-purple-400/45 dark:hover:outline-purple-300/55 hover:outline-offset-[-1px]"
     >
       {/* Status stripe */}
       <span className={`w-[3px] shrink-0 ${stripeColor}`} />
@@ -55,15 +56,15 @@ export default function WorkOrderCard({ wo, onClick }: WorkOrderCardProps) {
       <div className="flex-1 px-2.5 py-2 min-w-0">
         {/* Row 1: name + age + status */}
         <div className="flex items-center justify-between gap-2 mb-0.5">
-          <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">{wo.name}</span>
+          <span className="text-[10px] font-mono text-slate-600 dark:text-slate-300 truncate">{wo.name}</span>
           <div className="flex items-center gap-1.5 shrink-0">
             {shortfallBadge && (
-              <span className="text-[9px] font-bold bg-red-600 text-slate-900 dark:text-white rounded px-1 py-px leading-none">
+              <span className="text-[9px] font-bold bg-red-600 text-white rounded px-1 py-px leading-none">
                 {wo.shortfall_count} short
               </span>
             )}
             {amberBadge && (
-              <span className="text-[9px] font-bold bg-amber-600 text-slate-900 dark:text-white rounded px-1 py-px leading-none">
+              <span className="text-[9px] font-bold bg-amber-600 text-white rounded px-1 py-px leading-none">
                 {wo.amber_count} partial
               </span>
             )}

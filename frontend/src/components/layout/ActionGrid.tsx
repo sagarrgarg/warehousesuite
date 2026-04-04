@@ -1,6 +1,6 @@
 import {
   ArrowUpFromLine, ClipboardCheck, Search,
-  PackagePlus, Truck, Factory, PackageOpen, ListChecks,
+  PackagePlus, Truck, Factory, PackageOpen, ListChecks, Table2,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -87,6 +87,15 @@ const ACTIONS: ActionDef[] = [
     reactView: true,
   },
   {
+    id: 'so-pending-report',
+    label: 'SO Pending',
+    icon: <Table2 className="w-4 h-4" />,
+    color: 'bg-cyan-700 hover:bg-cyan-800 dark:bg-cyan-800 dark:hover:bg-cyan-700',
+    textClass: 'text-white',
+    operationKey: 'sales_order_pending_report',
+    reactView: true,
+  },
+  {
     id: 'repack',
     label: 'Repack',
     icon: <PackageOpen className="w-4 h-4" />,
@@ -101,17 +110,23 @@ export default function ActionGrid({ operations, onAction, sentBadge = 0 }: Acti
   const visible = ACTIONS.filter(a => !a.operationKey || operations?.[a.operationKey])
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+    // pt-2: room for badge (-top-1 + h-4) — overflow-x-auto clips overflow, padding keeps badge inside scrollport
+    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-2 pb-0.5">
       {visible.map(a => {
         const badge = a.badgeKey === 'sent' ? sentBadge : 0
         const disabled = !a.reactView
+        const stackClass =
+          disabled ? ''
+            : badge > 0
+              ? 'z-10 hover:z-30 focus-visible:z-30'
+              : 'z-0 hover:z-20 focus-visible:z-20'
 
         return (
           <button
             key={a.id}
             onClick={() => !disabled && onAction(a.id)}
             disabled={disabled}
-            className={`relative shrink-0 flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded transition-colors touch-manipulation ${
+            className={`relative shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded transition-colors touch-manipulation ${stackClass} ${
               disabled
                 ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
                 : `${a.color} ${a.textClass} cursor-pointer active:opacity-80`
@@ -120,7 +135,7 @@ export default function ActionGrid({ operations, onAction, sentBadge = 0 }: Acti
             {a.icon}
             <span>{a.label}</span>
             {!disabled && badge > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold bg-red-500 text-white px-1">
+              <span className="pointer-events-none absolute -top-1 -right-1 z-10 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold bg-red-500 text-white px-1 shadow-sm">
                 {badge}
               </span>
             )}

@@ -14,6 +14,7 @@ from warehousesuite.services.pow_work_order_service import (
     get_manufacturing_warehouses,
     create_work_order,
     get_work_order_materials,
+    set_work_order_item_substitute,
     transfer_materials_for_manufacture,
     get_manufacture_preview,
     manufacture_work_order,
@@ -77,6 +78,7 @@ def create_pow_work_order(
     source_warehouse=None,
     wip_warehouse=None,
     planned_start_date=None,
+    item_substitutions=None,
 ):
     """Create and submit a new Work Order.
 
@@ -89,6 +91,7 @@ def create_pow_work_order(
         source_warehouse: default raw material source — optional
         wip_warehouse: work-in-progress warehouse — optional
         planned_start_date: ISO date string — defaults to today if omitted
+        item_substitutions: optional JSON map/list for BOM item substitutions
 
     Returns:
         dict with status, work_order, message.
@@ -110,6 +113,7 @@ def create_pow_work_order(
         source_warehouse=source_warehouse or None,
         wip_warehouse=wip_warehouse or None,
         planned_start_date=planned_start_date or None,
+        item_substitutions=item_substitutions,
     )
 
 
@@ -150,6 +154,16 @@ def transfer_wo_materials(wo_name, items):
 
 
 @frappe.whitelist()
+def set_wo_item_substitute(wo_name, wo_item_name, substitute_item_code):
+    """Persist substitute item selection for a Work Order required item row."""
+    return set_work_order_item_substitute(
+        wo_name=wo_name,
+        wo_item_name=wo_item_name,
+        substitute_item_code=substitute_item_code,
+    )
+
+
+@frappe.whitelist()
 def get_manufacture_items(wo_name, qty):
     """Preview which items ERPNext will consume/produce for a manufacture entry.
 
@@ -168,7 +182,7 @@ def get_manufacture_items(wo_name, qty):
 
 
 @frappe.whitelist()
-def manufacture_wo(wo_name, qty, item_overrides=None):
+def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None):
     """Create a Manufacture Stock Entry to produce finished goods.
 
     Args:
@@ -176,6 +190,8 @@ def manufacture_wo(wo_name, qty, item_overrides=None):
         qty: quantity to produce (required)
         item_overrides: optional JSON array of {item_code, qty} to override
                         BOM-calculated raw material consumption.
+        item_substitutions: optional JSON array of
+                        {original_item_code, substitute_item_code}.
 
     Returns:
         dict with status, stock_entry.
@@ -192,7 +208,18 @@ def manufacture_wo(wo_name, qty, item_overrides=None):
     if item_overrides:
         parsed_overrides = frappe.parse_json(item_overrides) if isinstance(item_overrides, str) else item_overrides
 
-    return manufacture_work_order(wo_name=wo_name, qty=qty_val, item_overrides=parsed_overrides)
+    parsed_substitutions = None
+    if item_substitutions:
+        parsed_substitutions = (
+            frappe.parse_json(item_substitutions) if isinstance(item_substitutions, str) else item_substitutions
+        )
+
+    return manufacture_work_order(
+        wo_name=wo_name,
+        qty=qty_val,
+        item_overrides=parsed_overrides,
+        item_substitutions=parsed_substitutions,
+    )
 
 
 @frappe.whitelist()

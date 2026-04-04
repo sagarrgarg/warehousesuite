@@ -66,7 +66,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
 
   useEffect(() => {
     if (open && qty > 0) loadPreview(qty)
-  }, [open])
+  }, [open, qty, loadPreview])
 
   const handleQtyBlur = useCallback(() => {
     if (!qtyError && qty > 0) loadPreview(qty)
@@ -92,11 +92,18 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
             qty: overrides[m.item_code] ?? m.qty,
           }))
         : undefined
+      const itemSubstitutions = wo.required_items
+        .filter(item => item.original_item_code && item.original_item_code !== item.item_code)
+        .map(item => ({
+          original_item_code: item.original_item_code,
+          substitute_item_code: item.item_code,
+        }))
 
       const res = await doManufacture({
         wo_name: wo.name,
         qty,
         item_overrides: itemOverrides ? JSON.stringify(itemOverrides) : undefined,
+        item_substitutions: itemSubstitutions.length ? JSON.stringify(itemSubstitutions) : undefined,
       })
       const result = unwrap(res)
       if (result?.stock_entry) {
@@ -114,7 +121,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
     } finally {
       setSubmitting(false)
     }
-  }, [qty, wo.name, doManufacture, qtyError, hasOverrides, overrides, preview])
+  }, [qty, wo.name, wo.required_items, doManufacture, qtyError, hasOverrides, overrides, preview])
 
   if (!open) return null
 
@@ -313,7 +320,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
           className={`w-full flex items-center justify-center gap-2 rounded text-sm font-bold py-2.5 transition-colors ${
             qtyError || submitting || previewLoading
               ? 'bg-slate-100 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
-              : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-slate-900 dark:text-white cursor-pointer'
+              : 'bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white cursor-pointer'
           }`}
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}

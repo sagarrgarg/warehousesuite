@@ -167,7 +167,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 							<button onClick={() => setShowPending(!showPending)} className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 hover:bg-slate-200 touch-manipulation">
 								<span className="text-xs font-bold text-slate-700">Pending Transfers</span>
 								<div className="flex items-center gap-2">
-									<span className="bg-red-500 text-slate-900 dark:text-white rounded px-1.5 py-px text-[10px] font-bold">{pendingTransfers.length}</span>
+									<span className="bg-red-600 text-white rounded px-1.5 py-px text-[10px] font-bold">{pendingTransfers.length}</span>
 									{showPending ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
 								</div>
 							</button>
@@ -213,7 +213,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 					<div className="bg-white border border-slate-200 rounded">
 						<div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
 							<span className="text-xs font-bold text-slate-700">Items</span>
-							<button onClick={addLine} className="flex items-center gap-1 text-[11px] font-bold text-slate-900 dark:text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2 py-1 touch-manipulation">
+							<button onClick={addLine} className="flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2 py-1 touch-manipulation">
 								<Plus className="w-3 h-3" /> Add
 							</button>
 						</div>
@@ -272,7 +272,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 			<div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-3xl mx-auto w-full">
 				<div className="flex gap-2">
 					<button onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded touch-manipulation">Cancel</button>
-					<button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-slate-900 dark:text-white font-bold text-sm rounded disabled:opacity-50 active:opacity-80 touch-manipulation">
+					<button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded disabled:opacity-50 active:opacity-80 touch-manipulation">
 						{submitting ? 'Sending...' : 'Send Transfer'}
 					</button>
 				</div>

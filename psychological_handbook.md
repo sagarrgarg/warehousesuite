@@ -1,5 +1,44 @@
 # Psychological Handbook
 
+## Decision note (2026-04-05, SO pending report in POW)
+- Pending delivery is exposed only when a **POW Profile** explicitly enables it, so sales visibility stays an administrator choice per floor role.
+- The report is **company-scoped** from the profile (same company as other POW work), not warehouse-scoped, because open sales lines are a commercial backlog rather than a bin-level question.
+- Operators see **stock-UOM pending** (`stock_qty − delivered_qty`) so numbers match ERPNext delivery logic; mixing order UOM with `delivered_qty` would mislead pick/plan users.
+- Large datasets are **server-paginated** so the POW UI stays responsive: the browser only renders a bounded page of rows and receives a bounded JSON payload per request.
+
+## Decision note (2026-04-05, recursive WO substitutes)
+- On the floor, "use substitute" is not a one-step decision: teams often chain through known equivalents (A -> B -> C). The UI/API now treat alternatives as a connected graph, not a flat list.
+- Substitute choice is an operator intent that must survive the workflow handoff:
+  - Create WO preview,
+  - WO detail review,
+  - shortfall/MR request,
+  - final manufacture consumption.
+- Quantity must remain stable during substitution. The system changes **item identity**, not planning math, to avoid accidental over/under-requesting.
+- Traceability is non-negotiable: manufacturing entries still carry `original_item` context so ERPNext quantity updates and audits remain trustworthy.
+- Guardrail: once transfer/consumption starts for a WO row, swap is blocked to prevent historical movement ambiguity.
+
+## Decision note (2026-04-05, queue hover hues)
+- Transfer requests highlight **blue** on hover, incoming transfers **violet**, work orders **purple** — aligned with each column’s existing accent so hover reads as “this list” not generic grey.
+- In **dark mode**, hover uses a **lighter slate surface** (`slate-700` → `slate-600` active) with a soft coloured **inset wash**, not deeper `950` tones, so the row visibly “lifts.”
+
+## Decision note (2026-04-05, toolbar badges)
+- Count badges on action buttons sit partly outside the button box; the toolbar row must **reserve vertical space** and use **stacking** so badges are not clipped by scroll overflow and are not painted under the next button until that button is hovered.
+
+## Decision note (2026-04-05, WO material transfer not in POW)
+- Material Transfer for Manufacture from the POW work-order detail screen was removed so operators are not encouraged to run that step in POW; source must match a **fresh frontend build** or old bundles will still show the button.
+
+## Decision note (2026-04-05, clearer card separation)
+- Thin 1px borders between queue items were visually vague, especially on factory-floor displays with varying lighting.
+- **2px borders** with slightly darker tone (`slate-300` light, `slate-600` dark) make card boundaries unmistakable without adding visual noise.
+- Applied to all list rows (Material Requests, Incoming Transfers, Work Orders) and their section headers.
+
+## Decision note (2026-04-05, queue legibility in dark mode)
+- Dense operational queues need **alternating row treatments** at both the **card** and **item-line** levels so operators can tie quantities and codes to the correct line without rereading from the header.
+
+## Decision note (2026-04-05, readability and warehouse honesty)
+- POW runs on shop floors: **slightly larger default type** reduces misreads without turning the UI into a “tablet desktop.”
+- Warehouse pickers must **never imply** a wider scope than the POW Profile: WIP options are only warehouses the profile lists; when WIP and FG are the same operational location, **one control** is less error-prone than two identical dropdowns.
+
 ## Decision note (2026-04-05, POW boot parity)
 - The POW React app must behave like a first-class logged-in Frappe surface: same session, CSRF, and boot signals as Desk so API calls do not “mysteriously” fail only on the hosted `/pow` page.
 - Production therefore injects real `frappe.boot` and ensures `frappe` exists before CSRF injection; dev keeps using an explicit boot API behind `developer_mode` instead of pretending Jinja ran in Vite.

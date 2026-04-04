@@ -1,5 +1,173 @@
 # Technical Handbook
 
+## 2026-04-05 - POW: Sales Order pending delivery report (profile-gated, two tabs)
+
+### What changed
+- **POW Profile** (`pow_profile.json`): new check **Sales Order Pending Delivery Report** (`sales_order_pending_report`).
+- **Backend**
+  - `warehousesuite/services/pow_so_pending_report_service.py`: company-scoped queries for (1) open SO lines with undelivered stock-UOM qty, (2) rollup by **item code + stock UOM** (ignores differing SO line `item_name` text); summary shows **Item** master `item_name`. **Warehouse filter**: effective line warehouse `COALESCE(so_item.warehouse, so.set_warehouse)` must lie in POW Profile source/target roots plus leaf descendants (`get_all_child_warehouses`, excluding in-transit). Uses `stock_qty - delivered_qty` for pending (both stock UOM). Remark column uses `custom_remarks` on Sales Order when the column exists.
+  - `warehousesuite/api/pow_so_pending_report.py`: whitelisted `get_pow_so_pending_lines`, `get_pow_so_pending_summary`; requires user on profile, flag enabled, and Sales Order read permission.
+  - `pow_dashboard.get_pow_profile_operations`: returns `sales_order_pending_report`.
+- **Frontend**: `SalesOrderPendingReportModal.tsx` (tabs **By order & line** / **Item totals**; server-side filters; tab switch uses stable `useRef` for Frappe POST calls to avoid infinite refetch). `ActionGrid` **SO Pending**, `Dashboard`, `api.ts` + `types`.
+- **Filters**: `customer` and `item_code` are **exact** (picker on React); `sales_order` remains substring `LIKE`. Legacy `item_search` (substring on code/name) still accepted when `item_code` is omitted. Typeahead: `search_so_report_customers`, `search_so_report_items`. Lines include `conversion_factor` for sale vs stock UOM display.
+- **Performance**: responses are **paginated** (`start`, `page_length`, max 250). API returns `{ rows, total, start, page_length }` so the browser never builds huge tables; COUNT uses the same filters as the data query.
+
+### Why it changed
+- Operators needed the two existing SQL reports inside POW with correct pending math and access tied to POW Profile (not only Desk).
+
+### Migration implications
+- `bench migrate` (new profile field).
+- Rebuild POW frontend assets.
+
+## 2026-04-05 - Recursive WO alternatives across create/detail/MR/manufacture
+
+### What changed
+- `warehousesuite/services/pow_work_order_service.py`:
+  - `get_alternative_items()` now resolves **transitive** alternatives (A->B->C...) with cycle protection instead of one-hop lookup.
+  - `get_bom_for_item()` now includes per-row `alternatives` for Create WO preview.
+  - Added substitution helpers to validate alternatives and persist original item context on WO rows.
+  - `create_work_order()` accepts `item_substitutions` and applies selected substitutes while keeping required qty unchanged.
+  - Added `set_work_order_item_substitute()` to update a submitted WO required-item row before transfer/consumption starts.
+  - `get_work_order_materials()` and `get_material_shortfall()` now return `original_item_code` + `is_substituted`.
+  - `get_manufacture_preview()` and `manufacture_work_order()` now apply WO substitutions to Manufacture Stock Entry raw-material lines (same qty, `original_item` tracked).
+- `warehousesuite/api/pow_work_order.py`:
+  - Added whitelisted endpoint `set_wo_item_substitute`.
+  - `create_pow_work_order` now accepts `item_substitutions`.
+  - `manufacture_wo` now accepts `item_substitutions` in addition to qty overrides.
+- Frontend:
+  - `CreateWorkOrderModal.tsx` now shows recursive alternatives for BOM rows and submits `item_substitutions`.
+  - `WorkOrderDetailModal.tsx` now wires alternative swap to backend persistence and supports reset to original item.
+  - `WOManufactureModal.tsx` sends WO substitution map to backend manufacture API.
+  - `types/index.ts` and `lib/api.ts` updated for new alternative/substitution fields and endpoint.
+
+### Why it changed
+- Operators needed item substitution to work end-to-end (Create WO and existing WO), including alternatives-of-alternatives, so material planning is realistic when primary raw material is unavailable.
+- One-hop alternatives were insufficient for real shop-floor substitute chains.
+- Manufacture needed explicit substitute propagation so consumed raw material matches operator-selected alternatives while preserving ERPNext traceability.
+
+### Impacted modules
+- POW WO service/API (`pow_work_order_service.py`, `pow_work_order.py`)
+- POW manufacturing frontend modals and TypeScript contracts
+- Generated frontend assets (`public/pow`, `www/pow.html`) from build
+
+### Migration implications
+- No schema changes.
+- Rebuild frontend assets after pull (`yarn build` under `frontend/` or `bench build --app warehousesuite`).
+- Run cache clear and standard bench refresh on deployment.
+
+### Removed logic
+- Flat one-hop only alternative resolution in WO service.
+
+## 2026-04-05 - Queue row hover in dark mode (lighter lift)
+
+### What changed
+- Dark mode hover no longer uses near-black `*-950` washes; rows use **`slate-700`** (lighter than `slate-800/900` bases) plus a **light inset tint** (blue / violet / purple RGB overlay) and brighter **300-level** outlines. Active dark state steps to **`slate-600`**. Nested item lines use **`slate-600`** + matching inset tint on `group-hover`.
+
+### Why it changed
+- Operators reported dark hover reads as “darker mud”; lifting surfaces toward slate-600/700 with a visible colour wash matches “lighter highlight” intent.
+
+## 2026-04-05 - Queue row hover: variant tint per column
+
+### What changed
+- `MaterialRequestCard.tsx`: hover/active **blue** wash + `group` so nested item lines shift tint; subtle blue `outline` on hover.
+- `PendingReceiveCard.tsx`: wrapper `group`, hover **violet** wash (matches incoming-transfers accent), item lines `group-hover` tint, violet outline on hover.
+- `WorkOrderCard.tsx`: hover/active **purple** wash + outline (matches manufacturing column).
+
+### Why it changed
+- Operators need an obvious “which row am I on?” affordance; each column keeps its own hue so the three panes stay visually distinct.
+
+### Migration implications
+- `yarn build` when shipping assets.
+
+## 2026-04-05 - POW Send badge: no clip, correct hover stacking
+
+### What changed
+- `ActionGrid.tsx`: vertical padding inside the horizontal scroll row so the sent-count badge (`-top-1`) stays inside the overflow scrollport; z-index on buttons (`z-10` / `hover:z-30` when badge present, else `hover:z-20`) so the hovered control (and badge) paints above neighbors; badge `pointer-events-none`, `z-10`, light shadow.
+- `Dashboard.tsx`: action toolbar wrapper `overflow-visible` + adjusted top/bottom padding so the strip does not clip the badge.
+
+### Why it changed
+- `overflow-x-auto` was clipping the badge vertically; adjacent toolbar buttons stacked on top of the Send badge in paint order.
+
+### Migration implications
+- `yarn build` when shipping assets.
+
+## 2026-04-05 - POW Work Order: remove Transfer Materials + rebuild assets
+
+### What changed
+- `WorkOrderDetailModal.tsx`: removed **Transfer Materials** footer action and `onTransferMaterials` prop.
+- `Dashboard.tsx`: removed `WOTransferModal` flow; `woDetailAction` is only `manufacture` | `request` | `null`.
+- Deleted `WOTransferModal.tsx`; dropped unused `API.transferWOMaterials` from `frontend/src/lib/api.ts`.
+- Ran `yarn build` so `warehousesuite/public/pow/` and `www/pow.html` reference a **new** hashed JS bundle **without** the old button text.
+
+### Why it changed
+- Floors should not create Material Transfer for Manufacture from POW WO detail; Desk (or other process) handles that. Users still saw the button because **compiled assets were stale** until a fresh Vite build.
+
+### Migration implications
+- After pulling: `yarn build` under `frontend/`, then `bench clear-cache` on deploy. Hard-refresh the browser (or disable cache) so `/assets/warehousesuite/pow/assets/index-*.js` is the new file.
+
+### Removed logic
+- `WOTransferModal` UI and client wiring. Backend `transfer_wo_materials` API remains.
+
+## 2026-04-05 - Card/row borders stronger for visual separation
+
+### What changed
+- `MaterialRequestCard.tsx`, `PendingReceiveCard.tsx`, `WorkOrderCard.tsx`: upgraded row dividers from `border-b` (1px, subtle) to `border-b-2 border-slate-200 dark:border-slate-600` (2px, darker) so each request/transfer/row boundary is clearly visible.
+- `PendingMaterialRequestsPanel.tsx`, `PendingReceivesPanel.tsx`, `PendingWorkOrdersPanel.tsx`: applied same 2px border treatment to panel header and column header borders (`border-b-2 border-slate-300 dark:border-slate-600`) and warehouse subheading dividers.
+
+### Why it changed
+- In both light and dark modes, especially on busy factory-floor screens, thin/light borders made adjacent cards blend together. Heavier 2px borders in mid-tone slate make the queue grid easier to scan at a glance.
+
+### Impacted modules
+- POW React dashboard list panels only.
+
+### Migration implications
+- Rebuild assets as usual (`yarn build`).
+
+### Removed logic
+- None.
+
+## 2026-04-05 - Transfer / Incoming list zebra striping (dark mode)
+
+### What changed
+- `MaterialRequestCard.tsx`, `PendingMaterialRequestsPanel.tsx`: alternating card backgrounds (white / slate-50; dark: slate-800 vs slate-900), dark borders, age-badge dark variants, zebra **item line** rows with stronger `dark:bg-slate-700/50` vs `dark:bg-slate-950/85`, improved primary text contrast.
+- `PendingReceiveCard.tsx`, `PendingReceivesPanel.tsx`: same pattern for incoming transfers; global stripe index across warehouse sub-groups; status chips and qty inputs styled for dark; sticky warehouse subheaders use `dark:bg-slate-800`.
+
+### Why it changed
+- In dark mode, request/receive rows and nested item lines blended together; alternating bands make multi-line items easier to scan on the floor.
+
+### Impacted modules
+- POW React dashboard queues only.
+
+### Migration implications
+- Rebuild assets as usual.
+
+### Removed logic
+- None.
+
+## 2026-04-05 - POW typography + Create WO warehouse UX
+
+### What changed
+- `frontend/src/index.css`: raised root typography (`html` 112.5%, `body` 1rem) so Tailwind `rem`-based type reads larger on the floor.
+- `frontend/src/pages/Dashboard.tsx`, `frontend/src/components/layout/ActionGrid.tsx`: bumped header, ticker, tab labels, and action toolbar font classes for parity with the new base scale.
+- `frontend/src/components/manufacturing/CreateWorkOrderModal.tsx`:
+  - WIP dropdown options are limited to POW profile warehouses only: ordered union of **target** then **source** rows (no Manufacturing Settings “default outside profile” escape hatch).
+  - FG dropdown remains **target warehouses only** (finished goods).
+  - When WIP and FG resolve to the **same** warehouse, a single **“WIP & FG warehouse”** control is shown; optional links switch between unified and split modes.
+  - Submit always sends `wip_warehouse` (falls back to `fg_warehouse`) so ERPNext always gets an explicit WIP consistent with the UI.
+
+### Why it changed
+- Operators asked for larger text overall and less duplicate warehouse UI when defaults match.
+- Restricting WIP to profile-listed warehouses prevents picking a global default WIP outside the POW profile.
+
+### Impacted modules
+- POW React UI only (no DocType or API contract changes).
+
+### Migration implications
+- Rebuild frontend assets: `bench build --app warehousesuite` (or `yarn build` under `frontend/`).
+
+### Removed logic
+- “Use Manufacturing Settings default” empty option on the WIP select (replaced by profile-scoped lists and explicit defaults in `useEffect`).
+
 ## 2026-04-05 - POW production `/pow` boot, CSRF, and SPA routes
 
 ### What changed
@@ -236,8 +404,8 @@
 
 **Frontend (new files):**
 - `frontend/src/components/manufacturing/CreateWorkOrderModal.tsx` — Full-screen modal: item search, BOM auto-load, RM stock preview, warehouse config, submit.
-- `frontend/src/components/manufacturing/WorkOrderDetailModal.tsx` — Full-screen WO detail: RM status, transfer/manufacture/request action buttons, alternative item display.
-- `frontend/src/components/manufacturing/WOTransferModal.tsx` — Material Transfer for Manufacture SE creation.
+- `frontend/src/components/manufacturing/WorkOrderDetailModal.tsx` — Full-screen WO detail: RM status, manufacture/request action buttons, alternative item display.
+- ~~`WOTransferModal.tsx`~~ — removed 2026-04-05 from POW UI; backend transfer API retained.
 - `frontend/src/components/manufacturing/WOManufactureModal.tsx` — Manufacture SE creation with backflush qty.
 - `frontend/src/components/manufacturing/WORequestMaterialsModal.tsx` — Raises MR for material shortfall (Purchase or Transfer).
 - `frontend/src/components/dashboard/WorkOrderCard.tsx` — Compact WO list card with dual progress bars and shortfall badges.

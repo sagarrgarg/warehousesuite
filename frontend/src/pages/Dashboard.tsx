@@ -17,11 +17,12 @@ import StockCountModal from '@/components/stock-count/StockCountModal'
 import ItemInquiryModal from '@/components/item-inquiry/ItemInquiryModal'
 import CreateWorkOrderModal from '@/components/manufacturing/CreateWorkOrderModal'
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
-import WOTransferModal from '@/components/manufacturing/WOTransferModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
+import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { WODetail } from '@/types'
 
 function useLiveClock() {
@@ -33,7 +34,7 @@ function useLiveClock() {
   return now
 }
 
-type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | null
+type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-report' | null
 type MobileTab = 'requests' | 'manufacturing' | 'incoming'
 
 export default function Dashboard() {
@@ -87,15 +88,23 @@ export default function Dashboard() {
   // WO modal state
   const [showCreateWO, setShowCreateWO] = useState(false)
   const [activeWOName, setActiveWOName] = useState<string | null>(null)
-  const [woDetailAction, setWoDetailAction] = useState<'transfer' | 'manufacture' | 'request' | null>(null)
+  const [woDetailAction, setWoDetailAction] = useState<'manufacture' | 'request' | null>(null)
   const [woForAction, setWoForAction] = useState<WODetail | null>(null)
 
   // Mobile tab
   const [mobileTab, setMobileTab] = useState<MobileTab>('requests')
 
   const { theme, toggle: toggleTheme } = useTheme()
+  const smUp = useMediaQuery('(min-width: 640px)')
 
   const now = useLiveClock()
+
+  const dateLabel = smUp
+    ? now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+    : now.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const timeLabel = smUp
+    ? now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 
   const refreshAll = useCallback(() => {
     refreshSent(); refreshMRs(); refreshReceives(); refreshWOs()
@@ -150,7 +159,7 @@ export default function Dashboard() {
 
   const handleAction = (action: string) => {
     switch (action) {
-      case 'transfer-send': case 'stock-count': case 'item-inquiry':
+      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report':
         setActiveModal(action as ModalType)
         break
       case 'manufacturing':
@@ -195,33 +204,40 @@ export default function Dashboard() {
   return (
     <div className="h-dvh bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden">
       {/* ── System Bar ─────────────────────────────────────── */}
-      <header className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 shrink-0">
-        <div className="flex items-center justify-between px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))]">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">POW</span>
+      <header className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 shrink-0 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))]">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-base font-black text-slate-900 dark:text-white tracking-tight shrink-0">POW</span>
             {selectedProfile && (
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[120px] sm:max-w-none">
+              <span
+                className={`text-xs text-slate-600 dark:text-slate-300 truncate min-w-0 ${
+                  profiles.length > 1 ? 'hidden sm:inline' : ''
+                } max-w-[min(40vw,10rem)] sm:max-w-[14rem]`}
+                title={selectedProfile.name1 ?? selectedProfile.name}
+              >
                 {selectedProfile.name1 ?? selectedProfile.name}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] text-slate-500 tabular-nums hidden sm:inline">
-              {now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
-            </span>
-            <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300 tabular-nums">
-              {now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </span>
-            {/* Theme toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex flex-col items-end leading-none sm:flex-row sm:items-center sm:gap-1.5 sm:leading-normal">
+              <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                {dateLabel}
+              </span>
+              <span className="text-[11px] sm:text-sm font-mono text-slate-700 dark:text-slate-200 tabular-nums">
+                {timeLabel}
+              </span>
+            </div>
             <button
+              type="button"
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              className="w-8 h-8 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               {theme === 'dark'
-                ? <Sun className="w-3.5 h-3.5" />
-                : <Moon className="w-3.5 h-3.5" />
+                ? <Sun className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                : <Moon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               }
             </button>
             <ProfileSwitcher profiles={profiles} selectedProfileName={selectedProfileName} onSelect={setSelectedProfileName} />
@@ -229,31 +245,39 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ── Status Ticker ──────────────────────────────────── */}
-      <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-3 py-1 flex items-center gap-4 text-[10px] shrink-0 overflow-x-auto no-scrollbar">
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-          <span className="text-slate-500 dark:text-slate-400">Requests</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{pendingMRs.length}</span>
+      {/* ── Status summary (2×2 on narrow screens, row on sm+) ─ */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-2 sm:py-1 shrink-0 grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center gap-x-3 gap-y-2 sm:gap-y-1 sm:gap-x-5 text-[10px] sm:text-xs">
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+          <span className="text-slate-600 dark:text-slate-300 truncate">Requests</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{pendingMRs.length}</span>
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-          <span className="text-slate-500 dark:text-slate-400">Work Orders</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{workOrders.length}</span>
+        <span className="flex items-center gap-1 min-w-0 sm:min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+          <span className="text-slate-600 dark:text-slate-300 truncate">Work orders</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{workOrders.length}</span>
           {shortfallWOCount > 0 && (
-            <span className="text-[9px] text-red-600 dark:text-red-400 font-bold">({shortfallWOCount} short)</span>
+            <span className="hidden sm:inline text-[10px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
+              ({shortfallWOCount} short)
+            </span>
           )}
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-          <span className="text-slate-500 dark:text-slate-400">Incoming</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{pendingReceiveCount}</span>
+        <span className="flex items-center gap-1 min-w-0 col-span-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+          <span className="text-slate-600 dark:text-slate-300 truncate">Incoming</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{pendingReceiveCount}</span>
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-          <span className="text-slate-500 dark:text-slate-400">Sent</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{sentBadge}</span>
+        <span className="flex items-center gap-1 min-w-0 col-span-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+          <span className="text-slate-600 dark:text-slate-300 truncate">Sent</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{sentBadge}</span>
         </span>
+        {shortfallWOCount > 0 && (
+          <span className="col-span-2 sm:hidden flex items-center justify-center gap-1 text-[9px] text-red-600 dark:text-red-400 font-bold -mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+            {shortfallWOCount} work order{shortfallWOCount !== 1 ? 's' : ''} short on materials
+          </span>
+        )}
       </div>
 
       {/* ── Data Panels ────────────────────────────────────── */}
@@ -290,45 +314,52 @@ export default function Dashboard() {
       </section>
 
       {/* ── Bottom Nav Tabs (mobile) ────────────────────────── */}
-      <div className="lg:hidden shrink-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-700/60">
+      <nav
+        className="lg:hidden shrink-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-700/60 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+        aria-label="Dashboard sections"
+      >
         <div className="flex">
           {TABS.map(tab => {
             const active = mobileTab === tab.id
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setMobileTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors cursor-pointer touch-manipulation relative ${
-                  active ? tab.activeBg : 'hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800'
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[3.25rem] transition-colors cursor-pointer touch-manipulation relative ${
+                  active
+                    ? tab.activeBg
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200/80 dark:active:bg-slate-800/80'
                 }`}
               >
-                {/* active indicator bar */}
                 {active && (
-                  <span className={`absolute top-0 left-4 right-4 h-[2px] rounded-full ${tab.activeDot}`} />
+                  <span className={`absolute top-0 left-3 right-3 h-0.5 rounded-full ${tab.activeDot}`} aria-hidden />
                 )}
-                <span className={`transition-colors ${active ? tab.accent : 'text-slate-500'}`}>
+                <span className={`transition-colors ${active ? tab.accent : ''}`}>
                   {tab.icon}
                 </span>
-                <span className={`text-[10px] font-bold tracking-wide transition-colors ${active ? tab.accent : 'text-slate-500'}`}>
+                <span className={`text-[11px] font-bold tracking-wide transition-colors ${active ? tab.accent : ''}`}>
                   {tab.label}
                 </span>
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className={`absolute top-1.5 right-[calc(50%-18px)] min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-black px-1 leading-none ${
-                    active
-                      ? `${tab.activeDot} text-slate-900 dark:text-white`
-                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                  }`}>
-                    {tab.count}
+                  <span
+                    className={`absolute top-1 right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-black px-1 leading-none shadow-sm ${
+                      active
+                        ? `${tab.activeDot} text-white`
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 ring-1 ring-slate-300/80 dark:ring-slate-600'
+                    }`}
+                  >
+                    {tab.count > 99 ? '99+' : tab.count}
                   </span>
                 )}
               </button>
             )
           })}
         </div>
-      </div>
+      </nav>
 
       {/* ── Action Toolbar ─────────────────────────────────── */}
-      <div className="shrink-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-3 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 overflow-visible bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-3 pt-0.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <ActionGrid operations={operations} onAction={handleAction} sentBadge={sentBadge} />
       </div>
 
@@ -348,6 +379,13 @@ export default function Dashboard() {
       {activeModal === 'item-inquiry' && warehouses && (
         <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} />
       )}
+      {activeModal === 'so-pending-report' && selectedProfileName && (
+        <SalesOrderPendingReportModal
+          open
+          onClose={closeModal}
+          powProfileName={selectedProfileName}
+        />
+      )}
 
       {/* ── Work Order Modals ──────────────────────────────── */}
       {showCreateWO && warehouses && (
@@ -362,17 +400,8 @@ export default function Dashboard() {
           open
           woName={activeWOName}
           onClose={closeWODetail}
-          onTransferMaterials={(wo) => { setWoForAction(wo); setWoDetailAction('transfer') }}
           onManufacture={(wo) => { setWoForAction(wo); setWoDetailAction('manufacture') }}
           onRequestMaterials={(wo) => { setWoForAction(wo); setWoDetailAction('request') }}
-        />
-      )}
-      {woDetailAction === 'transfer' && woForAction && (
-        <WOTransferModal
-          open
-          wo={woForAction}
-          onClose={closeWOAction}
-          onDone={handleWODone}
         />
       )}
       {woDetailAction === 'manufacture' && woForAction && (

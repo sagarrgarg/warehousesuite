@@ -180,7 +180,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 											<button
 												onClick={() => handleReceive(t.stock_entry, t.items)}
 												disabled={isThisSubmitting}
-												className="text-xs font-bold px-3 py-1.5 bg-emerald-600 text-slate-900 dark:text-white rounded active:bg-emerald-700 disabled:opacity-50 touch-manipulation"
+												className="text-xs font-bold px-3 py-1.5 bg-emerald-600 text-white rounded active:bg-emerald-700 disabled:opacity-50 touch-manipulation"
 											>
 												{isThisSubmitting ? 'Receiving...' : 'Receive'}
 											</button>
@@ -225,7 +225,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 						<select className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-2 text-sm" value={concern.priority} onChange={e => setConcern(c => ({ ...c, priority: e.target.value }))}>
 							{['Low', 'Medium', 'High', 'Critical'].map(p => <option key={p}>{p}</option>)}
 						</select>
-						<button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-slate-900 dark:text-white font-bold py-2.5 rounded active:opacity-80 touch-manipulation text-sm">Submit Concern</button>
+						<button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-white font-bold py-2.5 rounded active:opacity-80 touch-manipulation text-sm">Submit Concern</button>
 					</div>
 				</div>
 			)}

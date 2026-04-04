@@ -18,11 +18,11 @@ export default function PendingWorkOrdersPanel({
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shrink-0 border-b-2 border-slate-300 dark:border-slate-600">
         <div className="flex items-center gap-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wider">Work Orders</h3>
           {workOrders.length > 0 && (
-            <span className="text-[9px] font-bold bg-purple-600 rounded px-1 py-px tabular-nums leading-none">
+            <span className="text-[9px] font-bold bg-purple-600 text-white rounded px-1 py-px tabular-nums leading-none">
               {workOrders.length}
             </span>
           )}
@@ -30,7 +30,7 @@ export default function PendingWorkOrdersPanel({
         {onCreateNew && (
           <button
             onClick={onCreateNew}
-            className="flex items-center gap-0.5 text-[10px] font-bold text-slate-900 dark:text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-purple-900/30"
+            className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-purple-900/30"
           >
             <Plus className="w-3 h-3" />
             New WO
@@ -39,7 +39,7 @@ export default function PendingWorkOrdersPanel({
       </div>
 
       {/* Column header */}
-      <div className="flex items-center px-3 py-1 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
+      <div className="flex items-center px-3 py-1 bg-white dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-600 text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
         <span className="w-[3px] shrink-0 mr-2.5" />
         <span className="flex-1">Order / Item</span>
         <span className="w-12 text-right">Qty</span>

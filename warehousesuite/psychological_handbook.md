@@ -23,6 +23,10 @@ Architectural intent, business reasoning, and anti-patterns. This complements `t
 - **Guardrails**: Tool allowlists, schema-constrained outputs, rate limits, and audit trails. No silent auto-posting from model output.
 - **Observability**: If automation runs, it must be measurable (success/fail counts, latency, override rate).
 
+## Reporting UX
+
+- **Operational reports** (e.g. SO pending delivery) should show quantities in the UOM operators expect: transaction qty in the **order line UOM**, fulfilment progress in **stock UOM**, with an explicit conversion hint when they differ—without mixing UOMs in one number.
+
 ## Anti-patterns
 
 - Duplicating Item/Warehouse master data in custom tables without a hard dependency on core.

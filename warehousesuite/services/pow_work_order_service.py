@@ -12,6 +12,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today, nowtime, cint
 
+ALT_ORIGINAL_MARKER_PREFIX = "[POW_ALT_ORIGINAL:"
+ALT_ORIGINAL_MARKER_SUFFIX = "]"
+
 
 # ---------------------------------------------------------------------------
 # Listing
@@ -222,6 +225,7 @@ def get_bom_for_item(item_code):
             "conversion_factor": flt(row.conversion_factor) or 1,
             "source_warehouse": row.source_warehouse,
             "allow_alternative_item": cint(row.allow_alternative_item),
+            "alternatives": _get_alternative_items_for(row.item_code),
             "availability": [
                 {
                     "warehouse": a.warehouse,
@@ -283,6 +287,7 @@ def create_work_order(
     source_warehouse=None,
     wip_warehouse=None,
     planned_start_date=None,
+    item_substitutions=None,
 ):
     """Create and submit a Work Order.
 
@@ -295,6 +300,7 @@ def create_work_order(
         source_warehouse: default raw material source — optional
         wip_warehouse: work-in-progress warehouse — optional
         planned_start_date: planned start date — defaults to today if omitted
+        item_substitutions: optional original->substitute mapping for BOM rows
 
     Returns:
         dict with status, work_order
@@ -331,6 +337,7 @@ def create_work_order(
 
     # Populate required items from BOM
     wo.get_items_and_operations_from_bom()
+    _apply_work_order_item_substitutions(wo, item_substitutions)
 
     frappe.db.begin()
     try:
@@ -345,6 +352,66 @@ def create_work_order(
         "status": "success",
         "work_order": wo.name,
         "message": _("Work Order {0} created").format(wo.name),
+    }
+
+
+def set_work_order_item_substitute(wo_name, wo_item_name, substitute_item_code):
+    """Persist an alternative item selection for a submitted Work Order row.
+
+    Args:
+        wo_name: Work Order name
+        wo_item_name: Child row name in Work Order required_items table
+        substitute_item_code: Item code selected by operator
+
+    Returns:
+        dict with status and updated row snapshot
+    """
+    if not wo_name or not wo_item_name or not substitute_item_code:
+        frappe.throw(_("wo_name, wo_item_name and substitute_item_code are required"))
+
+    wo = frappe.get_doc("Work Order", wo_name)
+    if wo.docstatus != 1:
+        frappe.throw(_("Work Order must be submitted"))
+    if wo.status in ("Completed", "Stopped", "Cancelled"):
+        frappe.throw(_("Cannot change materials for a {0} Work Order").format(wo.status))
+
+    row = next((d for d in wo.required_items if d.name == wo_item_name), None)
+    if not row:
+        frappe.throw(_("Work Order item row {0} was not found").format(wo_item_name))
+    if flt(row.transferred_qty) > 0 or flt(row.consumed_qty) > 0:
+        frappe.throw(_("Cannot change item after transfer/consumption has started for this row"))
+
+    current_original = _get_original_item_code_from_row(row)
+    normalized_substitute = (substitute_item_code or "").strip()
+    if not normalized_substitute:
+        frappe.throw(_("substitute_item_code is required"))
+
+    if normalized_substitute != current_original:
+        _validate_substitute_item(current_original, normalized_substitute)
+
+    _set_work_order_row_item(row, current_original, normalized_substitute)
+    frappe.db.set_value(
+        "Work Order Item",
+        row.name,
+        {
+            "item_code": row.item_code,
+            "item_name": row.item_name,
+            "description": row.description,
+            "stock_uom": row.stock_uom,
+        },
+        update_modified=False,
+    )
+
+    return {
+        "status": "success",
+        "row": {
+            "name": row.name,
+            "item_code": row.item_code,
+            "item_name": row.item_name,
+            "stock_uom": row.stock_uom,
+            "original_item_code": current_original,
+        },
+        "message": _("Updated item for row {0}").format(row.name),
     }
 
 
@@ -367,6 +434,7 @@ def get_work_order_materials(wo_name):
     required_items = []
     item_fill_ratios = []
     for item in wo.required_items:
+        original_item_code = _get_original_item_code_from_row(item)
         needed_transfer = flt(item.required_qty) - flt(item.transferred_qty)
         # Remaining to consume — basis for availability (correct after partial production)
         needed_consume = flt(item.required_qty) - flt(item.consumed_qty)
@@ -402,9 +470,7 @@ def get_work_order_materials(wo_name):
             LIMIT 10
         """, item.item_code, as_dict=True)
 
-        alternatives = []
-        if cint(item.allow_alternative_item) and cint(wo.allow_alternative_item):
-            alternatives = _get_alternative_items_for(item.item_code)
+        alternatives = _get_alternative_items_for(item.item_code)
 
         required_items.append({
             "name": item.name,
@@ -422,6 +488,8 @@ def get_work_order_materials(wo_name):
             "stock_status": stock_status,
             "allow_alternative_item": cint(item.allow_alternative_item),
             "alternatives": alternatives,
+            "original_item_code": original_item_code,
+            "is_substituted": cint(original_item_code != item.item_code),
             "warehouse_availability": [
                 {
                     "warehouse": b.warehouse,
@@ -612,6 +680,7 @@ def get_manufacture_preview(wo_name, qty):
 
     se_dict = make_stock_entry(wo_name, "Manufacture", qty)
     se = frappe.get_doc(se_dict)
+    _apply_substitutions_to_stock_entry(wo, se)
 
     fg_item = None
     raw_materials = []
@@ -643,7 +712,7 @@ def get_manufacture_preview(wo_name, qty):
     }
 
 
-def manufacture_work_order(wo_name, qty, item_overrides=None):
+def manufacture_work_order(wo_name, qty, item_overrides=None, item_substitutions=None):
     """Create a Manufacture Stock Entry to produce finished goods.
 
     Uses ERPNext's native make_stock_entry to ensure BOM explosion, backflush,
@@ -656,6 +725,8 @@ def manufacture_work_order(wo_name, qty, item_overrides=None):
         item_overrides: optional list[dict] with item_code, qty overrides for
                         raw materials. If provided, replaces the BOM-calculated
                         qty for matching items.
+        item_substitutions: optional original->substitute mapping to swap
+                        consumed raw material item codes.
 
     Returns:
         dict with status, stock_entry
@@ -682,6 +753,7 @@ def manufacture_work_order(wo_name, qty, item_overrides=None):
     se = frappe.get_doc(se_dict)
     se.posting_date = today()
     se.posting_time = nowtime()
+    _apply_substitutions_to_stock_entry(wo, se, item_substitutions=item_substitutions)
 
     if item_overrides:
         if isinstance(item_overrides, str):
@@ -730,6 +802,7 @@ def get_material_shortfall(wo_name):
 
     result = []
     for item in wo.required_items:
+        original_item_code = _get_original_item_code_from_row(item)
         needed = max(0, flt(item.required_qty) - flt(item.transferred_qty))
         if needed <= 0:
             continue
@@ -748,6 +821,8 @@ def get_material_shortfall(wo_name):
             "wo_item_name": item.name,
             "item_code": item.item_code,
             "item_name": item_info.get("item_name") or item.item_name,
+            "original_item_code": original_item_code,
+            "is_substituted": cint(original_item_code != item.item_code),
             "required_qty": item.required_qty,
             "transferred_qty": flt(item.transferred_qty),
             "needed_qty": needed,
@@ -867,37 +942,39 @@ def get_alternative_items(item_code):
     Returns:
         list[dict] with alternative_item_code, item_name, stock_uom
     """
-    alternatives = frappe.get_all(
-        "Item Alternative",
-        filters={"item_code": item_code},
-        fields=["alternative_item_code", "two_way"],
-    )
+    if not item_code:
+        return []
 
-    # Also check reverse (two_way) alternatives
-    reverse = frappe.get_all(
-        "Item Alternative",
-        filters={"alternative_item_code": item_code, "two_way": 1},
-        fields=["item_code as alternative_item_code", "two_way"],
-    )
+    reachable = _get_recursive_alternative_codes(item_code)
+    if not reachable:
+        return []
 
-    all_alts = alternatives + reverse
-    seen = set()
+    item_rows = frappe.get_all(
+        "Item",
+        filters={"name": ["in", list(reachable)]},
+        fields=["name", "item_name", "stock_uom"],
+        limit_page_length=0,
+    )
+    info_map = {
+        d.name: {
+            "item_name": d.item_name,
+            "stock_uom": d.stock_uom,
+        }
+        for d in item_rows
+    }
+
     result = []
-
-    for alt in all_alts:
-        alt_code = alt.alternative_item_code
-        if alt_code in seen or alt_code == item_code:
+    for alt_code in sorted(reachable):
+        if alt_code == item_code:
             continue
-        seen.add(alt_code)
-
-        item_info = frappe.db.get_value("Item", alt_code, ["item_name", "stock_uom"], as_dict=True)
+        item_info = info_map.get(alt_code)
         if not item_info:
             continue
-
         result.append({
             "item_code": alt_code,
             "item_name": item_info.get("item_name"),
             "stock_uom": item_info.get("stock_uom"),
+            "availability": _get_item_availability(alt_code),
         })
 
     return result
@@ -909,3 +986,232 @@ def _get_alternative_items_for(item_code):
         return get_alternative_items(item_code)
     except Exception:
         return []
+
+
+def _get_recursive_alternative_codes(item_code):
+    """Return all alternative item codes connected to item_code (transitive)."""
+    visited = {item_code}
+    queue = [item_code]
+
+    while queue:
+        frontier = queue[:50]
+        queue = queue[50:]
+        frontier_set = set(frontier)
+
+        rows = frappe.get_all(
+            "Item Alternative",
+            filters={"item_code": ["in", frontier]},
+            fields=["item_code", "alternative_item_code"],
+            limit_page_length=0,
+        )
+        rows += frappe.get_all(
+            "Item Alternative",
+            filters={"alternative_item_code": ["in", frontier]},
+            fields=["item_code", "alternative_item_code"],
+            limit_page_length=0,
+        )
+
+        for row in rows:
+            left = row.get("item_code")
+            right = row.get("alternative_item_code")
+            if not left or not right:
+                continue
+
+            if left in frontier_set and right not in visited:
+                visited.add(right)
+                queue.append(right)
+            if right in frontier_set and left not in visited:
+                visited.add(left)
+                queue.append(left)
+
+    visited.discard(item_code)
+    return visited
+
+
+def _parse_item_substitutions(item_substitutions):
+    """Normalize substitution payload into {original_item_code: substitute_item_code} map."""
+    if not item_substitutions:
+        return {}
+    if isinstance(item_substitutions, str):
+        item_substitutions = frappe.parse_json(item_substitutions)
+
+    if isinstance(item_substitutions, dict):
+        parsed = {}
+        for original, substitute in item_substitutions.items():
+            original_code = (original or "").strip()
+            substitute_code = (substitute or "").strip()
+            if original_code and substitute_code and substitute_code != original_code:
+                parsed[original_code] = substitute_code
+        return parsed
+
+    parsed = {}
+    if isinstance(item_substitutions, list):
+        for row in item_substitutions:
+            original_code = (row.get("original_item_code") or row.get("item_code") or "").strip()
+            substitute_code = (row.get("substitute_item_code") or row.get("selected_item_code") or "").strip()
+            if original_code and substitute_code and substitute_code != original_code:
+                parsed[original_code] = substitute_code
+    return parsed
+
+
+def _validate_substitute_item(original_item_code, substitute_item_code):
+    """Validate substitute belongs to recursive alternative graph for original item."""
+    if not original_item_code or not substitute_item_code:
+        frappe.throw(_("Both original and substitute item codes are required"))
+    if original_item_code == substitute_item_code:
+        return
+
+    reachable = _get_recursive_alternative_codes(original_item_code)
+    if substitute_item_code not in reachable:
+        frappe.throw(
+            _("Item {0} is not an allowed alternative for {1}").format(
+                substitute_item_code, original_item_code
+            )
+        )
+
+    if not frappe.db.exists("Item", substitute_item_code):
+        frappe.throw(_("Item {0} does not exist").format(substitute_item_code))
+
+
+def _strip_original_marker(description):
+    """Remove internal marker from description text if present."""
+    if not description:
+        return ""
+    text = str(description)
+    marker_index = text.find(ALT_ORIGINAL_MARKER_PREFIX)
+    if marker_index == -1:
+        return text.strip()
+    return text[:marker_index].strip()
+
+
+def _compose_description_with_original(base_description, original_item_code):
+    """Attach original-item marker in description for later reconstruction."""
+    clean = _strip_original_marker(base_description)
+    marker = f"{ALT_ORIGINAL_MARKER_PREFIX}{original_item_code}{ALT_ORIGINAL_MARKER_SUFFIX}"
+    if clean:
+        return f"{clean}\n{marker}"
+    return marker
+
+
+def _get_original_item_code_from_row(row):
+    """Read original item code marker from WO row description."""
+    description = str(row.get("description") or "")
+    start = description.find(ALT_ORIGINAL_MARKER_PREFIX)
+    if start == -1:
+        return row.get("item_code")
+    start += len(ALT_ORIGINAL_MARKER_PREFIX)
+    end = description.find(ALT_ORIGINAL_MARKER_SUFFIX, start)
+    if end == -1:
+        return row.get("item_code")
+    original = description[start:end].strip()
+    return original or row.get("item_code")
+
+
+def _set_work_order_row_item(row, original_item_code, effective_item_code):
+    """Update WO row item fields and description marker for substitute tracking."""
+    item_info = frappe.db.get_value(
+        "Item", effective_item_code, ["item_name", "stock_uom", "description"], as_dict=True
+    )
+    if not item_info:
+        frappe.throw(_("Item {0} does not exist").format(effective_item_code))
+
+    row.item_code = effective_item_code
+    row.item_name = item_info.get("item_name") or effective_item_code
+    row.stock_uom = item_info.get("stock_uom")
+    if effective_item_code == original_item_code:
+        row.description = _strip_original_marker(item_info.get("description") or row.get("description"))
+    else:
+        row.description = _compose_description_with_original(
+            item_info.get("description") or row.get("description"), original_item_code
+        )
+
+
+def _apply_work_order_item_substitutions(wo, item_substitutions):
+    """Apply substitutions on Work Order.required_items using original item code keys."""
+    substitutions = _parse_item_substitutions(item_substitutions)
+    if not substitutions:
+        return
+
+    for row in wo.required_items:
+        original_item_code = row.item_code
+        substitute_item_code = substitutions.get(original_item_code)
+        if not substitute_item_code:
+            continue
+        _validate_substitute_item(original_item_code, substitute_item_code)
+        _set_work_order_row_item(row, original_item_code, substitute_item_code)
+
+
+def _get_wo_substitution_map(wo, item_substitutions=None):
+    """Return {original_item_code: substitute_item_code} from payload and WO rows."""
+    substitution_map = {}
+    substitution_map.update(_parse_item_substitutions(item_substitutions))
+
+    for row in wo.required_items:
+        original_item = _get_original_item_code_from_row(row)
+        effective_item = row.item_code
+        if original_item and effective_item and original_item != effective_item:
+            substitution_map[original_item] = effective_item
+
+    return substitution_map
+
+
+def _apply_substitutions_to_stock_entry(wo, stock_entry, item_substitutions=None):
+    """Swap raw material rows to selected substitute items with same qty."""
+    substitution_map = _get_wo_substitution_map(wo, item_substitutions=item_substitutions)
+    if not substitution_map:
+        return
+
+    for row in stock_entry.items:
+        if cint(row.is_finished_item) or cint(row.is_scrap_item):
+            continue
+        original_item_code = row.item_code
+        substitute_item_code = substitution_map.get(original_item_code)
+        if not substitute_item_code or substitute_item_code == original_item_code:
+            continue
+
+        _validate_substitute_item(original_item_code, substitute_item_code)
+        substitute_info = frappe.db.get_value(
+            "Item",
+            substitute_item_code,
+            ["item_name", "description", "stock_uom"],
+            as_dict=True,
+        )
+        if not substitute_info:
+            continue
+
+        qty = flt(row.qty)
+        row.original_item = original_item_code
+        row.item_code = substitute_item_code
+        row.item_name = substitute_info.get("item_name") or substitute_item_code
+        row.description = substitute_info.get("description") or row.description
+        row.stock_uom = substitute_info.get("stock_uom") or row.stock_uom
+        row.uom = row.stock_uom
+        row.conversion_factor = 1
+        row.qty = qty
+        row.transfer_qty = qty
+        row.allow_alternative_item = 1
+
+
+def _get_item_availability(item_code):
+    """Return up to 10 positive-stock warehouses for an item."""
+    availability = frappe.db.sql(
+        """
+        SELECT b.warehouse, w.warehouse_name, b.actual_qty
+        FROM `tabBin` b
+        LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
+        WHERE b.item_code = %s AND b.actual_qty > 0
+        ORDER BY b.actual_qty DESC
+        LIMIT 10
+    """,
+        item_code,
+        as_dict=True,
+    )
+
+    return [
+        {
+            "warehouse": row.warehouse,
+            "warehouse_name": row.warehouse_name or row.warehouse,
+            "qty": flt(row.actual_qty),
+        }
+        for row in availability
+    ]

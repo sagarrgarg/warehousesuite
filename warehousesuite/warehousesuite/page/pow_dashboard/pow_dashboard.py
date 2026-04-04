@@ -189,7 +189,10 @@ def get_pow_profile_operations(pow_profile):
         "purchase_receipt": bool(profile.purchase_receipt),
         "repack": bool(profile.repack),
         "delivery_note": bool(profile.delivery_note),
-        "stock_count": bool(profile.stock_count)
+        "stock_count": bool(profile.stock_count),
+        "sales_order_pending_report": bool(
+            getattr(profile, "sales_order_pending_report", 0)
+        ),
     }
 
 @frappe.whitelist()

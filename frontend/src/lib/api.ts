@@ -1,6 +1,7 @@
 const BASE = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard'
 const MR_BASE = 'warehousesuite.api.pow_material_request'
 const WO_BASE = 'warehousesuite.api.pow_work_order'
+const SO_REP_BASE = 'warehousesuite.api.pow_so_pending_report'
 
 export const API = {
 	getProfiles: `${BASE}.get_applicable_pow_profiles`,
@@ -44,12 +45,18 @@ export const API = {
 	getMfgDefaultWarehouses: `${WO_BASE}.get_mfg_default_warehouses`,
 	createWorkOrder: `${WO_BASE}.create_pow_work_order`,
 	getWOMaterials: `${WO_BASE}.get_wo_materials`,
-	transferWOMaterials: `${WO_BASE}.transfer_wo_materials`,
+	setWOItemSubstitute: `${WO_BASE}.set_wo_item_substitute`,
 	getManufactureItems: `${WO_BASE}.get_manufacture_items`,
 	manufactureWO: `${WO_BASE}.manufacture_wo`,
 	getWOShortfall: `${WO_BASE}.get_wo_material_shortfall`,
 	raiseMRForWO: `${WO_BASE}.raise_mr_for_work_order`,
 	getItemAlternatives: `${WO_BASE}.get_item_alternatives`,
+
+	// Sales Order pending delivery (POW profile gated)
+	getSOPendingLines: `${SO_REP_BASE}.get_pow_so_pending_lines`,
+	getSOPendingSummary: `${SO_REP_BASE}.get_pow_so_pending_summary`,
+	searchSOReportCustomers: `${SO_REP_BASE}.search_so_report_customers`,
+	searchSOReportItems: `${SO_REP_BASE}.search_so_report_items`,
 } as const
 
 /** Extract result from frappe-react-sdk response. Handles {message: {status, ...}} pattern. */
