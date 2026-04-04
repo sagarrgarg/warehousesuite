@@ -272,5 +272,4 @@ doc_events = {
 
 fixtures = [
     {"doctype": "Custom Field", "filters": [["module", "=", "WarehouseSuite"]]},
-    {"doctype": "DocType", "filters": [["module", "=", "WarehouseSuite"]]}
 ]
