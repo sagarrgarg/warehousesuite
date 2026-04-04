@@ -144,15 +144,15 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	return (
 		<div className="fixed inset-0 z-50 bg-white flex flex-col animate-fade-in">
 			{/* Header */}
-			<header className="bg-slate-900 text-white shrink-0">
+			<header className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shrink-0">
 				<div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded touch-manipulation">
+					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 rounded touch-manipulation">
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 					<div className="flex-1 min-w-0">
 						<h2 className="text-sm font-bold">Transfer Send</h2>
 						{inTransitName && (
-							<p className="text-[10px] text-slate-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Via {inTransitName}</p>
+							<p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Via {inTransitName}</p>
 						)}
 					</div>
 				</div>
@@ -167,7 +167,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 							<button onClick={() => setShowPending(!showPending)} className="w-full flex items-center justify-between px-3 py-2 bg-slate-100 hover:bg-slate-200 touch-manipulation">
 								<span className="text-xs font-bold text-slate-700">Pending Transfers</span>
 								<div className="flex items-center gap-2">
-									<span className="bg-red-500 text-white rounded px-1.5 py-px text-[10px] font-bold">{pendingTransfers.length}</span>
+									<span className="bg-red-500 text-slate-900 dark:text-white rounded px-1.5 py-px text-[10px] font-bold">{pendingTransfers.length}</span>
 									{showPending ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
 								</div>
 							</button>
@@ -184,7 +184,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 												{t.items.slice(0, 3).map((item, i) => (
 													<p key={i} className="text-[10px] text-slate-500">{item.item_name} — <span className="font-medium text-slate-700">{item.remaining_qty} {item.uom}</span></p>
 												))}
-												{t.items.length > 3 && <p className="text-[10px] text-slate-400">+{t.items.length - 3} more</p>}
+												{t.items.length > 3 && <p className="text-[10px] text-slate-500 dark:text-slate-400">+{t.items.length - 3} more</p>}
 											</div>
 										</div>
 									))}
@@ -213,7 +213,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 					<div className="bg-white border border-slate-200 rounded">
 						<div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
 							<span className="text-xs font-bold text-slate-700">Items</span>
-							<button onClick={addLine} className="flex items-center gap-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2 py-1 touch-manipulation">
+							<button onClick={addLine} className="flex items-center gap-1 text-[11px] font-bold text-slate-900 dark:text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2 py-1 touch-manipulation">
 								<Plus className="w-3 h-3" /> Add
 							</button>
 						</div>
@@ -234,7 +234,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 											/>
 											{lines.length > 1 && (
 												<button onClick={() => removeLine(line.id)} className="p-1 hover:bg-red-50 rounded touch-manipulation shrink-0">
-													<Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
+													<Trash2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 hover:text-red-500" />
 												</button>
 											)}
 										</div>
@@ -243,7 +243,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 												<div>
 													<input type="number" min="0" step="1" className={`w-20 bg-white border rounded px-2 py-1.5 text-xs text-center font-bold focus:outline-none focus:ring-1 ${exceedsStock ? 'border-red-300 focus:ring-red-400' : 'border-slate-200 focus:ring-blue-400'}`} value={line.qty || ''} onChange={e => updateLine(line.id, { qty: parseFloat(e.target.value) || 0 })} placeholder="Qty" />
 													{!sameUom && line.qty > 0 && (
-														<p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsStock ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+														<p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsStock ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
 															= {stockQty} {line.stock_uom}
 														</p>
 													)}
@@ -272,7 +272,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 			<div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-3xl mx-auto w-full">
 				<div className="flex gap-2">
 					<button onClick={onClose} className="px-4 py-2 bg-slate-200 text-slate-700 font-bold text-xs rounded touch-manipulation">Cancel</button>
-					<button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded disabled:opacity-50 active:opacity-80 touch-manipulation">
+					<button onClick={handleSubmit} disabled={submitting} className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 text-slate-900 dark:text-white font-bold text-sm rounded disabled:opacity-50 active:opacity-80 touch-manipulation">
 						{submitting ? 'Sending...' : 'Send Transfer'}
 					</button>
 				</div>

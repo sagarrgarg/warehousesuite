@@ -164,14 +164,14 @@ export default function PrintLabelsModal({ open, onClose, itemCode, itemData }: 
 	return (
 		<div className="fixed inset-0 z-[70] bg-white flex flex-col animate-fade-in">
 			{/* Header */}
-			<header className="bg-slate-900 text-white shrink-0">
+			<header className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shrink-0">
 				<div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded touch-manipulation">
+					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 rounded touch-manipulation">
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 					<div className="flex-1 min-w-0">
 						<h2 className="text-sm font-bold">Print Labels</h2>
-						<p className="text-[10px] text-slate-400 truncate">{itemData?.item_name || itemCode}</p>
+						<p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{itemData?.item_name || itemCode}</p>
 					</div>
 				</div>
 			</header>
@@ -253,7 +253,7 @@ export default function PrintLabelsModal({ open, onClose, itemCode, itemData }: 
 					<button onClick={handleDownload} disabled={generating || !printFormat} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-300 text-slate-700 font-bold text-xs rounded disabled:opacity-50 touch-manipulation">
 						<Download className="w-4 h-4" /> Download ZPL
 					</button>
-					<button onClick={handlePrint} disabled={generating || !printFormat} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-700 text-white font-bold text-xs rounded disabled:opacity-50 touch-manipulation">
+					<button onClick={handlePrint} disabled={generating || !printFormat} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-bold text-xs rounded disabled:opacity-50 touch-manipulation">
 						<Printer className="w-4 h-4" /> Print
 					</button>
 				</div>

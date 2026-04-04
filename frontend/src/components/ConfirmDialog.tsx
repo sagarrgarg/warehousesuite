@@ -26,7 +26,7 @@ export default function ConfirmDialog({
 	const confirmBg = variant === 'danger'
 		? 'bg-red-600 hover:bg-red-700'
 		: variant === 'neutral'
-			? 'bg-slate-600 hover:bg-slate-700'
+			? 'bg-slate-200 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-100 dark:bg-slate-700'
 			: 'bg-blue-600 hover:bg-blue-700'
 
 	return (
@@ -45,7 +45,7 @@ export default function ConfirmDialog({
 					<button onClick={onCancel} className="flex-1 py-2 border border-slate-300 rounded font-bold text-xs text-slate-700 touch-manipulation">
 						{cancelLabel}
 					</button>
-					<button onClick={onConfirm} className={`flex-1 py-2 text-white rounded font-bold text-xs touch-manipulation ${confirmBg}`}>
+					<button onClick={onConfirm} className={`flex-1 py-2 text-slate-900 dark:text-white rounded font-bold text-xs touch-manipulation ${confirmBg}`}>
 						{confirmLabel}
 					</button>
 				</div>

@@ -195,9 +195,9 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
   return (
     <div className="fixed inset-0 z-50 bg-white flex flex-col animate-fade-in">
       {/* Header */}
-      <header className="bg-slate-900 text-white shrink-0">
+      <header className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shrink-0">
         <div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded touch-manipulation">
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 rounded touch-manipulation">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h2 className="text-sm font-bold flex-1">Raise Transfer Request</h2>
@@ -211,7 +211,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
           </div>
           <p className="text-sm font-bold text-slate-900">Request Created</p>
           <p className="text-xs text-slate-500 font-mono">{success}</p>
-          <button onClick={onClose} className="mt-2 px-6 py-2 bg-slate-700 text-white text-xs font-bold rounded hover:bg-slate-800 touch-manipulation">
+          <button onClick={onClose} className="mt-2 px-6 py-2 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 touch-manipulation">
             Done
           </button>
         </div>
@@ -226,7 +226,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                 <div>
                   <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">I need material at</label>
                   <div className="relative">
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 dark:text-slate-400 pointer-events-none" />
                     <select
                       className="w-full appearance-none bg-white border border-slate-200 rounded px-2.5 pr-7 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
                       value={targetWarehouse}
@@ -240,7 +240,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                 <div>
                   <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Prefer from (optional)</label>
                   <div className="relative">
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 dark:text-slate-400 pointer-events-none" />
                     <select
                       className="w-full appearance-none bg-white border border-slate-200 rounded px-2.5 pr-7 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
                       value={fromWarehouse}
@@ -281,7 +281,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                   <button
                     onClick={handleSubmit}
                     disabled={!canSubmit}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-slate-900 dark:text-white text-xs font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
                   >
                     {submitting ? (
                       <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...</>
@@ -315,7 +315,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                       <div className={`px-3 py-2.5 ${isDupe ? 'bg-amber-50' : ''} ${insufficientStock ? 'bg-red-50/50' : ''}`}>
                         {/* Search + delete */}
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-slate-400 w-4 text-center shrink-0 tabular-nums">{idx + 1}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 w-4 text-center shrink-0 tabular-nums">{idx + 1}</span>
                           <ItemSearchInput
                             items={items}
                             value={line.item_code}
@@ -323,7 +323,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                           />
                           {lines.length > 1 && (
                             <button onClick={() => removeLine(line.id)} className="p-1 hover:bg-red-50 rounded touch-manipulation shrink-0">
-                              <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                              <Trash2 className="w-3 h-3 text-slate-500 dark:text-slate-400 hover:text-red-500" />
                             </button>
                           )}
                         </div>
@@ -350,7 +350,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                                   className={`w-20 border rounded px-2 py-1.5 text-xs text-slate-900 text-center font-bold focus:outline-none focus:ring-1 ${exceedsAll ? 'border-red-300 focus:ring-red-400' : 'border-slate-200 focus:ring-blue-400'}`}
                                 />
                                 {stockQty != null && line.qty > 0 && (
-                                  <p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsAll ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                                  <p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsAll ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
                                     = {stockQty} {line.stock_uom}
                                   </p>
                                 )}
@@ -364,7 +364,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                                   {line.uom_options.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                               ) : (
-                                <span className="text-xs text-slate-400 tabular-nums">{line.uom || '—'}</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{line.uom || '—'}</span>
                               )}
                               {isDupe && <span className="text-[9px] text-amber-600 font-bold ml-auto">Duplicate</span>}
                             </div>
@@ -375,8 +375,8 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                         {/* Availability loading */}
                         {loadingAvail === line.id && (
                           <div className="flex items-center gap-1 mt-1.5 ml-[22px]">
-                            <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
-                            <span className="text-[9px] text-slate-400">Checking availability...</span>
+                            <Loader2 className="w-3 h-3 text-slate-500 dark:text-slate-400 animate-spin" />
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400">Checking availability...</span>
                           </div>
                         )}
 
@@ -435,7 +435,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-slate-900 dark:text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...</>

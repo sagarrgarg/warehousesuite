@@ -12,9 +12,9 @@ export default function ProfileSwitcher({ profiles, selectedProfileName, onSelec
 
 	return (
 		<div className="relative">
-			<ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+			<ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 dark:text-slate-400 pointer-events-none" />
 			<select
-				className="appearance-none bg-slate-700 text-slate-200 text-[11px] font-medium rounded pl-2 pr-5 py-1 border border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer touch-manipulation"
+				className="appearance-none bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-medium rounded pl-2 pr-5 py-1 border border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer touch-manipulation"
 				value={selectedProfileName ?? ''}
 				onChange={(e) => onSelect(e.target.value)}
 			>

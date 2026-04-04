@@ -36,7 +36,7 @@ export default function PendingReceivesPanel({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 text-white shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shrink-0">
         <div className="flex items-center gap-2">
           <h3 className="text-[11px] font-bold uppercase tracking-wider">Incoming Transfers</h3>
           {pendingReceives.length > 0 && (
@@ -46,7 +46,7 @@ export default function PendingReceivesPanel({
           )}
         </div>
         {grouped.length > 1 && (
-          <span className="text-[9px] text-slate-400">
+          <span className="text-[9px] text-slate-500 dark:text-slate-400">
             {grouped.length} warehouses
           </span>
         )}
@@ -59,7 +59,7 @@ export default function PendingReceivesPanel({
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600" />
           </div>
         ) : pendingReceives.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-slate-400 text-[11px]">
+          <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px]">
             Nothing to receive
           </div>
         ) : (
@@ -71,7 +71,7 @@ export default function PendingReceivesPanel({
                 <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wide truncate">
                   {shortWarehouse(warehouse)}
                 </span>
-                <span className="text-[9px] text-slate-400 tabular-nums shrink-0">
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 tabular-nums shrink-0">
                   {entries.length}
                 </span>
               </div>

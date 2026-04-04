@@ -147,14 +147,14 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 	return (
 		<div className="fixed inset-0 z-50 bg-white flex flex-col animate-fade-in">
 			{/* Header */}
-			<header className="bg-slate-900 text-white shrink-0">
+			<header className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white shrink-0">
 				<div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-800 rounded touch-manipulation">
+					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 rounded touch-manipulation">
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 					<div className="flex-1 min-w-0">
 						<h2 className="text-sm font-bold">Stock Count</h2>
-						<p className="text-[10px] text-slate-400">Enter what you physically see</p>
+						<p className="text-[10px] text-slate-500 dark:text-slate-400">Enter what you physically see</p>
 					</div>
 				</div>
 			</header>
@@ -186,7 +186,7 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 
 					{!isLoading && items.length === 0 && (
 						<div className="flex flex-col items-center py-12 text-center">
-							<PackageSearch className="w-12 h-12 text-slate-300 mb-3" />
+							<PackageSearch className="w-12 h-12 text-slate-600 dark:text-slate-300 mb-3" />
 							<p className="text-sm font-bold text-slate-700">No items here</p>
 							<p className="text-xs text-slate-500">This warehouse has no stock to count</p>
 						</div>
@@ -205,13 +205,13 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 											<p className="text-[9px] text-slate-500 truncate">{item.item_name}</p>
 										</div>
 									<div className="text-right shrink-0 bg-slate-100 px-1.5 py-0.5 rounded">
-										<p className="text-[8px] text-slate-400 uppercase leading-none">Sys</p>
-										<p className="text-xs font-bold text-slate-800 tabular-nums">{item.current_qty} <span className="text-[8px] font-normal text-slate-400">{item.stock_uom}</span></p>
+										<p className="text-[8px] text-slate-500 dark:text-slate-400 uppercase leading-none">Sys</p>
+										<p className="text-xs font-bold text-slate-800 tabular-nums">{item.current_qty} <span className="text-[8px] font-normal text-slate-500 dark:text-slate-400">{item.stock_uom}</span></p>
 									</div>
 									</div>
 								<div className="relative">
 									<input type="number" min="0" step="1" className={`w-full border rounded px-2 py-1.5 pr-12 text-sm font-bold text-center focus:outline-none focus:ring-1 focus:ring-slate-400 ${hasDiff ? 'border-amber-400 bg-white' : 'border-slate-200 bg-slate-50'}`} value={physical ?? ''} onChange={e => setPhysicalQtys(p => ({ ...p, [item.item_code]: parseFloat(e.target.value) || 0 }))} placeholder={String(item.current_qty)} />
-									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 pointer-events-none">{item.stock_uom}</span>
+									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500 dark:text-slate-400 pointer-events-none">{item.stock_uom}</span>
 								</div>
 								{hasDiff && (
 										<div className={`mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block ${physical! > item.current_qty ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -231,7 +231,7 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 					<button onClick={handleSaveDraft} disabled={savingDraft || items.length === 0} className="flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-300 text-slate-700 font-bold text-xs rounded disabled:opacity-50 touch-manipulation">
 						<Save className="w-4 h-4" /> {savingDraft ? 'Saving...' : 'Draft'}
 					</button>
-					<button onClick={handleSubmitClick} disabled={submitting || items.length === 0} className="flex-1 bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded disabled:opacity-50 active:opacity-80 touch-manipulation text-sm">
+					<button onClick={handleSubmitClick} disabled={submitting || items.length === 0} className="flex-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold py-2.5 rounded disabled:opacity-50 active:opacity-80 touch-manipulation text-sm">
 						{submitting ? 'Submitting...' : 'Submit Count'}
 					</button>
 				</div>
@@ -279,7 +279,7 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 						</div>
 						<div className="flex gap-2 p-3 border-t border-slate-200">
 							<button onClick={() => setShowConfirm(false)} className="flex-1 py-2 border border-slate-300 rounded font-bold text-xs touch-manipulation">Cancel</button>
-							<button onClick={() => handleFinalSubmit(true)} className="flex-1 py-2 bg-slate-700 text-white rounded font-bold text-xs touch-manipulation flex items-center justify-center gap-1.5">
+							<button onClick={() => handleFinalSubmit(true)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded font-bold text-xs touch-manipulation flex items-center justify-center gap-1.5">
 								<Check className="w-4 h-4" /> Confirm
 							</button>
 						</div>

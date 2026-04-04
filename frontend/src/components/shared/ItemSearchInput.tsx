@@ -158,7 +158,7 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
         left: rect.left,
         width: rect.width,
       }}
-      className="bg-white border border-slate-200 rounded shadow-xl z-[9999] px-3 py-3 text-center text-[10px] text-slate-400"
+      className="bg-white border border-slate-200 rounded shadow-xl z-[9999] px-3 py-3 text-center text-[10px] text-slate-500 dark:text-slate-400"
     >
       No items found
     </div>
@@ -166,11 +166,11 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
 
   return (
     <div className={`relative flex-1 min-w-0 ${className ?? ''}`} ref={wrapperRef}>
-      <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+      <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 dark:text-slate-400 pointer-events-none" />
       <input
         ref={inputRef}
         type="text"
-        className="w-full bg-slate-50 border border-slate-200 rounded pl-6 pr-7 py-1.5 text-[11px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-300 placeholder:text-slate-400"
+        className="w-full bg-slate-50 border border-slate-200 rounded pl-6 pr-7 py-1.5 text-[11px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-300 placeholder:text-slate-500 dark:text-slate-400"
         placeholder={placeholder ?? 'Search item...'}
         value={query}
         onChange={e => {
@@ -185,7 +185,7 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
       {query && (
         <button
           type="button"
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-slate-400 hover:text-slate-600 touch-manipulation"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 touch-manipulation"
           onMouseDown={e => e.preventDefault()}
           onClick={clear}
         >

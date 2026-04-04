@@ -94,10 +94,10 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
           </div>
           {/* Route: source → dest */}
           <div className="flex items-center gap-1 mt-0.5 min-w-0">
-            <span className="text-[10px] text-slate-400 truncate shrink min-w-0">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate shrink min-w-0">
               {group.source_warehouse?.replace(/ - [A-Z0-9]+$/i, '')}
             </span>
-            <ArrowRight className="w-2.5 h-2.5 text-slate-300 shrink-0" />
+            <ArrowRight className="w-2.5 h-2.5 text-slate-600 dark:text-slate-300 shrink-0" />
             <span className="text-[10px] font-semibold text-violet-600 truncate shrink min-w-0">
               {group.dest_warehouse?.replace(/ - [A-Z0-9]+$/i, '')}
             </span>
@@ -119,12 +119,12 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
                 <div key={item.ste_detail} className="flex items-center gap-1.5 text-[10px]">
                   <div className="flex-1 min-w-0">
                     <span className="text-slate-700 font-semibold truncate block leading-tight">{item.item_name || item.item_code}</span>
-                    <span className="text-[8px] text-slate-400 font-mono truncate block leading-tight">{item.item_code}</span>
+                    <span className="text-[8px] text-slate-500 dark:text-slate-400 font-mono truncate block leading-tight">{item.item_code}</span>
                   </div>
                   <span className="text-right tabular-nums shrink-0">
-                    <span className="text-slate-400">{item.remaining_qty} {item.uom}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.remaining_qty} {item.uom}</span>
                     {stockRemaining != null && (
-                      <span className="block text-[8px] text-slate-400/70 leading-tight">{stockRemaining} {item.stock_uom}</span>
+                      <span className="block text-[8px] text-slate-500 dark:text-slate-400/70 leading-tight">{stockRemaining} {item.stock_uom}</span>
                     )}
                   </span>
                   <input
@@ -151,7 +151,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
                 <button
                   onClick={handleReceive}
                   disabled={submitting || !hasAnyQty}
-                  className="text-[10px] font-bold px-2 py-1 bg-emerald-600 text-white rounded active:bg-emerald-700 disabled:opacity-40 touch-manipulation"
+                  className="text-[10px] font-bold px-2 py-1 bg-emerald-600 text-slate-900 dark:text-white rounded active:bg-emerald-700 disabled:opacity-40 touch-manipulation"
                 >
                   {submitting ? '...' : 'Receive'}
                 </button>
@@ -184,7 +184,7 @@ export default function PendingReceiveCard({ group, company, onReceived }: Pendi
               {['Quantity Mismatch', 'Quality Issue', 'Damaged Goods', 'Missing Items', 'Wrong Items', 'Other'].map(t => <option key={t}>{t}</option>)}
             </select>
             <textarea className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs resize-none" rows={2} value={concern.concern_description} onChange={e => setConcern(c => ({ ...c, concern_description: e.target.value }))} placeholder="Describe the issue... *" />
-            <button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-white font-bold py-2 rounded text-xs active:opacity-80 touch-manipulation">Submit</button>
+            <button onClick={handleConcernSubmit} className="w-full bg-amber-600 text-slate-900 dark:text-white font-bold py-2 rounded text-xs active:opacity-80 touch-manipulation">Submit</button>
           </div>
         </div>
       )}

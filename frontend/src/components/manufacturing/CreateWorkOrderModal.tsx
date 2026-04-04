@@ -18,7 +18,7 @@ function shortWh(name: string) {
 }
 
 function StockBadge({ qty, needed, uom }: { qty: number; needed: number; uom: string }) {
-  const color = qty >= needed ? 'bg-emerald-800 text-emerald-300' : qty > 0 ? 'bg-amber-800 text-amber-300' : 'bg-red-900 text-red-300'
+  const color = qty >= needed ? 'bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300' : qty > 0 ? 'bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300' : 'bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-300'
   return (
     <span className={`text-[9px] font-bold rounded px-1 py-px leading-none ${color}`}>
       {qty.toFixed(3)} {uom}
@@ -159,14 +159,14 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center px-8">
           <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center mx-auto mb-4">
-            <Check className="w-6 h-6 text-white" />
+            <Check className="w-6 h-6 text-slate-900 dark:text-white" />
           </div>
-          <p className="text-sm font-bold text-white mb-1">Work Order Created</p>
-          <p className="text-xs text-slate-400 mb-6 font-mono">{success}</p>
-          <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded px-5 py-2 cursor-pointer">
+          <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">Work Order Created</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-mono">{success}</p>
+          <button onClick={onClose} className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white text-xs font-semibold rounded px-5 py-2 cursor-pointer">
             Close
           </button>
         </div>
@@ -181,27 +181,27 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
   const targetWhs = warehouses.target_warehouses.map(w => w.warehouse)
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-900 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-slate-800 border-b border-slate-700 shrink-0">
-        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
+      <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <button onClick={onClose} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-900 dark:text-white transition-colors cursor-pointer">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <Factory className="w-4 h-4 text-purple-400" />
-        <h2 className="text-sm font-bold text-white">New Work Order</h2>
+        <Factory className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white">New Work Order</h2>
       </div>
 
       {/* Body: left config pane + right BOM preview */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
 
         {/* ── LEFT: config ──────────────────────────────────── */}
-        <div className="lg:w-72 shrink-0 bg-slate-800 border-b lg:border-b-0 lg:border-r border-slate-700 flex flex-col overflow-y-auto">
+        <div className="lg:w-72 shrink-0 bg-white dark:bg-slate-800 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 flex flex-col overflow-y-auto">
           <div className="p-4 space-y-4">
 
             {/* Production item */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Production Item <span className="text-red-400">*</span>
+              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                Production Item <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <ItemSearchInput
                 items={items}
@@ -211,8 +211,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
               />
               {productionItem && (
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-300 truncate">{productionItemName || productionItem}</span>
-                  <button onClick={handleClearItem} className="text-[9px] text-red-400 hover:text-red-300 ml-2 cursor-pointer shrink-0">Clear</button>
+                  <span className="text-[10px] text-slate-600 dark:text-slate-300 truncate">{productionItemName || productionItem}</span>
+                  <button onClick={handleClearItem} className="text-[9px] text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300 ml-2 cursor-pointer shrink-0">Clear</button>
                 </div>
               )}
               {bom && (
@@ -224,8 +224,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* Qty */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Qty to Manufacture <span className="text-red-400">*</span>
+              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                Qty to Manufacture <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 type="number"
@@ -233,7 +233,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                 step={1}
                 value={qty}
                 onChange={e => setQty(Math.max(0.001, parseFloat(e.target.value) || 0))}
-                className="w-full bg-slate-700 border border-slate-600 rounded text-white text-sm px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-sm px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
               />
               {bom && (
                 <p className="text-[9px] text-slate-500 mt-0.5">
@@ -244,14 +244,14 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* WIP Warehouse — primary */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                 WIP Warehouse
                 <span className="ml-1 text-[9px] text-slate-500 normal-case font-normal">(in-process)</span>
               </label>
               <select
                 value={wipWarehouse}
                 onChange={e => setWipWarehouse(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500"
               >
                 <option value="">— Use Manufacturing Settings default —</option>
                 {targetWhs.map(w => (
@@ -262,14 +262,14 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* FG Warehouse — required by ERPNext */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                FG Warehouse <span className="text-red-400">*</span>
+              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                FG Warehouse <span className="text-red-600 dark:text-red-400">*</span>
                 <span className="ml-1 text-[9px] text-slate-500 normal-case font-normal">(finished goods)</span>
               </label>
               <select
                 value={fgWarehouse}
                 onChange={e => setFgWarehouse(e.target.value)}
-                className={`w-full bg-slate-700 border rounded text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500 ${!fgWarehouse ? 'border-red-600' : 'border-slate-600'}`}
+                className={`w-full bg-slate-100 dark:bg-slate-700 border rounded text-slate-900 dark:text-white text-xs px-2 py-1.5 focus:outline-none focus:border-purple-500 ${!fgWarehouse ? 'border-red-600' : 'border-slate-300 dark:border-slate-600'}`}
               >
                 <option value="">— Select —</option>
                 {targetWhs.map(w => (
@@ -280,14 +280,14 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
             {/* Planned Start Date — required by ERPNext */}
             <div>
-              <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Planned Start Date <span className="text-red-400">*</span>
+              <label className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                Planned Start Date <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 type="date"
                 value={plannedStartDate}
                 onChange={e => setPlannedStartDate(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded text-white text-xs px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
+                className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-xs px-2.5 py-1.5 focus:outline-none focus:border-purple-500"
               />
             </div>
 
@@ -297,8 +297,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
               disabled={!canSubmit}
               className={`w-full flex items-center justify-center gap-2 rounded text-sm font-bold py-2.5 transition-colors ${
                 canSubmit
-                  ? 'bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white cursor-pointer'
-                  : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                  ? 'bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-slate-900 dark:text-white cursor-pointer'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-500 cursor-not-allowed'
               }`}
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Factory className="w-4 h-4" />}
@@ -309,9 +309,9 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
 
         {/* ── RIGHT: BOM raw materials preview ──────────────── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center gap-2 shrink-0">
-            <Package className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider">Raw Materials Required</span>
+          <div className="px-4 py-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2 shrink-0">
+            <Package className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Raw Materials Required</span>
             {bom && (
               <span className="text-[9px] text-slate-500">
                 — {bom.items.length} item{bom.items.length !== 1 ? 's' : ''}, producing {qty} {bom.stock_uom}
@@ -327,11 +327,11 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
               </div>
             ) : bomLoading ? (
               <div className="flex items-center justify-center h-full">
-                <RefreshCw className="w-4 h-4 animate-spin text-slate-400 mr-2" />
-                <span className="text-xs text-slate-400">Loading BOM…</span>
+                <RefreshCw className="w-4 h-4 animate-spin text-slate-500 dark:text-slate-400 mr-2" />
+                <span className="text-xs text-slate-500 dark:text-slate-400">Loading BOM…</span>
               </div>
             ) : bomError ? (
-              <div className="flex items-center gap-2 p-4 text-red-400">
+              <div className="flex items-center gap-2 p-4 text-red-600 dark:text-red-400">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span className="text-xs">{bomError}</span>
               </div>
@@ -342,7 +342,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
             ) : bom ? (
               <div>
                 {/* Column header */}
-                <div className="grid grid-cols-12 gap-0 px-3 py-1 bg-slate-800 border-b border-slate-700 text-[9px] font-semibold text-slate-400 uppercase tracking-wider sticky top-0">
+                <div className="grid grid-cols-12 gap-0 px-3 py-1 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky top-0">
                   <span className="col-span-5">Item</span>
                   <span className="col-span-3 text-right">Need</span>
                   <span className="col-span-2 text-right">Total</span>
@@ -359,11 +359,11 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                       <span className={`w-1 h-4 mt-0.5 rounded-full shrink-0 ${stripeColor}`} />
                       <div className="grid grid-cols-12 gap-0 flex-1 min-w-0">
                         <div className="col-span-5 min-w-0">
-                          <p className="text-[10px] font-semibold text-white truncate">{item.item_name || item.item_code}</p>
+                          <p className="text-[10px] font-semibold text-slate-900 dark:text-white truncate">{item.item_name || item.item_code}</p>
                           <p className="text-[8px] text-slate-500 font-mono truncate">{item.item_code}</p>
                         </div>
                         <div className="col-span-3 text-right">
-                          <p className="text-[10px] tabular-nums text-slate-200">{item.needed_qty.toFixed(3)}</p>
+                          <p className="text-[10px] tabular-nums text-slate-700 dark:text-slate-200">{item.needed_qty.toFixed(3)}</p>
                           <p className="text-[8px] text-slate-500">{item.stock_uom}</p>
                         </div>
                         <div className="col-span-2 text-right">

@@ -20,7 +20,8 @@ import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModa
 import WOTransferModal from '@/components/manufacturing/WOTransferModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 import type { WODetail } from '@/types'
 
 function useLiveClock() {
@@ -92,6 +93,8 @@ export default function Dashboard() {
   // Mobile tab
   const [mobileTab, setMobileTab] = useState<MobileTab>('requests')
 
+  const { theme, toggle: toggleTheme } = useTheme()
+
   const now = useLiveClock()
 
   const refreshAll = useCallback(() => {
@@ -124,10 +127,10 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-slate-900">
+      <div className="flex items-center justify-center min-h-dvh bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-600 border-t-slate-300" />
-          <p className="text-sm text-slate-400">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 dark:border-slate-600 border-t-slate-300" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
         </div>
       </div>
     )
@@ -135,11 +138,11 @@ export default function Dashboard() {
 
   if (profiles.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-dvh bg-slate-900">
-        <div className="text-center bg-slate-800 border border-slate-700 rounded p-8 max-w-sm w-full">
+      <div className="flex items-center justify-center min-h-dvh bg-slate-50 dark:bg-slate-900">
+        <div className="text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-8 max-w-sm w-full">
           <Warehouse className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-          <h2 className="text-sm font-bold text-slate-200 mb-1">No profiles assigned</h2>
-          <p className="text-xs text-slate-400">Ask your administrator to assign a POW Profile to your account.</p>
+          <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">No profiles assigned</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Ask your administrator to assign a POW Profile to your account.</p>
         </div>
       </div>
     )
@@ -165,7 +168,7 @@ export default function Dashboard() {
       label: 'Requests',
       count: pendingMRs.length,
       icon: <ArrowLeftRight className="w-4 h-4" />,
-      accent: 'text-blue-400',
+      accent: 'text-blue-600 dark:text-blue-400',
       activeBg: 'bg-blue-500/15',
       activeDot: 'bg-blue-400',
     },
@@ -174,7 +177,7 @@ export default function Dashboard() {
       label: 'Mfg',
       count: workOrders.length,
       icon: <Hammer className="w-4 h-4" />,
-      accent: 'text-purple-400',
+      accent: 'text-purple-700 dark:text-purple-400',
       activeBg: 'bg-purple-500/15',
       activeDot: 'bg-purple-400',
     },
@@ -183,21 +186,21 @@ export default function Dashboard() {
       label: 'Incoming',
       count: pendingReceiveCount,
       icon: <ArrowDownToLine className="w-4 h-4" />,
-      accent: 'text-violet-400',
+      accent: 'text-violet-600 dark:text-violet-400',
       activeBg: 'bg-violet-500/15',
       activeDot: 'bg-violet-400',
     },
   ]
 
   return (
-    <div className="h-dvh bg-slate-100 flex flex-col overflow-hidden">
+    <div className="h-dvh bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden">
       {/* ── System Bar ─────────────────────────────────────── */}
-      <header className="bg-slate-900 text-slate-300 shrink-0">
+      <header className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 shrink-0">
         <div className="flex items-center justify-between px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))]">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-sm font-black text-white tracking-tight">POW</span>
+            <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">POW</span>
             {selectedProfile && (
-              <span className="text-[10px] text-slate-400 truncate max-w-[120px] sm:max-w-none">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[120px] sm:max-w-none">
                 {selectedProfile.name1 ?? selectedProfile.name}
               </span>
             )}
@@ -207,38 +210,49 @@ export default function Dashboard() {
             <span className="text-[10px] text-slate-500 tabular-nums hidden sm:inline">
               {now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
-            <span className="text-[11px] font-mono text-slate-300 tabular-nums">
+            <span className="text-[11px] font-mono text-slate-600 dark:text-slate-300 tabular-nums">
               {now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="w-7 h-7 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              {theme === 'dark'
+                ? <Sun className="w-3.5 h-3.5" />
+                : <Moon className="w-3.5 h-3.5" />
+              }
+            </button>
             <ProfileSwitcher profiles={profiles} selectedProfileName={selectedProfileName} onSelect={setSelectedProfileName} />
           </div>
         </div>
       </header>
 
       {/* ── Status Ticker ──────────────────────────────────── */}
-      <div className="bg-slate-800 border-t border-slate-700 px-3 py-1 flex items-center gap-4 text-[10px] shrink-0 overflow-x-auto no-scrollbar">
+      <div className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-3 py-1 flex items-center gap-4 text-[10px] shrink-0 overflow-x-auto no-scrollbar">
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-          <span className="text-slate-400">Requests</span>
-          <span className="text-white font-bold tabular-nums">{pendingMRs.length}</span>
+          <span className="text-slate-500 dark:text-slate-400">Requests</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{pendingMRs.length}</span>
         </span>
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-          <span className="text-slate-400">Work Orders</span>
-          <span className="text-white font-bold tabular-nums">{workOrders.length}</span>
+          <span className="text-slate-500 dark:text-slate-400">Work Orders</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{workOrders.length}</span>
           {shortfallWOCount > 0 && (
-            <span className="text-[9px] text-red-400 font-bold">({shortfallWOCount} short)</span>
+            <span className="text-[9px] text-red-600 dark:text-red-400 font-bold">({shortfallWOCount} short)</span>
           )}
         </span>
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-          <span className="text-slate-400">Incoming</span>
-          <span className="text-white font-bold tabular-nums">{pendingReceiveCount}</span>
+          <span className="text-slate-500 dark:text-slate-400">Incoming</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{pendingReceiveCount}</span>
         </span>
         <span className="flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-          <span className="text-slate-400">Sent</span>
-          <span className="text-white font-bold tabular-nums">{sentBadge}</span>
+          <span className="text-slate-500 dark:text-slate-400">Sent</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums">{sentBadge}</span>
         </span>
       </div>
 
@@ -276,7 +290,7 @@ export default function Dashboard() {
       </section>
 
       {/* ── Bottom Nav Tabs (mobile) ────────────────────────── */}
-      <div className="lg:hidden shrink-0 bg-slate-900 border-t border-slate-700/60">
+      <div className="lg:hidden shrink-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-700/60">
         <div className="flex">
           {TABS.map(tab => {
             const active = mobileTab === tab.id
@@ -285,7 +299,7 @@ export default function Dashboard() {
                 key={tab.id}
                 onClick={() => setMobileTab(tab.id)}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors cursor-pointer touch-manipulation relative ${
-                  active ? tab.activeBg : 'hover:bg-slate-800'
+                  active ? tab.activeBg : 'hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800'
                 }`}
               >
                 {/* active indicator bar */}
@@ -301,8 +315,8 @@ export default function Dashboard() {
                 {tab.count !== undefined && tab.count > 0 && (
                   <span className={`absolute top-1.5 right-[calc(50%-18px)] min-w-[16px] h-4 flex items-center justify-center rounded-full text-[8px] font-black px-1 leading-none ${
                     active
-                      ? `${tab.activeDot} text-white`
-                      : 'bg-slate-700 text-slate-300'
+                      ? `${tab.activeDot} text-slate-900 dark:text-white`
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                   }`}>
                     {tab.count}
                   </span>
@@ -314,7 +328,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Action Toolbar ─────────────────────────────────── */}
-      <div className="shrink-0 bg-slate-900 border-t border-slate-700 px-3 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 px-3 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         <ActionGrid operations={operations} onAction={handleAction} sentBadge={sentBadge} />
       </div>
 
