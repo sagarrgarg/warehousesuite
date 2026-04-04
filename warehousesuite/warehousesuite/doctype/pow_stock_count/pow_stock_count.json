@@ -67,6 +67,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
@@ -113,6 +114,7 @@
    "label": "Conversion Details"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "stock_reconciliation",
    "fieldtype": "Link",
    "label": "Stock Reconciliation",
@@ -120,6 +122,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "converted_by",
    "fieldtype": "Link",
    "label": "Converted By",
@@ -127,6 +130,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "converted_on",
    "fieldtype": "Datetime",
    "label": "Converted On",

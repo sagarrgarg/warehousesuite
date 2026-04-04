@@ -90,12 +90,13 @@ class POWStockCount(Document):
             stock_reconciliation.insert()
             stock_reconciliation.submit()
             
-            # Update POW Stock Count
-            self.status = "Converted"
-            self.stock_reconciliation = stock_reconciliation.name
-            self.converted_by = frappe.session.user
-            self.converted_on = now_datetime()
-            self.save()
+            # Update POW Stock Count fields directly (document is submitted, can't use .save())
+            self.db_set({
+                "status": "Converted",
+                "stock_reconciliation": stock_reconciliation.name,
+                "converted_by": frappe.session.user,
+                "converted_on": now_datetime(),
+            })
             
             frappe.msgprint(_("Stock count converted to Stock Reconciliation: {0}").format(stock_reconciliation.name))
             
@@ -123,5 +124,13 @@ class POWStockCount(Document):
         """, self.warehouse, as_dict=True)
         
         return items
+
+
+@frappe.whitelist()
+def convert_to_stock_reconciliation(stock_count):
+    """Standalone wrapper so the method can be called via frappe.call as well."""
+    doc = frappe.get_doc("POW Stock Count", stock_count)
+    doc.convert_to_stock_reconciliation()
+    return {"status": "success", "stock_reconciliation": doc.stock_reconciliation}
 
  

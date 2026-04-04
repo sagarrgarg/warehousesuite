@@ -1,67 +1,66 @@
 import {
-	ArrowUpFromLine, ArrowDownToLine, ClipboardCheck, Search,
-	PackagePlus, Truck, Factory, PackageOpen,
+  ArrowUpFromLine, ClipboardCheck, Search,
+  PackagePlus, Truck, Factory, PackageOpen, ListChecks,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
 interface ActionGridProps {
-	operations: ProfileOperations | null
-	onAction: (action: string) => void
-	receiveBadge?: number
-	sentBadge?: number
+  operations: ProfileOperations | null
+  onAction: (action: string) => void
+  sentBadge?: number
 }
 
 interface ActionDef {
-	id: string
-	label: string
-	icon: React.ReactNode
-	gradient: string
-	shadow: string
-	operationKey?: keyof ProfileOperations
-	badgeKey?: 'receive' | 'sent'
+  id: string
+  label: string
+  icon: React.ReactNode
+  color: string
+  operationKey?: keyof ProfileOperations
+  badgeKey?: 'sent'
+  reactView: boolean
 }
 
 const ACTIONS: ActionDef[] = [
-	{ id: 'transfer-send',    label: 'Transfer\nSend',    icon: <ArrowUpFromLine strokeWidth={2.5} />, gradient: 'from-orange-400 to-orange-600', shadow: 'shadow-orange-200', operationKey: 'material_transfer', badgeKey: 'sent' },
-	{ id: 'transfer-receive', label: 'Transfer\nReceive', icon: <ArrowDownToLine strokeWidth={2.5} />, gradient: 'from-violet-400 to-violet-600', shadow: 'shadow-violet-200', operationKey: 'material_transfer', badgeKey: 'receive' },
-	{ id: 'stock-count',      label: 'Stock\nCount',      icon: <ClipboardCheck strokeWidth={2.5} />,  gradient: 'from-slate-400 to-slate-600',   shadow: 'shadow-slate-200',  operationKey: 'stock_count' },
-	{ id: 'item-inquiry',     label: 'Item\nInquiry',     icon: <Search strokeWidth={2.5} />,          gradient: 'from-pink-400 to-pink-600',     shadow: 'shadow-pink-200' },
-	{ id: 'purchase-receipt',  label: 'Receive\n(PR)',     icon: <PackagePlus strokeWidth={2.5} />,     gradient: 'from-emerald-400 to-emerald-600', shadow: 'shadow-emerald-200', operationKey: 'purchase_receipt' },
-	{ id: 'delivery-note',    label: 'Delivery\n(DN)',    icon: <Truck strokeWidth={2.5} />,           gradient: 'from-blue-400 to-blue-600',     shadow: 'shadow-blue-200',   operationKey: 'delivery_note' },
-	{ id: 'manufacturing',    label: 'Manufac-\nturing',  icon: <Factory strokeWidth={2.5} />,         gradient: 'from-purple-400 to-purple-600', shadow: 'shadow-purple-200', operationKey: 'manufacturing' },
-	{ id: 'repack',           label: 'Repack',            icon: <PackageOpen strokeWidth={2.5} />,     gradient: 'from-amber-400 to-amber-600',   shadow: 'shadow-amber-200',  operationKey: 'repack' },
+  { id: 'transfer-send',    label: 'Send',      icon: <ArrowUpFromLine className="w-4 h-4" />, color: 'bg-orange-600 hover:bg-orange-700', operationKey: 'material_transfer', badgeKey: 'sent', reactView: true },
+  { id: 'stock-count',      label: 'Count',     icon: <ClipboardCheck className="w-4 h-4" />,  color: 'bg-slate-600 hover:bg-slate-700',   operationKey: 'stock_count', reactView: true },
+  { id: 'item-inquiry',     label: 'Inquiry',   icon: <Search className="w-4 h-4" />,          color: 'bg-slate-600 hover:bg-slate-700', reactView: true },
+  { id: 'pick-list',        label: 'Pick List', icon: <ListChecks className="w-4 h-4" />,       color: 'bg-slate-600 hover:bg-slate-700', reactView: false },
+  { id: 'purchase-receipt', label: 'PR',        icon: <PackagePlus className="w-4 h-4" />,     color: 'bg-emerald-700 hover:bg-emerald-800', operationKey: 'purchase_receipt', reactView: false },
+  { id: 'delivery-note',   label: 'DN',        icon: <Truck className="w-4 h-4" />,           color: 'bg-blue-700 hover:bg-blue-800',     operationKey: 'delivery_note', reactView: false },
+  { id: 'manufacturing',   label: 'Mfg',       icon: <Factory className="w-4 h-4" />,         color: 'bg-purple-700 hover:bg-purple-800', operationKey: 'manufacturing', reactView: true },
+  { id: 'repack',           label: 'Repack',    icon: <PackageOpen className="w-4 h-4" />,     color: 'bg-amber-700 hover:bg-amber-800',   operationKey: 'repack', reactView: false },
 ]
 
-export default function ActionGrid({ operations, onAction, receiveBadge = 0, sentBadge = 0 }: ActionGridProps) {
-	const visible = ACTIONS.filter(a => !a.operationKey || operations?.[a.operationKey])
+export default function ActionGrid({ operations, onAction, sentBadge = 0 }: ActionGridProps) {
+  const visible = ACTIONS.filter(a => !a.operationKey || operations?.[a.operationKey])
 
-	const getBadge = (a: ActionDef): number => {
-		if (a.badgeKey === 'receive') return receiveBadge
-		if (a.badgeKey === 'sent') return sentBadge
-		return 0
-	}
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+      {visible.map(a => {
+        const badge = a.badgeKey === 'sent' ? sentBadge : 0
+        const disabled = !a.reactView
 
-	return (
-		<div className="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-4">
-			{visible.map(a => {
-				const badge = getBadge(a)
-				return (
-					<div key={a.id} className="relative">
-						<button
-							onClick={() => onAction(a.id)}
-							className={`w-full aspect-square rounded-2xl sm:rounded-3xl bg-gradient-to-br ${a.gradient} text-white flex flex-col items-center justify-center gap-1.5 sm:gap-2.5 shadow-lg ${a.shadow} active:scale-95 active:shadow-md transition-all duration-150 cursor-pointer focus:outline-none touch-manipulation overflow-hidden`}
-						>
-							<div className="w-8 h-8 sm:w-10 sm:h-10">{a.icon}</div>
-							<span className="text-xs sm:text-sm font-bold text-center leading-tight whitespace-pre-line drop-shadow-sm">{a.label}</span>
-						</button>
-						{badge > 0 && (
-							<span className={`absolute -top-2 -right-2 min-w-[24px] h-6 flex items-center justify-center rounded-full text-xs font-bold text-white border-2 border-white shadow-md animate-pulse ${a.badgeKey === 'sent' ? 'bg-cyan-500' : 'bg-red-500'}`}>
-								{badge}
-							</span>
-						)}
-					</div>
-				)
-			})}
-		</div>
-	)
+        return (
+          <button
+            key={a.id}
+            onClick={() => !disabled && onAction(a.id)}
+            disabled={disabled}
+            className={`relative shrink-0 flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded transition-colors touch-manipulation ${
+              disabled
+                ? 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
+                : `${a.color} text-white cursor-pointer active:opacity-80`
+            }`}
+          >
+            {a.icon}
+            <span>{a.label}</span>
+            {!disabled && badge > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold bg-red-500 text-white px-1">
+                {badge}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
