@@ -30,9 +30,21 @@ interface Props {
   onDone: () => void
 }
 
+const MIN_MFG_QTY = 0.001
+
+function isValidQtyDraft(s: string): boolean {
+  return s === '' || /^\d*\.?\d*$/.test(s)
+}
+
+function qtyFromInput(s: string): number {
+  return parseFloat(s.replace(/,/g, '').trim())
+}
+
 export default function WOManufactureModal({ open, wo, onClose, onDone }: Props) {
   const remaining = wo.qty - wo.produced_qty
-  const [qty, setQty] = useState(remaining)
+  const [qtyInput, setQtyInput] = useState(() =>
+    String(remaining > 0 ? remaining : 0),
+  )
   const [preview, setPreview] = useState<ManufacturePreview | null>(null)
   const [overrides, setOverrides] = useState<Record<string, number>>({})
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -43,9 +55,21 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
   const { call: fetchPreview } = useFrappePostCall(API.getManufactureItems)
   const { call: doManufacture } = useFrappePostCall(API.manufactureWO)
 
-  const qtyError = qty <= 0 ? 'Qty must be greater than 0'
-    : qty > remaining + 0.001 ? `Max remaining is ${remaining}`
-    : null
+  const qtyParsed = qtyFromInput(qtyInput)
+  const qtyError = remaining <= 0
+    ? 'Nothing left to produce on this work order'
+    : !Number.isFinite(qtyParsed) || qtyParsed <= 0
+      ? 'Qty must be greater than 0'
+      : qtyParsed > remaining + 0.001
+        ? `Max remaining is ${remaining}`
+        : null
+
+  useEffect(() => {
+    if (open) {
+      const r = wo.qty - wo.produced_qty
+      setQtyInput(String(r > 0 ? r : 0))
+    }
+  }, [open, wo.name, wo.qty, wo.produced_qty])
 
   const loadPreview = useCallback(async (manufactureQty: number) => {
     if (manufactureQty <= 0) return
@@ -65,12 +89,25 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
   }, [wo.name, fetchPreview])
 
   useEffect(() => {
-    if (open && qty > 0) loadPreview(qty)
-  }, [open, qty, loadPreview])
+    if (!open) return
+    if (!Number.isFinite(qtyParsed) || qtyParsed <= 0) return
+    if (qtyParsed > remaining + 0.001) return
+    loadPreview(qtyParsed)
+  }, [open, qtyInput, qtyParsed, remaining, loadPreview])
 
-  const handleQtyBlur = useCallback(() => {
-    if (!qtyError && qty > 0) loadPreview(qty)
-  }, [qty, qtyError, loadPreview])
+  const normalizeManufactureQtyOnBlur = useCallback(() => {
+    if (remaining <= 0) {
+      setQtyInput('0')
+      return
+    }
+    let n = qtyFromInput(qtyInput)
+    if (!Number.isFinite(n) || n <= 0) {
+      setQtyInput(String(remaining))
+      return
+    }
+    n = Math.min(remaining, Math.max(MIN_MFG_QTY, n))
+    setQtyInput(String(n))
+  }, [qtyInput, remaining])
 
   const updateOverride = (itemCode: string, val: number) => {
     setOverrides(prev => ({ ...prev, [itemCode]: Math.max(0, val) }))
@@ -101,7 +138,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
 
       const res = await doManufacture({
         wo_name: wo.name,
-        qty,
+        qty: qtyParsed,
         item_overrides: itemOverrides ? JSON.stringify(itemOverrides) : undefined,
         item_substitutions: itemSubstitutions.length ? JSON.stringify(itemSubstitutions) : undefined,
       })
@@ -121,7 +158,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
     } finally {
       setSubmitting(false)
     }
-  }, [qty, wo.name, wo.required_items, doManufacture, qtyError, hasOverrides, overrides, preview])
+  }, [qtyParsed, wo.name, wo.required_items, doManufacture, qtyError, hasOverrides, overrides, preview])
 
   if (!open) return null
 
@@ -204,19 +241,24 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
           </label>
           <div className="flex items-center gap-2">
             <input
-              type="number"
-              min={0.001}
-              max={remaining}
-              step={1}
-              value={qty}
-              onChange={e => setQty(Math.max(0, parseFloat(e.target.value) || 0))}
-              onBlur={handleQtyBlur}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={qtyInput}
+              onChange={e => {
+                const v = e.target.value
+                if (isValidQtyDraft(v)) setQtyInput(v)
+              }}
+              onBlur={normalizeManufactureQtyOnBlur}
               className={`flex-1 bg-slate-100 dark:bg-slate-700 border rounded text-slate-900 dark:text-white text-base px-3 py-2 focus:outline-none ${
                 qtyError ? 'border-red-500' : 'border-slate-300 dark:border-slate-600 focus:border-emerald-500'
               }`}
             />
             <button
-              onClick={() => qty > 0 && loadPreview(qty)}
+              type="button"
+              onClick={() => {
+                if (!qtyError && Number.isFinite(qtyParsed) && qtyParsed > 0) loadPreview(qtyParsed)
+              }}
               disabled={!!qtyError || previewLoading}
               className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-200 dark:bg-slate-600 border border-slate-300 dark:border-slate-600 rounded px-3 py-2 text-[10px] font-bold text-slate-600 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
               title="Recalculate materials"

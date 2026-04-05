@@ -77,12 +77,13 @@
   {
    "fieldname": "section_break_items",
    "fieldtype": "Section Break",
-   "label": "Stock Count Items"
+   "label": "Stock count variances"
   },
   {
+   "description": "Only lines where counted quantity differs from system stock are stored. Matching lines are omitted on save.",
    "fieldname": "items",
    "fieldtype": "Table",
-   "label": "Items",
+   "label": "Variance lines",
    "options": "POW Stock Count Item"
   },
   {

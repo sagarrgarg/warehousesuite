@@ -1,11 +1,26 @@
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, getdate, get_datetime, format_datetime, flt
 from frappe.model.document import Document
+
+# Align with POW UI (physical vs system qty), same order of magnitude as ERPNext float noise
+QTY_DIFF_TOLERANCE = 0.001
+
+
+def item_row_has_difference(counted_qty, current_stock):
+    """Return True when counted quantity differs from system/current stock beyond tolerance.
+
+    Non-numeric or missing counted_qty is treated as no variance (row should not be stored).
+    """
+    if counted_qty is None:
+        return False
+    return abs(flt(counted_qty) - flt(current_stock or 0)) > QTY_DIFF_TOLERANCE
+
 
 class POWStockCount(Document):
     def validate(self):
         self.calculate_differences()
+        self.prune_items_without_difference()
         self.check_draft_limitation()
     
     def check_draft_limitation(self):
@@ -57,7 +72,14 @@ class POWStockCount(Document):
                     item.item_name = frappe.db.get_value("Item", item.item_code, "item_name")
                 if not item.uom:
                     item.uom = frappe.db.get_value("Item", item.item_code, "stock_uom")
-    
+
+    def prune_items_without_difference(self):
+        """Keep only child rows with a real variance (counted vs current stock)."""
+        self.items[:] = [
+            row
+            for row in self.items
+            if row.item_code and item_row_has_difference(row.counted_qty, row.current_stock)
+        ]
 
     
     @frappe.whitelist()
@@ -70,16 +92,19 @@ class POWStockCount(Document):
             frappe.throw(_("Only submitted stock counts can be converted"))
         
         try:
-            # Create Stock Reconciliation
+            count_dt = get_datetime(self.count_date) if self.count_date else now_datetime()
+
+            # Create Stock Reconciliation — use stock count timestamp (+ allow custom posting time)
             stock_reconciliation = frappe.new_doc("Stock Reconciliation")
             stock_reconciliation.company = self.company
             stock_reconciliation.purpose = "Stock Reconciliation"
-            stock_reconciliation.posting_date = frappe.utils.today()
-            stock_reconciliation.posting_time = frappe.utils.nowtime()
-            
+            stock_reconciliation.set_posting_time = 1
+            stock_reconciliation.posting_date = getdate(count_dt)
+            stock_reconciliation.posting_time = count_dt.strftime("%H:%M:%S")
+
             # Add items with differences
             for item in self.items:
-                if item.difference != 0:  # Only add items with differences
+                if item_row_has_difference(item.counted_qty, item.current_stock):
                     stock_reconciliation.append("items", {
                         "item_code": item.item_code,
                         "warehouse": self.warehouse,
@@ -98,7 +123,11 @@ class POWStockCount(Document):
                 "converted_on": now_datetime(),
             })
             
-            frappe.msgprint(_("Stock count converted to Stock Reconciliation: {0}").format(stock_reconciliation.name))
+            frappe.msgprint(
+                _(
+                    "Stock Reconciliation {0} created with posting date and time from this stock count ({1})."
+                ).format(stock_reconciliation.name, format_datetime(count_dt))
+            )
             
         except Exception as e:
             frappe.logger().error(f"Error converting stock count to reconciliation: {str(e)}")

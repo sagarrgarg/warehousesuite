@@ -2,9 +2,9 @@
 
 import frappe
 
+from warehousesuite.utils.pow_warehouse_scope import get_pow_profile_delivery_warehouse_scope
 from warehousesuite.services.pow_so_pending_report_service import (
     assert_pow_so_pending_report_access,
-    get_pow_profile_delivery_warehouse_scope,
     get_so_pending_delivery_lines,
     get_so_pending_delivery_summary,
     search_customers_for_so_report,

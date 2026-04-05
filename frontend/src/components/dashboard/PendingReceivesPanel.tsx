@@ -8,6 +8,7 @@ interface PendingReceivesPanelProps {
   isLoading: boolean
   company: string
   onReceived: () => void
+  filterEmptyHint?: string
 }
 
 function shortWarehouse(name: string) {
@@ -19,6 +20,7 @@ export default function PendingReceivesPanel({
   isLoading,
   company,
   onReceived,
+  filterEmptyHint,
 }: PendingReceivesPanelProps) {
   const pendingReceives = receives.filter(r => r.status !== 'Complete')
 
@@ -68,8 +70,11 @@ export default function PendingReceivesPanel({
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600" />
           </div>
         ) : pendingReceives.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px]">
-            Nothing to receive
+          <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px] px-4 text-center">
+            <span>Nothing to receive</span>
+            {filterEmptyHint && (
+              <span className="text-[10px] mt-1 text-slate-400 dark:text-slate-500">{filterEmptyHint}</span>
+            )}
           </div>
         ) : (
           groupedWithStripe.map(([warehouse, entries]) => (

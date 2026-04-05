@@ -41,47 +41,6 @@ def _so_line_warehouse_expr(so_alias="so", so_item_alias="so_item"):
     )
 
 
-def get_pow_profile_delivery_warehouse_scope(pow_profile_name):
-    """Warehouses allowed for SO pending report: profile roots + descendants.
-
-    Aligns with ``get_pow_profile_warehouses``: non-group roots are included; group
-    roots contribute only leaf descendants. In-transit is excluded from expansion.
-    The same rules are applied to **source** and **target** table rows so scope is
-    the union of both.
-
-    Args:
-        pow_profile_name: ``POW Profile`` name.
-
-    Returns:
-        list[str]: deduplicated warehouse names (may be empty).
-    """
-    from warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard import (
-        get_all_child_warehouses,
-    )
-
-    profile = frappe.get_cached_doc("POW Profile", pow_profile_name)
-    in_transit = profile.in_transit_warehouse or None
-    seen = set()
-    out = []
-
-    def add(name):
-        if name and name not in seen:
-            seen.add(name)
-            out.append(name)
-
-    for row in list(profile.source_warehouse or []) + list(profile.target_warehouse or []):
-        w = (row.warehouse or "").strip()
-        if not w:
-            continue
-        is_group = cint(frappe.db.get_value("Warehouse", w, "is_group"))
-        if not is_group:
-            add(w)
-        for ch in get_all_child_warehouses(w, in_transit):
-            add(ch.get("name"))
-
-    return out
-
-
 def _warehouse_scope_sql(allowed_warehouses, so_alias="so", so_item_alias="so_item"):
     """SQL fragment restricting SO lines to warehouses in *allowed_warehouses*.
 

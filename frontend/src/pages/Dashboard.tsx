@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useFrappeGetCall } from 'frappe-react-sdk'
 import { useSelectedProfile, useProfileOperations, useProfileWarehouses } from '@/hooks/useProfile'
 import { useSentBadge } from '@/hooks/useBadges'
 import { usePendingMaterialRequests } from '@/hooks/usePendingMaterialRequests'
@@ -20,10 +21,12 @@ import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModa
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X } from 'lucide-react'
+import { API } from '@/lib/api'
+import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
 import { useTheme } from '@/hooks/useTheme'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
-import type { WODetail } from '@/types'
+import type { WODetail, DropdownItem } from '@/types'
 
 function useLiveClock() {
   const [now, setNow] = useState(new Date())
@@ -35,7 +38,7 @@ function useLiveClock() {
 }
 
 type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-report' | null
-type MobileTab = 'requests' | 'manufacturing' | 'incoming'
+type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
   const {
@@ -80,6 +83,30 @@ export default function Dashboard() {
     refresh: refreshWOs,
   } = usePendingWorkOrders(allWarehouseNames.length > 0 ? allWarehouseNames : null)
 
+  const { data: filterItemsData } = useFrappeGetCall<{ message: DropdownItem[] }>(
+    API.getItemsForDropdown,
+    {},
+  )
+  const filterItems = filterItemsData?.message ?? []
+  const [itemFilterCode, setItemFilterCode] = useState<string | null>(null)
+  const itemFilterInputRef = useRef<ItemSearchInputHandle>(null)
+
+  const filteredMRs = useMemo(() => {
+    if (!itemFilterCode) return pendingMRs
+    return pendingMRs.filter(mr => mr.lines.some(l => l.item_code === itemFilterCode))
+  }, [pendingMRs, itemFilterCode])
+
+  const filteredReceives = useMemo(() => {
+    if (!itemFilterCode) return pendingReceives
+    return pendingReceives.filter(g =>
+      (g.items || []).some(it => it.item_code === itemFilterCode),
+    )
+  }, [pendingReceives, itemFilterCode])
+
+  useEffect(() => {
+    setItemFilterCode(null)
+  }, [selectedProfileName])
+
   // Modal state
   const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [fulfillMR, setFulfillMR] = useState<string | null>(null)
@@ -91,8 +118,36 @@ export default function Dashboard() {
   const [woDetailAction, setWoDetailAction] = useState<'manufacture' | 'request' | null>(null)
   const [woForAction, setWoForAction] = useState<WODetail | null>(null)
 
-  // Mobile tab
-  const [mobileTab, setMobileTab] = useState<MobileTab>('requests')
+  // Mobile tab (work orders first; manufacturing-only tab removed — use WO panel + action bar)
+  const [mobileTab, setMobileTab] = useState<MobileTab>('work-orders')
+
+  const blockGlobalItemTypeahead =
+    Boolean(activeModal) ||
+    Boolean(fulfillMR) ||
+    showRaiseMR ||
+    showCreateWO ||
+    Boolean(activeWOName) ||
+    Boolean(woDetailAction)
+
+  useEffect(() => {
+    if (blockGlobalItemTypeahead) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target
+      if (t instanceof HTMLElement) {
+        const tag = t.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+        if (t.isContentEditable) return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.key.length !== 1) return
+      const handle = itemFilterInputRef.current
+      if (!handle) return
+      handle.ingestPrintableKey(e.key)
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKeyDown, true)
+    return () => window.removeEventListener('keydown', onKeyDown, true)
+  }, [blockGlobalItemTypeahead])
 
   const { theme, toggle: toggleTheme } = useTheme()
   const smUp = useMediaQuery('(min-width: 640px)')
@@ -162,33 +217,31 @@ export default function Dashboard() {
       case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report':
         setActiveModal(action as ModalType)
         break
-      case 'manufacturing':
-        setShowCreateWO(true)
-        break
     }
   }
 
-  const pendingReceiveCount = pendingReceives.filter(r => r.status !== 'Complete').length
+  const pendingReceiveCount = filteredReceives.filter(r => r.status !== 'Complete').length
+  const pendingReceiveTotal = pendingReceives.filter(r => r.status !== 'Complete').length
   const shortfallWOCount = workOrders.filter(wo => wo.shortfall_count > 0).length
 
   const TABS: { id: MobileTab; label: string; count?: number; icon: React.ReactNode; accent: string; activeBg: string; activeDot: string }[] = [
     {
-      id: 'requests',
-      label: 'Requests',
-      count: pendingMRs.length,
-      icon: <ArrowLeftRight className="w-4 h-4" />,
-      accent: 'text-blue-600 dark:text-blue-400',
-      activeBg: 'bg-blue-500/15',
-      activeDot: 'bg-blue-400',
-    },
-    {
-      id: 'manufacturing',
-      label: 'Mfg',
+      id: 'work-orders',
+      label: 'WO',
       count: workOrders.length,
       icon: <Hammer className="w-4 h-4" />,
       accent: 'text-purple-700 dark:text-purple-400',
       activeBg: 'bg-purple-500/15',
       activeDot: 'bg-purple-400',
+    },
+    {
+      id: 'requests',
+      label: 'Requests',
+      count: filteredMRs.length,
+      icon: <ArrowLeftRight className="w-4 h-4" />,
+      accent: 'text-blue-600 dark:text-blue-400',
+      activeBg: 'bg-blue-500/15',
+      activeDot: 'bg-blue-400',
     },
     {
       id: 'incoming',
@@ -248,11 +301,6 @@ export default function Dashboard() {
       {/* ── Status summary (2×2 on narrow screens, row on sm+) ─ */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-2 sm:py-1 shrink-0 grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center gap-x-3 gap-y-2 sm:gap-y-1 sm:gap-x-5 text-[10px] sm:text-xs">
         <span className="flex items-center gap-1 min-w-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-          <span className="text-slate-600 dark:text-slate-300 truncate">Requests</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{pendingMRs.length}</span>
-        </span>
-        <span className="flex items-center gap-1 min-w-0 sm:min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
           <span className="text-slate-600 dark:text-slate-300 truncate">Work orders</span>
           <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{workOrders.length}</span>
@@ -262,10 +310,25 @@ export default function Dashboard() {
             </span>
           )}
         </span>
+        <span className="flex items-center gap-1 min-w-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+          <span className="text-slate-600 dark:text-slate-300 truncate">Requests</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0" title={itemFilterCode ? `${filteredMRs.length} visible (filter on)` : undefined}>
+            {filteredMRs.length}
+            {itemFilterCode && pendingMRs.length !== filteredMRs.length && (
+              <span className="text-slate-400 dark:text-slate-500 font-semibold">/{pendingMRs.length}</span>
+            )}
+          </span>
+        </span>
         <span className="flex items-center gap-1 min-w-0 col-span-1">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
           <span className="text-slate-600 dark:text-slate-300 truncate">Incoming</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{pendingReceiveCount}</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0" title={itemFilterCode ? `${pendingReceiveCount} visible (filter on)` : undefined}>
+            {pendingReceiveCount}
+            {itemFilterCode && pendingReceiveCount !== pendingReceiveTotal && (
+              <span className="text-slate-400 dark:text-slate-500 font-semibold">/{pendingReceiveTotal}</span>
+            )}
+          </span>
         </span>
         <span className="flex items-center gap-1 min-w-0 col-span-1">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
@@ -280,20 +343,39 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── Data Panels ────────────────────────────────────── */}
-      <section className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* Transfer Requests */}
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 ${mobileTab === 'requests' ? 'flex' : 'hidden lg:flex'}`}>
-          <PendingMaterialRequestsPanel
-            requests={pendingMRs}
-            isLoading={mrsLoading}
-            onFulfill={(mrName) => setFulfillMR(mrName)}
-            onRaise={() => setShowRaiseMR(true)}
-          />
+      {/* Item filter: MRs + incoming */}
+      <div className="shrink-0 px-2.5 sm:px-3 py-1.5 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex items-center gap-2 rounded-md border border-slate-200/90 dark:border-slate-600 bg-white/80 dark:bg-slate-800/60 px-2 py-1 sm:py-1.5">
+          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0" title="Filter transfer requests and incoming by line item">
+            <Filter className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hidden sm:inline">Item</span>
+          </span>
+          <div className="flex-1 min-w-0 sm:max-w-md">
+            <ItemSearchInput
+              ref={itemFilterInputRef}
+              items={filterItems}
+              value={itemFilterCode ?? ''}
+              onSelect={code => setItemFilterCode(code ? code : null)}
+              placeholder="Search or type anywhere to filter…"
+            />
+          </div>
+          {itemFilterCode && (
+            <button
+              type="button"
+              onClick={() => setItemFilterCode(null)}
+              className="flex items-center gap-0.5 shrink-0 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+              Clear
+            </button>
+          )}
         </div>
+      </div>
 
+      {/* ── Data Panels (desktop: WO → Transfer req → Incoming) ─ */}
+      <section className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* Work Orders */}
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 ${mobileTab === 'manufacturing' ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 ${mobileTab === 'work-orders' ? 'flex' : 'hidden lg:flex'}`}>
           <PendingWorkOrdersPanel
             workOrders={workOrders}
             isLoading={woLoading}
@@ -302,13 +384,25 @@ export default function Dashboard() {
           />
         </div>
 
+        {/* Transfer Requests */}
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 ${mobileTab === 'requests' ? 'flex' : 'hidden lg:flex'}`}>
+          <PendingMaterialRequestsPanel
+            requests={filteredMRs}
+            isLoading={mrsLoading}
+            onFulfill={(mrName) => setFulfillMR(mrName)}
+            onRaise={() => setShowRaiseMR(true)}
+            filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
+          />
+        </div>
+
         {/* Incoming Transfers */}
         <div className={`flex-1 flex-col min-h-0 overflow-hidden ${mobileTab === 'incoming' ? 'flex' : 'hidden lg:flex'}`}>
           <PendingReceivesPanel
-            receives={pendingReceives}
+            receives={filteredReceives}
             isLoading={receivesLoading}
             company={company}
             onReceived={refreshAll}
+            filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
           />
         </div>
       </section>
@@ -371,7 +465,7 @@ export default function Dashboard() {
         <MRFulfillmentModal open onClose={closeFulfillment} mrName={fulfillMR} company={selectedProfile.company} profileWarehouses={warehouses} sourceWarehouses={sourceWarehouseNames} defaultWarehouse={null} />
       )}
       {activeModal === 'transfer-send' && warehouses && selectedProfile && (
-        <TransferSendModal open onClose={closeModal} warehouses={warehouses} defaultWarehouse={null} showOnlyStockItems={!!selectedProfile.show_only_stock_items} />
+        <TransferSendModal open onClose={closeModal} warehouses={warehouses} defaultWarehouse={null} />
       )}
       {activeModal === 'stock-count' && warehouses && selectedProfile && (
         <StockCountModal open onClose={closeModal} warehouses={warehouses} />
@@ -388,11 +482,12 @@ export default function Dashboard() {
       )}
 
       {/* ── Work Order Modals ──────────────────────────────── */}
-      {showCreateWO && warehouses && (
+      {showCreateWO && warehouses && selectedProfileName && (
         <CreateWorkOrderModal
           open
           onClose={() => { setShowCreateWO(false); refreshWOs() }}
           warehouses={warehouses}
+          powProfileName={selectedProfileName}
         />
       )}
       {activeWOName && !woDetailAction && (

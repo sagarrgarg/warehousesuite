@@ -13,7 +13,7 @@ Architectural intent, business reasoning, and anti-patterns. This complements `t
 1. **Truth in ERPNext**: Inventory quantities and valuations live in core Stock Ledger / Bin. WarehouseSuite orchestrates and validates; it does not fork inventory math.
 2. **Session as accountability**: Work happens inside `POW Session` with profiles—auditable who did what, when, and under which rules.
 3. **Fail closed on doubt**: Validations (transit, value difference, permissions) should block ambiguous postings rather than “best guess” adjustments.
-4. **Operator empathy**: Mobile/tablet, glare, gloves, interruption—UI choices favor large targets, obvious state, and resume-friendly drafts (e.g. stock count).
+4. **Operator empathy**: Mobile/tablet, glare, gloves, interruption—UI choices favor large targets, obvious state, and resume-friendly drafts (e.g. stock count). **Stock counts** should highlight **variances only** in the submitted document; unchanged lines belong in Bin, not duplicated in the count’s child table.
 5. **Slice delivery**: Ship thin vertical slices (one workflow end-to-end) instead of large horizontal refactors.
 6. **Short path to work**: The **`/pow` website** route is the preferred bookmark for floor staff (hostname + `/pow`), not hunting inside Desk `/app`—same permissions and APIs, less navigation friction.
 

@@ -67,7 +67,7 @@ function load_items_from_warehouse(frm) {
                 });
                 
                 frm.refresh_field('items');
-                frappe.msgprint(__('Loaded {0} items from warehouse').format(r.message.length));
+                frappe.msgprint(__('Loaded {0} items. Rows with no variance are removed when you save.').format(r.message.length));
             }
         }
     });

@@ -7,6 +7,8 @@ interface PendingMaterialRequestsPanelProps {
   isLoading: boolean
   onFulfill: (mrName: string) => void
   onRaise?: () => void
+  /** Shown under the empty-state line when filters exclude everything. */
+  filterEmptyHint?: string
 }
 
 export default function PendingMaterialRequestsPanel({
@@ -14,6 +16,7 @@ export default function PendingMaterialRequestsPanel({
   isLoading,
   onFulfill,
   onRaise,
+  filterEmptyHint,
 }: PendingMaterialRequestsPanelProps) {
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900">
@@ -52,8 +55,11 @@ export default function PendingMaterialRequestsPanel({
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600" />
           </div>
         ) : requests.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px]">
-            No open transfer requests
+          <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px] px-4 text-center">
+            <span>No open transfer requests</span>
+            {filterEmptyHint && (
+              <span className="text-[10px] mt-1 text-slate-400 dark:text-slate-500">{filterEmptyHint}</span>
+            )}
           </div>
         ) : (
           requests.map((mr, i) => (

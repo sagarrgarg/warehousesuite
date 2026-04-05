@@ -1,7 +1,27 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { Search, X } from 'lucide-react'
 import type { DropdownItem } from '@/types'
+
+/** Readable qty in picker rows (avoids 10.000000 noise). */
+function formatPickerStockQty(q: number): string {
+  if (!Number.isFinite(q)) return '0'
+  const n = Math.round(q * 1_000_000) / 1_000_000
+  return String(n)
+}
+
+export interface ItemSearchInputHandle {
+  /** Focus the field and insert a printable key (home-screen typeahead). */
+  ingestPrintableKey: (key: string) => void
+}
 
 interface ItemSearchProps {
   items: DropdownItem[]
@@ -16,7 +36,10 @@ interface ItemSearchProps {
  * Dropdown renders via portal with position:fixed so it escapes
  * all overflow containers and stacking contexts.
  */
-export default function ItemSearchInput({ items, value, onSelect, placeholder, className }: ItemSearchProps) {
+const ItemSearchInput = forwardRef<ItemSearchInputHandle, ItemSearchProps>(function ItemSearchInput(
+  { items, value, onSelect, placeholder, className },
+  ref,
+) {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [highlightIdx, setHighlightIdx] = useState(-1)
@@ -24,11 +47,38 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const valueRef = useRef(value)
+  valueRef.current = value
+  /** Skip clearing query when value becomes '' right after global typeahead clears selection. */
+  const skipEmptyValueSyncRef = useRef(false)
 
   useEffect(() => {
-    if (value) setQuery(value)
-    else setQuery('')
+    if (value) {
+      setQuery(value)
+      return
+    }
+    if (skipEmptyValueSyncRef.current) {
+      skipEmptyValueSyncRef.current = false
+      return
+    }
+    setQuery('')
   }, [value])
+
+  useImperativeHandle(ref, () => ({
+    ingestPrintableKey: (key: string) => {
+      const hadSelection = Boolean(valueRef.current)
+      if (hadSelection) {
+        skipEmptyValueSyncRef.current = true
+        onSelect('')
+      }
+      setQuery(q => (hadSelection ? key : q + key))
+      setIsOpen(true)
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+        if (inputRef.current) setRect(inputRef.current.getBoundingClientRect())
+      })
+    },
+  }), [onSelect])
 
   const updateRect = useCallback(() => {
     if (inputRef.current) setRect(inputRef.current.getBoundingClientRect())
@@ -122,26 +172,27 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
         left: rect.left,
         width: rect.width,
       }}
-      className="bg-white border border-slate-200 rounded shadow-xl max-h-56 overflow-y-auto z-[9999]"
+      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded shadow-xl max-h-56 overflow-y-auto z-[9999]"
     >
       {filtered.map((i, idx) => (
         <button
           key={i.item_code}
           type="button"
-          className={`w-full text-left px-2.5 py-1.5 flex items-start gap-2 border-b border-slate-50 last:border-b-0 touch-manipulation transition-colors ${
-            idx === highlightIdx ? 'bg-blue-50' : 'hover:bg-slate-50 active:bg-slate-100'
+          className={`w-full text-left px-2.5 py-1.5 flex items-start gap-2 border-b border-slate-50 dark:border-slate-700 last:border-b-0 touch-manipulation transition-colors ${
+            idx === highlightIdx ? 'bg-blue-50 dark:bg-slate-700/80' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 active:bg-slate-100 dark:active:bg-slate-600'
           }`}
           onMouseDown={e => e.preventDefault()}
           onClick={() => pick(i.item_code)}
           onMouseEnter={() => setHighlightIdx(idx)}
         >
           <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-semibold text-slate-900 block truncate">{i.item_code}</span>
-            <span className="text-[10px] text-slate-500 block truncate">{i.item_name}</span>
+            <span className="text-[11px] font-semibold text-slate-900 dark:text-white block truncate">{i.item_code}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">{i.item_name}</span>
           </div>
-          {(i.stock_qty ?? 0) > 0 && (
-            <span className="text-[9px] text-emerald-600 font-bold tabular-nums shrink-0 mt-0.5">
-              {i.stock_qty} {i.stock_uom}
+          {(i.stock_qty ?? 0) > 0 && i.stock_uom && (
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-bold tabular-nums shrink-0 text-right leading-tight">
+              <span className="block">{formatPickerStockQty(i.stock_qty ?? 0)}</span>
+              <span className="block text-[9px] font-semibold opacity-90">{i.stock_uom}</span>
             </span>
           )}
         </button>
@@ -158,7 +209,7 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
         left: rect.left,
         width: rect.width,
       }}
-      className="bg-white border border-slate-200 rounded shadow-xl z-[9999] px-3 py-3 text-center text-[10px] text-slate-500 dark:text-slate-400"
+      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded shadow-xl z-[9999] px-3 py-3 text-center text-[10px] text-slate-500 dark:text-slate-400"
     >
       No items found
     </div>
@@ -170,7 +221,7 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
       <input
         ref={inputRef}
         type="text"
-        className="w-full bg-slate-50 border border-slate-200 rounded pl-6 pr-7 py-1.5 text-[11px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-300 placeholder:text-slate-500 dark:text-slate-400"
+        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded pl-6 pr-7 py-1.5 text-[11px] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-300 placeholder:text-slate-500 dark:text-slate-400"
         placeholder={placeholder ?? 'Search item...'}
         value={query}
         onChange={e => {
@@ -185,7 +236,7 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
       {query && (
         <button
           type="button"
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 touch-manipulation"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 touch-manipulation"
           onMouseDown={e => e.preventDefault()}
           onClick={clear}
         >
@@ -195,4 +246,6 @@ export default function ItemSearchInput({ items, value, onSelect, placeholder, c
       {createPortal(<>{dropdownContent}{noResults}</>, document.body)}
     </div>
   )
-}
+})
+
+export default ItemSearchInput

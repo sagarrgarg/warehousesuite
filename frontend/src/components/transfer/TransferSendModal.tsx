@@ -13,7 +13,6 @@ interface Props {
 	onClose: () => void
 	warehouses: ProfileWarehouses
 	defaultWarehouse: string | null
-	showOnlyStockItems: boolean
 }
 
 interface Line {
@@ -38,7 +37,7 @@ function lineStockQty(line: Line): number {
 	return +(line.qty * cf).toFixed(3)
 }
 
-export default function TransferSendModal({ open, onClose, warehouses, defaultWarehouse, showOnlyStockItems }: Props) {
+export default function TransferSendModal({ open, onClose, warehouses, defaultWarehouse }: Props) {
 	const company = useCompany()
 	const [sourceWarehouse, setSourceWarehouse] = useState(defaultWarehouse ?? warehouses.source_warehouses[0]?.warehouse ?? '')
 	const [targetWarehouse, setTargetWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
@@ -52,9 +51,13 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
 
-	const { data: itemsData, mutate: refreshItems } = useFrappeGetCall<{ message: DropdownItem[] }>(
+	/** Transfer send: only items with actual_qty &gt; 0 in the source warehouse; API returns stock_qty + stock_uom. */
+	const { data: itemsData, mutate: refreshItems, isLoading: itemsLoading } = useFrappeGetCall<{ message: DropdownItem[] }>(
 		API.getItemsForDropdown,
-		{ warehouse: sourceWarehouse, show_only_stock_items: showOnlyStockItems ? 1 : 0 },
+		sourceWarehouse
+			? { warehouse: sourceWarehouse, show_only_stock_items: 1 }
+			: undefined,
+		sourceWarehouse ? undefined : null,
 	)
 	const items = itemsData?.message ?? []
 
@@ -208,6 +211,12 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 							</select>
 						</div>
 					</div>
+
+					{sourceWarehouse && !itemsLoading && items.length === 0 && (
+						<p className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded px-3 py-2">
+							No items with available stock in the selected source warehouse. Choose another warehouse or add stock.
+						</p>
+					)}
 
 					{/* Items */}
 					<div className="bg-white border border-slate-200 rounded">

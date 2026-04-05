@@ -179,11 +179,50 @@ def _get_wo_required_items_summary(wo_name, wip_warehouse=None):
 # BOM + Warehouses
 # ---------------------------------------------------------------------------
 
-def get_bom_for_item(item_code):
+def _query_bin_availability_for_item(item_code, allowed_warehouses=None, limit=10):
+    """Bins with positive stock for *item_code*, optionally restricted to warehouses.
+
+    Args:
+        item_code: Item code.
+        allowed_warehouses: ``None`` = all warehouses; ``[]`` = none; else ``IN`` list.
+        limit: max rows.
+
+    Returns:
+        list of dict rows from SQL (warehouse, warehouse_name, actual_qty).
+    """
+    if allowed_warehouses is not None and len(allowed_warehouses) == 0:
+        return []
+
+    params = [item_code]
+    wh_clause = ""
+    if allowed_warehouses:
+        ph = ", ".join(["%s"] * len(allowed_warehouses))
+        wh_clause = f" AND b.warehouse IN ({ph})"
+        params.extend(allowed_warehouses)
+
+    lim = max(1, min(cint(limit), 50))
+    return frappe.db.sql(
+        f"""
+        SELECT b.warehouse, w.warehouse_name, b.actual_qty
+        FROM `tabBin` b
+        LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
+        WHERE b.item_code = %s AND b.actual_qty > 0
+        {wh_clause}
+        ORDER BY b.actual_qty DESC
+        LIMIT {lim}
+        """,
+        tuple(params),
+        as_dict=True,
+    )
+
+
+def get_bom_for_item(item_code, allowed_warehouses=None):
     """Return the default active BOM for an item with exploded items + stock.
 
     Args:
         item_code: item to look up
+        allowed_warehouses: if set, restrict Bin availability to these warehouses
+            (POW profile scope). ``None`` = any warehouse (non-POW callers).
 
     Returns:
         dict with bom_no, item_name, items (list), scrap_items (list)
@@ -205,15 +244,7 @@ def get_bom_for_item(item_code):
             "Item", row.item_code, ["item_name", "stock_uom"], as_dict=True
         ) or {}
 
-        # Warehouse availability
-        availability = frappe.db.sql("""
-            SELECT b.warehouse, w.warehouse_name, b.actual_qty
-            FROM `tabBin` b
-            LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
-            WHERE b.item_code = %s AND b.actual_qty > 0
-            ORDER BY b.actual_qty DESC
-            LIMIT 10
-        """, row.item_code, as_dict=True)
+        availability = _query_bin_availability_for_item(row.item_code, allowed_warehouses)
 
         items.append({
             "item_code": row.item_code,
@@ -225,7 +256,7 @@ def get_bom_for_item(item_code):
             "conversion_factor": flt(row.conversion_factor) or 1,
             "source_warehouse": row.source_warehouse,
             "allow_alternative_item": cint(row.allow_alternative_item),
-            "alternatives": _get_alternative_items_for(row.item_code),
+            "alternatives": _get_alternative_items_for(row.item_code, allowed_warehouses),
             "availability": [
                 {
                     "warehouse": a.warehouse,
@@ -933,11 +964,12 @@ def raise_material_request_for_wo(wo_name, items, request_type, target_warehouse
 # Alternative Items
 # ---------------------------------------------------------------------------
 
-def get_alternative_items(item_code):
+def get_alternative_items(item_code, allowed_warehouses=None):
     """Return Item Alternative records for an item.
 
     Args:
         item_code: original item code
+        allowed_warehouses: optional scope for per-alt availability (``None`` = any warehouse).
 
     Returns:
         list[dict] with alternative_item_code, item_name, stock_uom
@@ -974,16 +1006,16 @@ def get_alternative_items(item_code):
             "item_code": alt_code,
             "item_name": item_info.get("item_name"),
             "stock_uom": item_info.get("stock_uom"),
-            "availability": _get_item_availability(alt_code),
+            "availability": _get_item_availability(alt_code, allowed_warehouses),
         })
 
     return result
 
 
-def _get_alternative_items_for(item_code):
+def _get_alternative_items_for(item_code, allowed_warehouses=None):
     """Internal helper to get alternatives list."""
     try:
-        return get_alternative_items(item_code)
+        return get_alternative_items(item_code, allowed_warehouses)
     except Exception:
         return []
 
@@ -1192,21 +1224,9 @@ def _apply_substitutions_to_stock_entry(wo, stock_entry, item_substitutions=None
         row.allow_alternative_item = 1
 
 
-def _get_item_availability(item_code):
+def _get_item_availability(item_code, allowed_warehouses=None):
     """Return up to 10 positive-stock warehouses for an item."""
-    availability = frappe.db.sql(
-        """
-        SELECT b.warehouse, w.warehouse_name, b.actual_qty
-        FROM `tabBin` b
-        LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
-        WHERE b.item_code = %s AND b.actual_qty > 0
-        ORDER BY b.actual_qty DESC
-        LIMIT 10
-    """,
-        item_code,
-        as_dict=True,
-    )
-
+    availability = _query_bin_availability_for_item(item_code, allowed_warehouses, limit=10)
     return [
         {
             "warehouse": row.warehouse,

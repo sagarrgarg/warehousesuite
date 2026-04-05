@@ -2,7 +2,11 @@ import frappe
 import json
 import re
 from frappe import _
-from frappe.utils import now_datetime, flt
+from frappe.utils import now_datetime, flt, format_datetime
+
+from warehousesuite.warehousesuite.doctype.pow_stock_count.pow_stock_count import (
+    item_row_has_difference,
+)
 
 @frappe.whitelist()
 def get_applicable_pow_profiles():
@@ -1079,24 +1083,32 @@ def create_pow_stock_count_with_items(warehouse, company, session_name, items_da
         if session_name:
             stock_count.pow_session_id = session_name
         
-        # Add items
+        # Add items — variance rows only (counted vs system)
+        appended = 0
         for item in items_data:
-            if item.get('physical_qty') is not None:  # Only add items with physical count
-                stock_count.append("items", {
-                    "item_code": item['item_code'],
-                    "item_name": item['item_name'],
-                    "warehouse": warehouse,
-                    "current_stock": item['current_qty'],
-                    "counted_qty": float(item['physical_qty']),
-                    "uom": item['stock_uom']
-                })
-        
+            if item.get("physical_qty") is None:
+                continue
+            phy = float(item["physical_qty"])
+            if not item_row_has_difference(phy, item.get("current_qty")):
+                continue
+            stock_count.append("items", {
+                "item_code": item["item_code"],
+                "item_name": item["item_name"],
+                "warehouse": warehouse,
+                "current_stock": item["current_qty"],
+                "counted_qty": phy,
+                "uom": item["stock_uom"],
+            })
+            appended += 1
+
         stock_count.insert()
-        
+
         return {
             "status": "success",
             "stock_count": stock_count.name,
-            "message": f"Stock count created with {len(items_data)} items: {stock_count.name}"
+            "message": _("Stock count created with {0} variance line(s): {1}").format(
+                appended, stock_count.name
+            ),
         }
         
     except Exception as e:
@@ -1155,25 +1167,28 @@ def save_pow_stock_count_draft(warehouse, company, session_name, items_data):
             if session_name:
                 stock_count.pow_session_id = session_name
         
-        # Add items
+        # Add items — variance rows only
         for item in items_data:
+            phy = float(item["physical_qty"])
+            if not item_row_has_difference(phy, item.get("current_qty")):
+                continue
             stock_count.append("items", {
-                "item_code": item['item_code'],
-                "item_name": item['item_name'],
+                "item_code": item["item_code"],
+                "item_name": item["item_name"],
                 "warehouse": warehouse,
-                "current_stock": item['current_qty'],
-                "counted_qty": float(item['physical_qty']),
-                "uom": item['stock_uom']
+                "current_stock": item["current_qty"],
+                "counted_qty": phy,
+                "uom": item["stock_uom"],
             })
-        
+
         # Save as draft (don't submit) - this will have docstatus = 0
         stock_count.flags.ignore_draft_validation = True  # Skip draft validation during save
         stock_count.save()
-        
+
         return {
             "status": "success",
             "stock_count": stock_count.name,
-            "message": f"Stock count saved as draft: {stock_count.name}"
+            "message": _("Stock count draft saved: {0}").format(stock_count.name),
         }
         
     except Exception as e:
@@ -1208,32 +1223,47 @@ def create_and_submit_pow_stock_count(warehouse, company, session_name, items_da
         if session_name:
             stock_count.pow_session_id = session_name
         
-        # Add items (all items for complete record)
+        # Variance lines only (counted vs system)
+        diff_rows = []
         for item in items_data:
+            if item.get("physical_qty") is None:
+                continue
+            phy = float(item["physical_qty"])
+            if not item_row_has_difference(phy, item.get("current_qty")):
+                continue
+            diff_rows.append(item)
+
+        if not diff_rows:
+            frappe.throw(_("No stock differences to submit."))
+
+        for item in diff_rows:
             stock_count.append("items", {
-                "item_code": item['item_code'],
-                "item_name": item['item_name'],
+                "item_code": item["item_code"],
+                "item_name": item["item_name"],
                 "warehouse": warehouse,
-                "current_stock": item['current_qty'],
-                "counted_qty": float(item['physical_qty']),
-                "uom": item['stock_uom']
+                "current_stock": item["current_qty"],
+                "counted_qty": float(item["physical_qty"]),
+                "uom": item["stock_uom"],
             })
-        
+
         # Insert and submit the stock count
         stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
         stock_count.insert()
         stock_count.submit()  # This will trigger the on_submit method and set status to "Submitted"
-        
-        # Refresh to get updated status
+
+        # Refresh to get updated status and count_date from on_submit
         stock_count.reload()
-        
-        # Count items with differences for the message
-        items_with_differences = [item for item in items_data if abs(item.get('difference', 0)) > 0.001]
-        
+        count_dt = stock_count.count_date
+
+        time_hint = format_datetime(count_dt) if count_dt else ""
         return {
             "status": "success",
             "stock_count": stock_count.name,
-            "message": f"Stock count submitted with {len(items_with_differences)} items having differences: {stock_count.name}"
+            "count_date": str(count_dt) if count_dt else None,
+            "count_date_formatted": time_hint or None,
+            "message": _(
+                "Stock count {0} submitted. Count recorded at: {1}. Variance line(s): {2}."
+            ).format(stock_count.name, time_hint or _("(time pending)"), len(diff_rows)),
         }
         
     except Exception as e:
@@ -1275,13 +1305,20 @@ def create_stock_match_entry(warehouse, company, session_name, items_count):
         stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
         stock_count.insert()
         stock_count.submit()  # Submit immediately since submitted
-        
+        stock_count.reload()
+        count_dt = stock_count.count_date
+        time_hint = format_datetime(count_dt) if count_dt else ""
+
         return {
             "status": "success",
             "stock_count": stock_count.name,
-            "message": f"Stock verification completed: All {items_count} items match. Entry created: {stock_count.name}"
+            "count_date": str(count_dt) if count_dt else None,
+            "count_date_formatted": time_hint or None,
+            "message": _(
+                "Stock verification recorded as {0}. All {1} items match. Count time: {2}."
+            ).format(stock_count.name, items_count, time_hint or _("(time pending)")),
         }
-        
+
     except Exception as e:
         frappe.logger().error(f"Error in create_stock_match_entry: {str(e)}")
         return {

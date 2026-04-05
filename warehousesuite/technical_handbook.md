@@ -31,6 +31,34 @@ Living reference for modules, integrations, and change discipline. Update this f
 
 ## Change Log (recent)
 
+### 2026-04-05 — Transfer Send: item picker = in-stock only + qty/UOM
+
+- **What changed**: **Transfer Send** always calls `get_items_for_dropdown` with **`show_only_stock_items=1`** for the **source** warehouse (no longer tied to POW Profile “show only stock items”). Empty-stock warehouse shows an inline message. **ItemSearchInput** picker rows show **stock quantity + stock UOM** in a clearer right column (formatted qty). SDK call is skipped until a source warehouse is available.
+- **Why**: Operators should not scroll through items with zero quantity when sending transfers.
+- **Impacted modules**: `frontend` `TransferSendModal.tsx`, `Dashboard.tsx`, `ItemSearchInput.tsx`; backend unchanged (`get_items_for_dropdown` already filters `Bin.actual_qty > 0`).
+- **Migrations**: None; rebuild `/pow` bundle.
+
+### 2026-04-05 — POW React: WO qty suggests BOM batch size
+
+- **What changed**: **New Work Order** — when a BOM loads, **Qty to Manufacture** defaults to **one BOM batch** (`max(0.001, BOM quantity)`). Helper copy states the batch size in FG UOM; **Quick** actions set **1× / 2× / 3× / 5×** batch totals. Clearing the production item resets qty to `1`.
+- **Why**: ERPNext BOM `quantity` is “FG per batch”; aligning the WO default reduces wrong material scaling and typing.
+- **Impacted modules**: `frontend` `CreateWorkOrderModal.tsx`.
+- **Migrations**: None; rebuild `/pow` bundle.
+
+### 2026-04-05 — POW React: qty inputs for WO create / manufacture
+
+- **What changed**: **New Work Order** “Qty to Manufacture” uses a clearable text field (`inputMode="decimal"`); value is normalized on blur (minimum `0.001`). BOM preview and submit use parsed qty only when valid. **Manufacture** modal uses the same pattern (blur restores sensible qty, caps to remaining). Fixed **Create Work Order** BOM load: `get_bom_details` result is now assigned with `setBom(unwrap(res))` (was missing, so BOM preview never populated).
+- **Why**: `type="number"` with `onChange` forcing `Math.max(0.001, …)` prevented clearing the field and snapped empty input to `0.001`.
+- **Impacted modules**: `frontend` `CreateWorkOrderModal.tsx`, `WOManufactureModal.tsx`.
+- **Migrations**: None; rebuild `/pow` bundle.
+
+### 2026-04-05 — POW Stock Count: child table stores variance lines only
+
+- **What changed**: `POW Stock Count` **Items** now persist only rows where counted quantity differs from system stock (tolerance `0.001`, same as POW UI). `validate` recalculates from Bin then prunes non-variance rows. Dashboard APIs (`create_and_submit_pow_stock_count`, `save_pow_stock_count_draft`, `create_pow_stock_count_with_items`) append only variance lines; submit endpoint throws if the payload has no differences. Stock Reconciliation conversion uses the shared `item_row_has_difference` helper. Desk form labels/descriptions updated; “Load items” message notes that matching rows drop on save. React stock count modal sends only variance rows for draft/submit.
+- **Why**: The document should record **exceptions**, not a full warehouse snapshot (Bin is already the full picture).
+- **Impacted modules**: `pow_stock_count.py`, `pow_stock_count.json`, `pow_stock_count.js`, `pow_dashboard.py`, `frontend` `StockCountModal.tsx`.
+- **Migrations**: None (`bench migrate` for DocType label/description if syncing JSON).
+
 ### 2026-04-05 — SO pending report: exact filters, UOM display
 
 - **What changed**: Lines query returns `conversion_factor`. Report filters use **exact** `customer` and `item_code` (picker-backed on React); `sales_order` remains substring. New whitelisted methods `search_so_report_customers`, `search_so_report_items`. UI shows sale qty in **line UOM**, delivered/pending in **stock UOM**, with `1 {sale_uom} = {factor} {stock_uom}` under sale qty when UOMs differ.

@@ -1,6 +1,6 @@
 import {
   ArrowUpFromLine, ClipboardCheck, Search,
-  PackagePlus, Truck, Factory, PackageOpen, ListChecks, Table2,
+  PackagePlus, Truck, PackageOpen, ListChecks, Table2,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -76,15 +76,6 @@ const ACTIONS: ActionDef[] = [
     textClass: 'text-white',
     operationKey: 'delivery_note',
     reactView: false,
-  },
-  {
-    id: 'manufacturing',
-    label: 'Mfg',
-    icon: <Factory className="w-4 h-4" />,
-    color: 'bg-purple-700 hover:bg-purple-800 dark:bg-purple-700 dark:hover:bg-purple-600',
-    textClass: 'text-white',
-    operationKey: 'manufacturing',
-    reactView: true,
   },
   {
     id: 'so-pending-report',

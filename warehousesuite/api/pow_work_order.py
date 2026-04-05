@@ -39,18 +39,33 @@ def get_pending_pow_work_orders(warehouses=None):
 
 
 @frappe.whitelist()
-def get_bom_details(item_code):
+def get_bom_details(item_code, pow_profile=None):
     """Return default BOM for an item with exploded items and stock availability.
+
+    When *pow_profile* is set, stock availability (and alternative availability)
+    is limited to that profile's warehouse scope (same expansion as POW transfers).
 
     Args:
         item_code: item to look up (required)
+        pow_profile: optional POW Profile name for scoped bins
 
     Returns:
         dict with bom_no, items, scrap_items.
     """
     if not item_code:
         frappe.throw(_("item_code is required"))
-    return get_bom_for_item(item_code)
+
+    allowed = None
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import (
+            assert_user_on_pow_profile,
+            get_pow_profile_delivery_warehouse_scope,
+        )
+
+        assert_user_on_pow_profile(pow_profile)
+        allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+
+    return get_bom_for_item(item_code, allowed_warehouses=allowed)
 
 
 @frappe.whitelist()

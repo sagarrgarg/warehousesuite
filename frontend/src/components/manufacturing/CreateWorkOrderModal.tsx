@@ -11,10 +11,31 @@ interface Props {
   open: boolean
   onClose: () => void
   warehouses: ProfileWarehouses
+  /** Required for BOM stock rows scoped to profile warehouses. */
+  powProfileName: string
 }
+
+/** ERPNext work order qty must be > 0; keep field clearable while typing, clamp on blur/submit. */
+const MIN_WO_QTY = 0.001
 
 function shortWh(name: string) {
   return name.replace(/ - [A-Z0-9]+$/i, '')
+}
+
+/** Loose while typing: digits and at most one decimal point; empty allowed. */
+function isValidQtyDraft(s: string): boolean {
+  return s === '' || /^\d*\.?\d*$/.test(s)
+}
+
+function qtyFromInput(s: string): number {
+  const n = parseFloat(s.replace(/,/g, '').trim())
+  return n
+}
+
+/** Stable string for qty field (avoids long float tails from batch multiples). */
+function formatQtyForInput(n: number): string {
+  if (!Number.isFinite(n) || n < MIN_WO_QTY) return String(MIN_WO_QTY)
+  return String(Number(n.toFixed(6)))
 }
 
 function StockBadge({ qty, needed, uom }: { qty: number; needed: number; uom: string }) {
@@ -26,13 +47,13 @@ function StockBadge({ qty, needed, uom }: { qty: number; needed: number; uom: st
   )
 }
 
-export default function CreateWorkOrderModal({ open, onClose, warehouses }: Props) {
+export default function CreateWorkOrderModal({ open, onClose, warehouses, powProfileName }: Props) {
   const company = useCompany()
 
   // Form state
   const [productionItem, setProductionItem] = useState('')
   const [productionItemName, setProductionItemName] = useState('')
-  const [qty, setQty] = useState(1)
+  const [qtyInput, setQtyInput] = useState('1')
   const [wipWarehouse, setWipWarehouse] = useState('')
   const [fgWarehouse, setFgWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
   const today = new Date().toISOString().split('T')[0]
@@ -121,14 +142,17 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     setItemSubstitutions({})
     setBomLoading(true)
     try {
-      const res = await fetchBom({ item_code: itemCode })
-      setBom(unwrap(res) as BOMDetails)
+      const res = await fetchBom({ item_code: itemCode, pow_profile: powProfileName })
+      const data = unwrap(res) as BOMDetails
+      setBom(data)
+      const oneBatch = Math.max(MIN_WO_QTY, data.qty || 1)
+      setQtyInput(formatQtyForInput(oneBatch))
     } catch (err: any) {
       setBomError(err?.message || 'No active BOM found for this item')
     } finally {
       setBomLoading(false)
     }
-  }, [fetchBom, items])
+  }, [fetchBom, items, powProfileName])
 
   const handleClearItem = useCallback(() => {
     setProductionItem('')
@@ -136,7 +160,14 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     setBom(null)
     setBomError(null)
     setItemSubstitutions({})
+    setQtyInput('1')
   }, [])
+
+  const bomBatchQty = bom ? Math.max(MIN_WO_QTY, bom.qty || 1) : null
+
+  const qtyParsed = qtyFromInput(qtyInput)
+  const qtyForCalc = Number.isFinite(qtyParsed) && qtyParsed > 0 ? qtyParsed : 0
+  const qtyOk = Number.isFinite(qtyParsed) && qtyParsed >= MIN_WO_QTY
 
   /**
    * BOM has a base batch size (`bom.qty`), e.g. "this BOM produces 10 units".
@@ -155,7 +186,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     if (!bom) return []
     const bomBaseQty = bom.qty || 1
     return bom.items.map(item => {
-      const needed_qty = (item.stock_qty / bomBaseQty) * qty
+      const needed_qty = (item.stock_qty / bomBaseQty) * qtyForCalc
       const selectedAltCode = itemSubstitutions[item.item_code]
       const selectedAlt = item.alternatives?.find(alt => alt.item_code === selectedAltCode)
       const effectiveItemCode = selectedAlt?.item_code || item.item_code
@@ -184,10 +215,19 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
         effective_availability: effectiveAvailability,
       }
     })
-  }, [bom, qty, itemSubstitutions])
+  }, [bom, qtyForCalc, itemSubstitutions])
 
   // fg_warehouse is required by ERPNext's Work Order doctype
-  const canSubmit = !!(productionItem && bom && qty > 0 && fgWarehouse && company) && !submitting
+  const canSubmit = !!(productionItem && bom && qtyOk && fgWarehouse && company) && !submitting
+
+  const normalizeQtyOnBlur = useCallback(() => {
+    const n = qtyFromInput(qtyInput)
+    if (!Number.isFinite(n) || n < MIN_WO_QTY) {
+      setQtyInput(String(MIN_WO_QTY))
+    } else {
+      setQtyInput(String(n))
+    }
+  }, [qtyInput])
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return
@@ -200,7 +240,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
       const res = await submitWO({
         production_item: productionItem,
         bom_no: bom!.bom_no,
-        qty,
+        qty: qtyParsed,
         company,
         fg_warehouse: fgWarehouse,
         wip_warehouse: wipWarehouse || fgWarehouse,
@@ -220,7 +260,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, productionItem, bom, qty, company, wipWarehouse, fgWarehouse, plannedStartDate, submitWO, itemSubstitutions])
+  }, [canSubmit, productionItem, bom, qtyParsed, company, wipWarehouse, fgWarehouse, plannedStartDate, submitWO, itemSubstitutions])
 
   if (!open) return null
 
@@ -292,17 +332,49 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
                 Qty to Manufacture <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
-                type="number"
-                min={0.001}
-                step={1}
-                value={qty}
-                onChange={e => setQty(Math.max(0.001, parseFloat(e.target.value) || 0))}
+                type="text"
+                inputMode="decimal"
+                autoComplete="off"
+                value={qtyInput}
+                onChange={e => {
+                  const v = e.target.value
+                  if (isValidQtyDraft(v)) setQtyInput(v)
+                }}
+                onBlur={normalizeQtyOnBlur}
+                placeholder="e.g. 10"
                 className="w-full bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-slate-900 dark:text-white text-base px-2.5 py-2 focus:outline-none focus:border-purple-500"
               />
-              {bom && (
-                <p className="text-[10px] text-slate-500 mt-0.5">
-                  = {(qty / (bom.qty || 1)).toFixed(3)}× batch{(qty / (bom.qty || 1)) !== 1 ? 'es' : ''}
-                </p>
+              {bom && bomBatchQty != null && (
+                <div className="mt-1.5 space-y-1">
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
+                    Suggested: <span className="font-bold tabular-nums">{bomBatchQty}</span>{' '}
+                    {bom.stock_uom} per BOM batch (1 full run).
+                  </p>
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[9px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold mr-0.5">
+                      Quick:
+                    </span>
+                    {([1, 2, 3, 5] as const).map(mult => {
+                      const q = Math.max(MIN_WO_QTY, mult * (bom.qty || 1))
+                      return (
+                        <button
+                          key={mult}
+                          type="button"
+                          onClick={() => setQtyInput(formatQtyForInput(q))}
+                          className="text-[10px] font-bold rounded px-2 py-0.5 border border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/80 text-slate-800 dark:text-slate-100 hover:bg-purple-100 dark:hover:bg-purple-900/40 hover:border-purple-400 dark:hover:border-purple-500 transition-colors cursor-pointer touch-manipulation"
+                        >
+                          {mult}× batch ({formatQtyForInput(q)})
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {qtyForCalc > 0 && (
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      = {(qtyForCalc / bomBatchQty).toFixed(3)}× BOM batch
+                      {Math.abs(qtyForCalc / bomBatchQty - 1) > 0.0005 ? 'es' : ''}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
@@ -418,7 +490,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses }: Prop
             <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Raw Materials Required</span>
             {bom && (
               <span className="text-[10px] text-slate-500">
-                — {bom.items.length} item{bom.items.length !== 1 ? 's' : ''}, producing {qty} {bom.stock_uom}
+                — {bom.items.length} item{bom.items.length !== 1 ? 's' : ''}, producing {qtyForCalc > 0 ? qtyForCalc : (qtyInput.trim() || '—')} {bom.stock_uom}
               </span>
             )}
           </div>
