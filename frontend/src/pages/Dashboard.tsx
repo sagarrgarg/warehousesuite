@@ -75,7 +75,8 @@ export default function Dashboard() {
     receives: pendingReceives,
     isLoading: receivesLoading,
     refresh: refreshReceives,
-  } = usePendingPowReceives(allWarehouseNames)
+  } = usePendingPowReceives(selectedProfileName)
+
 
   const {
     workOrders,

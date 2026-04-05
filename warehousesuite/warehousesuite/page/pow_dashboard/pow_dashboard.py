@@ -670,14 +670,18 @@ def _get_warehouses_for_receive_filter(warehouse):
 
 
 @frappe.whitelist()
-def get_transfer_receive_data(default_warehouse=None, warehouses=None):
+def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profile=None):
     """Get transfer receive data filtered by warehouse(s).
 
     Args:
         default_warehouse: Single warehouse (legacy, expands to include children/parent).
         warehouses: JSON list of warehouse names. Each is expanded via
                     ``_get_warehouses_for_receive_filter`` so children/parents are included.
-                    Takes precedence over ``default_warehouse`` when both are provided.
+        pow_profile: POW Profile name. When set, restricts destinations to **target**
+                    warehouses on that profile (plus descendants), asserts the user is on
+                    the profile, and **ignores** ``warehouses`` / ``default_warehouse`` for
+                    filtering so the client cannot widen scope. Use this for the POW
+                    dashboard incoming list.
     """
     try:
         sql_query = """
@@ -711,8 +715,20 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None):
 
         params = []
         wh_list = None
-        if warehouses:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import (
+                assert_user_on_pow_profile,
+                get_pow_profile_target_receive_scope,
+            )
+
+            assert_user_on_pow_profile(pow_profile)
+            wh_list = get_pow_profile_target_receive_scope(pow_profile)
+            wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
+            if not wh_list:
+                return []
+        elif warehouses:
             wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
+
         if wh_list:
             all_dest = []
             for wh in wh_list:

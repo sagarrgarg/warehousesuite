@@ -31,6 +31,13 @@ Living reference for modules, integrations, and change discipline. Update this f
 
 ## Change Log (recent)
 
+### 2026-04-05 — Incoming transfers scoped to POW profile **targets** only
+
+- **What changed**: ``get_transfer_receive_data`` accepts optional ``pow_profile``; when set, the server asserts the user is on that profile and filters destinations using **target** warehouses + descendants only (``get_pow_profile_target_receive_scope``). Client ``warehouses`` / ``default_warehouse`` are ignored when ``pow_profile`` is passed. Dashboard hook ``usePendingPowReceives`` now sends ``pow_profile`` instead of a source∪target list (which expanded parents/children from **sources** and showed unrelated incomings).
+- **Why**: Incoming receive is at **destination**; including source warehouses in the filter widened the IN-clause to company-wide warehouse trees.
+- **Impacted modules**: ``warehousesuite/utils/pow_warehouse_scope.py``, ``pow_dashboard.py``, ``usePendingPowReceives.ts``, ``Dashboard.tsx``. Desk ``TransferReceiveModal`` (single ``default_warehouse``) unchanged.
+- **Migrations**: None.
+
 ### 2026-04-05 — Transfer Send: item picker = in-stock only + qty/UOM
 
 - **What changed**: **Transfer Send** always calls `get_items_for_dropdown` with **`show_only_stock_items=1`** for the **source** warehouse (no longer tied to POW Profile “show only stock items”). Empty-stock warehouse shows an inline message. **ItemSearchInput** picker rows show **stock quantity + stock UOM** in a clearer right column (formatted qty). SDK call is skipped until a source warehouse is available.

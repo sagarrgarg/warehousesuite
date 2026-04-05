@@ -4,14 +4,17 @@ import type { TransferReceiveGroup } from '@/types'
 
 const REFRESH_INTERVAL = 30_000
 
-export function usePendingPowReceives(warehouses: string[]) {
-  const hasWarehouses = warehouses.length > 0
+/**
+ * Incoming in-transit transfers for the dashboard.
+ * Server filters by POW Profile **target** warehouses (+ descendants); do not pass a raw warehouse list.
+ */
+export function usePendingPowReceives(powProfileName: string | null) {
   const { data, mutate, isLoading, error } = useFrappeGetCall<{
     message: TransferReceiveGroup[]
   }>(
     API.getTransferReceiveData,
-    hasWarehouses ? { warehouses: JSON.stringify(warehouses) } : undefined,
-    hasWarehouses ? undefined : null,
+    powProfileName ? { pow_profile: powProfileName } : undefined,
+    powProfileName ? undefined : null,
     { refreshInterval: REFRESH_INTERVAL },
   )
 
