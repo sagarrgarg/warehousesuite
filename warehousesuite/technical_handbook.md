@@ -105,11 +105,11 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `warehousesuite/services/pow_so_pending_report_service.py`, `warehousesuite/api/pow_so_pending_report.py`, `frontend` (`SalesOrderPendingReportModal`, `SoReportAsyncPickers`, `api.ts`, types).
 - **Migrations**: None. Rebuild frontend bundle for `/pow`.
 
-### 2026-04-06 — BOM reads respect Frappe document permissions
+### 2026-04-06 — BOM reads use db.get_value (POW profile is the auth boundary)
 
-- **What changed**: Replaced `frappe.db.get_value("BOM", ...)` and `frappe.db.exists("BOM", ...)` in `pow_work_order_service.py` with `frappe.get_all("BOM", ...)` and `frappe.get_doc("BOM", ...)` which enforce Frappe's role + user permission checks.
-- **Why**: When BOMs are marked confidential (via User Permissions or role restrictions), `db.get_value`/`db.exists` bypass the permission layer and leak BOM existence or data to unauthorized users. `get_all` and `get_doc` respect the full permission chain.
-- **Impacted modules**: `pow_work_order_service.py` (`get_bom_for_item`, `create_pow_work_order`).
+- **What changed**: BOM lookups in `pow_work_order_service.py` use `frappe.db.get_value` and `frappe.db.exists` (permission-bypassing) intentionally. POW users typically do not have BOM DocType read permission — their access is authorized through the POW Profile layer, not DocType permissions.
+- **Why (reverted from `get_all`)**: Switching to `frappe.get_all` caused 500 errors on production because POW user roles lack BOM read permission. Since `get_bom_details` already validates POW profile membership via `assert_user_on_pow_profile`, the BOM lookup is implicitly authorized. Confidential BOM access should be controlled at the Item selection level or the POW Profile operations level, not via BOM DocType permissions.
+- **Impacted modules**: `pow_work_order_service.py`.
 - **Migrations**: None.
 
 ### 2026-04-06 — Server-side data scoping (eliminate client-trusted DB reads)
