@@ -722,6 +722,7 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
         """
 
         params = []
+        profile_scoped = False
         wh_list = None
         if pow_profile:
             from warehousesuite.utils.pow_warehouse_scope import (
@@ -734,18 +735,24 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
             wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
             if not wh_list:
                 return []
+            profile_scoped = True
         elif warehouses:
             wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
 
         if wh_list:
-            all_dest = []
-            for wh in wh_list:
-                all_dest.extend(_get_warehouses_for_receive_filter(wh))
-            all_dest = list(dict.fromkeys(w.strip() for w in all_dest if w and w.strip()))
+            if profile_scoped:
+                all_dest = list(dict.fromkeys(wh_list))
+            else:
+                all_dest = []
+                for wh in wh_list:
+                    all_dest.extend(_get_warehouses_for_receive_filter(wh))
+                all_dest = list(dict.fromkeys(w.strip() for w in all_dest if w and w.strip()))
             if all_dest:
                 placeholders = ", ".join(["%s"] * len(all_dest))
                 sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
                 params = all_dest
+            else:
+                return []
         elif default_warehouse:
             dest_warehouses = _get_warehouses_for_receive_filter(default_warehouse)
             dest_warehouses = [w.strip() for w in dest_warehouses if w and w.strip()]
@@ -873,7 +880,12 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         if pow_profile:
             dest_wh = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
             allowed = get_pow_profile_target_receive_scope(pow_profile)
-            if dest_wh and allowed and dest_wh not in allowed:
+            if not dest_wh:
+                frappe.throw(
+                    _("This transfer has no destination warehouse set. Cannot verify permissions."),
+                    frappe.PermissionError,
+                )
+            if not allowed or dest_wh not in allowed:
                 frappe.throw(
                     _("You are not allowed to receive at warehouse {0} under this profile.").format(dest_wh),
                     frappe.PermissionError,

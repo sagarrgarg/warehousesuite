@@ -52,6 +52,15 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `frontend` `TransferSendModal.tsx`, `Dashboard.tsx`, `ItemSearchInput.tsx`; backend unchanged (`get_items_for_dropdown` already filters `Bin.actual_qty > 0`).
 - **Migrations**: None; rebuild `/pow` bundle.
 
+### 2026-04-06 — Fix: incoming transfer listing/receive leaking across profiles
+
+- **What changed**: Fixed two bugs in the incoming transfer flow:
+  1. **Listing bug** (`get_transfer_receive_data`): When `pow_profile` was set, the code still ran each target warehouse through `_get_warehouses_for_receive_filter()` which adds parent group warehouses. This meant a profile with target `Finished Goods - RKCW` would also match transfers destined to sibling warehouses under the same parent group `Finished Goods`. Fix: when `profile_scoped=True`, use `get_pow_profile_target_receive_scope()` output directly without re-expanding through `_get_warehouses_for_receive_filter`.
+  2. **Receive bug** (`receive_transfer_stock_entry`): The check `if dest_wh and allowed and dest_wh not in allowed` short-circuited when `dest_wh` was None/empty, skipping permission validation entirely. Fix: if `dest_wh` is empty, throw PermissionError; if `allowed` is empty or `dest_wh` not in it, throw PermissionError.
+- **Why**: Users on Profile-A could see and receive incoming transfers destined to Profile-B's warehouses because parent warehouse expansion widened the SQL filter beyond the profile's actual target scope.
+- **Impacted modules**: `pow_dashboard.py` (listing + receive endpoints).
+- **Migrations**: None.
+
 ### 2026-04-06 — Comprehensive POW Profile permission enforcement on all mutation endpoints
 
 - **What changed**: Full security audit and hardening of every `@frappe.whitelist()` mutation endpoint that creates or modifies documents (Stock Entry, Work Order, Material Request, POW Stock Count, Stock Reconciliation). Added `pow_profile` parameter to every mutation path; server now validates user membership on the profile and that all warehouses are within profile scope before proceeding. Reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` added to `pow_warehouse_scope.py`. Debug endpoints (`debug_stock_entry_warehouses`, `fix_stock_entry_warehouses`, `test_pow_stock_concern_creation`) gated to System Manager only. Frontend threads `powProfileName` to every API mutation call.
