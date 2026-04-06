@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2, Check, ShoppingCart, AlertTriangle } from 'lucide-react'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { WODetail, WOShortfallItem } from '@/types'
 import type { ProfileWarehouses } from '@/types'
 
@@ -44,8 +44,8 @@ export default function WORequestMaterialsModal({ open, wo, warehouses, onClose,
         init[item.wo_item_name] = item.shortfall_qty
       }
       setQtyOverrides(init)
-    }).catch(() => {
-      toast.error('Failed to load material shortfall')
+    }).catch((err: unknown) => {
+      toast.error(formatPowFetchError(err, 'Failed to load material shortfall'))
     }).finally(() => setLoadingShortfall(false))
   }, [open, wo.name])
 
@@ -84,12 +84,8 @@ export default function WORequestMaterialsModal({ open, wo, warehouses, onClose,
         setSuccess(result.material_request)
         toast.success(`Material Request ${result.material_request} created`)
       }
-    } catch (err: any) {
-      let msg = err?.message || 'Failed to create Material Request'
-      try {
-        const parsed = JSON.parse(msg)
-        if (Array.isArray(parsed)) msg = parsed.map((m: any) => m.message || m).join('\n')
-      } catch { /* keep raw */ }
+    } catch (err: unknown) {
+      const msg = formatPowFetchError(err, 'Failed to create Material Request')
       setSubmitError(msg)
       toast.error(msg)
     } finally {

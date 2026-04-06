@@ -6,6 +6,7 @@ import PendingReceiveCard from './PendingReceiveCard'
 interface PendingReceivesPanelProps {
   receives: TransferReceiveGroup[]
   isLoading: boolean
+  fetchError?: string | null
   company: string
   onReceived: () => void
   filterEmptyHint?: string
@@ -19,6 +20,7 @@ function shortWarehouse(name: string) {
 export default function PendingReceivesPanel({
   receives,
   isLoading,
+  fetchError,
   company,
   onReceived,
   filterEmptyHint,
@@ -70,6 +72,10 @@ export default function PendingReceivesPanel({
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600" />
+          </div>
+        ) : fetchError ? (
+          <div className="px-3 py-6 text-[11px] text-red-600 dark:text-red-400 whitespace-pre-wrap break-words" role="alert">
+            {fetchError}
           </div>
         ) : pendingReceives.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px] px-4 text-center">

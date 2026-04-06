@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Calendar, User } from 'lucide-react'
-import { API, unwrap, isError } from '@/lib/api'
+import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import type { TransferReceiveGroup, ConcernData } from '@/types'
@@ -20,12 +20,15 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 	const [showReceiveConfirm, setShowReceiveConfirm] = useState(false)
 	const [pendingReceive, setPendingReceive] = useState<{ entry: string; items: TransferReceiveGroup['items'] } | null>(null)
 
-	const { data: transfersData, mutate } = useFrappeGetCall<{ message: TransferReceiveGroup[] }>(
+	const { data: transfersData, mutate, error: transfersFetchError } = useFrappeGetCall<{ message: TransferReceiveGroup[] }>(
 		API.getTransferReceiveData,
 		defaultWarehouse ? { default_warehouse: defaultWarehouse } : undefined,
 		defaultWarehouse ? undefined : null,
 	)
 	const transfers = transfersData?.message ?? []
+	const transfersFetchErrorText = defaultWarehouse && transfersFetchError
+		? formatPowFetchError(transfersFetchError, 'Could not load transfers to receive')
+		: null
 
 	const { call: receiveTransfer } = useFrappePostCall(API.receiveTransfer)
 	const { call: raiseConcern } = useFrappePostCall(API.createConcern)
@@ -59,7 +62,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 			const result = unwrap(res)
 			if (isError(result)) { toast.error(result.message) }
 			else { toast.success(`Received: ${result.stock_entry}`); mutate(); clearQtys(entry) }
-		} catch (err: any) { toast.error(err?.message || 'Receive failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Receive failed')) }
 		finally { setSubmitting(null) }
 	}, [receiveQtys, receiveTransfer, company, mutate])
 
@@ -82,7 +85,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 				setConcern({ ...DEFAULT_CONCERN })
 				mutate()
 			}
-		} catch (err: any) { toast.error(err?.message || 'Failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed')) }
 	}
 
 	if (!open) return null
@@ -102,6 +105,12 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 				</div>
 			</header>
 
+			{transfersFetchErrorText && (
+				<div className="shrink-0 px-3 py-2 bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 text-[11px] text-red-700 dark:text-red-300 whitespace-pre-wrap break-words">
+					{transfersFetchErrorText}
+				</div>
+			)}
+
 			{/* Body */}
 			<div className="flex-1 overflow-y-auto overscroll-contain bg-slate-50">
 				<div className="max-w-5xl mx-auto p-3">
@@ -111,7 +120,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 							<p className="text-xs text-slate-500">Pick your warehouse from the dropdown on the main screen</p>
 						</div>
 					)}
-					{defaultWarehouse && transfers.length === 0 && (
+					{defaultWarehouse && !transfersFetchErrorText && transfers.length === 0 && (
 						<div className="flex flex-col items-center py-16 text-center">
 							<p className="text-sm font-bold text-slate-700 mb-1">All done</p>
 							<p className="text-xs text-slate-500">No transfers waiting to be received</p>

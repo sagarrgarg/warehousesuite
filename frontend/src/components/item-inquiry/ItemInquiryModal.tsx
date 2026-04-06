@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useFrappeGetCall } from 'frappe-react-sdk'
 import { ArrowLeft, Search, Barcode, Ruler, Warehouse, Tag, Users, Printer } from 'lucide-react'
-import { API } from '@/lib/api'
+import { API, formatPowFetchError } from '@/lib/api'
 import PrintLabelsModal from '@/components/print-labels/PrintLabelsModal'
 
 interface ItemInquiryModalProps {
@@ -19,7 +19,7 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 	const [activeTab, setActiveTab] = useState<Tab>('stock')
 	const [showPrintLabels, setShowPrintLabels] = useState(false)
 
-	const { data: inquiryRaw, isLoading } = useFrappeGetCall<{ message: any }>(
+	const { data: inquiryRaw, isLoading, error: inquiryFetchError } = useFrappeGetCall<{ message: any }>(
 		selectedItem
 			? API.getItemInquiryData
 			: undefined as any,
@@ -37,7 +37,7 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 	const apiResponse = inquiryRaw?.message
 	const itemData = apiResponse?.data ?? apiResponse
 
-	const { data: itemsSearch } = useFrappeGetCall<{ message: any[] }>(
+	const { data: itemsSearch, error: itemSearchError } = useFrappeGetCall<{ message: any[] }>(
 		searchTerm.length >= 2
 			? API.getItemsForDropdown
 			: undefined as any,
@@ -55,6 +55,13 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 	const stockInfo = itemData?.stock_info ?? []
 	const attributes = itemData?.attributes ?? []
 	const suppliers = itemData?.suppliers ?? []
+
+	const inquiryErrorText = selectedItem && inquiryFetchError
+		? formatPowFetchError(inquiryFetchError, 'Could not load item details')
+		: null
+	const searchErrorText = searchTerm.length >= 2 && !selectedItem && itemSearchError
+		? formatPowFetchError(itemSearchError, 'Item search failed')
+		: null
 
 	const tabs: { id: Tab; label: string; icon: React.ReactNode; count?: number }[] = [
 		{ id: 'stock', label: 'Stock', icon: <Warehouse className="w-3.5 h-3.5" />, count: stockInfo.length },
@@ -101,6 +108,12 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 					/>
 				</div>
 
+				{searchErrorText && (
+					<p className="mt-1.5 max-w-2xl mx-auto text-[11px] text-red-600 px-1 whitespace-pre-wrap break-words" role="alert">
+						{searchErrorText}
+					</p>
+				)}
+
 				{searchTerm.length >= 2 && !selectedItem && searchResults.length > 0 && (
 					<div className="mt-1.5 max-w-2xl mx-auto bg-white border border-slate-200 rounded overflow-hidden max-h-48 overflow-y-auto">
 						{searchResults.map((item: any) => (
@@ -123,6 +136,12 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 					{isLoading && (
 						<div className="flex items-center justify-center py-16">
 							<div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-600" />
+						</div>
+					)}
+
+					{inquiryErrorText && (
+						<div className="px-4 py-6 text-sm text-red-600 whitespace-pre-wrap break-words" role="alert">
+							{inquiryErrorText}
 						</div>
 					)}
 

@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2, Loader2, Check, Package, ChevronDown, MapPin, AlertTriangle } from 'lucide-react'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
 import type { ProfileWarehouses, DropdownItem } from '@/types'
@@ -179,8 +179,8 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
         setSuccess(result.material_request)
         toast.success(`MR ${result.material_request} created`)
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to create request')
+    } catch (e: unknown) {
+      toast.error(formatPowFetchError(e, 'Failed to create request'))
     } finally {
       setSubmitting(false)
     }

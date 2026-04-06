@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2, Hammer, ShoppingCart, AlertTriangle, RefreshCw, CheckCircle2, Repeat2 } from 'lucide-react'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { WODetail, WORequiredItem } from '@/types'
 
 interface Props {
@@ -175,8 +175,8 @@ export default function WorkOrderDetailModal({
     try {
       const res = await fetchWO({ wo_name: woName, pow_profile: powProfileName ?? undefined })
       setWo(unwrap(res) as WODetail)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load Work Order')
+    } catch (err: unknown) {
+      setError(formatPowFetchError(err, 'Failed to load Work Order'))
     } finally {
       setLoading(false)
     }
@@ -193,8 +193,8 @@ export default function WorkOrderDetailModal({
       })
       toast.success(`Updated ${item.item_code} to ${altCode}`)
       await loadWO()
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to set alternative item')
+    } catch (err: unknown) {
+      toast.error(formatPowFetchError(err, 'Failed to set alternative item'))
     } finally {
       setSwappingRow(null)
     }

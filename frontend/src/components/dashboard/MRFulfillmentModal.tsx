@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, Warehouse, Package, ArrowRight, Loader2, Check, AlertTriangle } from 'lucide-react'
 import { useFulfillmentOptions, useCreateTransferFromMR } from '@/hooks/useMaterialRequestFulfillment'
+import { formatPowFetchError } from '@/lib/api'
 import type { FulfillmentLineOption, MaterialRequestFulfillmentPayload, ProfileWarehouses } from '@/types'
 
 interface MRFulfillmentModalProps {
@@ -33,7 +34,10 @@ export default function MRFulfillmentModal({
   defaultWarehouse,
   powProfileName,
 }: MRFulfillmentModalProps) {
-  const { options, isLoading: optionsLoading } = useFulfillmentOptions(mrName, sourceWarehouses)
+  const { options, isLoading: optionsLoading, error: optionsFetchError } = useFulfillmentOptions(mrName, sourceWarehouses)
+  const optionsFetchErrorText = optionsFetchError
+    ? formatPowFetchError(optionsFetchError, 'Could not load fulfillment options')
+    : null
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('')
   const [lineQtys, setLineQtys] = useState<LineQty[]>([])
   const [success, setSuccess] = useState<string | null>(null)
@@ -162,6 +166,10 @@ export default function MRFulfillmentModal({
       ) : optionsLoading ? (
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <Loader2 className="w-6 h-6 animate-spin text-slate-500 dark:text-slate-400" />
+        </div>
+      ) : optionsFetchErrorText ? (
+        <div className="flex-1 flex items-center justify-center bg-slate-50 px-4">
+          <p className="text-sm text-red-600 text-center whitespace-pre-wrap break-words max-w-md">{optionsFetchErrorText}</p>
         </div>
       ) : (
         <>

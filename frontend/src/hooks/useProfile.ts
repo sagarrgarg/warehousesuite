@@ -16,7 +16,7 @@ export function useProfiles() {
 export function useSelectedProfile() {
 	const [selectedProfileName, setSelectedProfileName] = useAtom(selectedProfileAtom)
 	const [defaultWarehouse, setDefaultWarehouse] = useAtom(defaultWarehouseAtom)
-	const { profiles, isLoading } = useProfiles()
+	const { profiles, isLoading, error: profilesError } = useProfiles()
 
 	useEffect(() => {
 		if (isLoading || profiles.length === 0) return
@@ -35,6 +35,7 @@ export function useSelectedProfile() {
 		setDefaultWarehouse,
 		profiles,
 		isLoading,
+		profilesError,
 	}
 }
 

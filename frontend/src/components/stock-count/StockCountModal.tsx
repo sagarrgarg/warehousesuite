@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, PackageSearch, Check, X, Save, Trash2 } from 'lucide-react'
-import { API, unwrap, isError } from '@/lib/api'
+import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import type { ProfileWarehouses, StockCountWarehouseItem } from '@/types'
@@ -25,18 +25,24 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const [showDeleteDraftConfirm, setShowDeleteDraftConfirm] = useState(false)
 	const [savingDraft, setSavingDraft] = useState(false)
 
-	const { data: itemsData, isLoading } = useFrappeGetCall<{ message: StockCountWarehouseItem[] }>(
+	const { data: itemsData, isLoading, error: itemsFetchError } = useFrappeGetCall<{ message: StockCountWarehouseItem[] }>(
 		API.getWarehouseItemsForStockCount,
 		warehouse ? { warehouse, pow_profile: powProfileName ?? undefined } : undefined,
 		warehouse ? undefined : null,
 	)
 	const items = itemsData?.message ?? []
 
-	const { data: draftCheck, mutate: mutateDraftCheck } = useFrappeGetCall<{ message: { has_draft: boolean; draft_info: { name: string } | null } }>(
+	const { data: draftCheck, mutate: mutateDraftCheck, error: draftCheckError } = useFrappeGetCall<{ message: { has_draft: boolean; draft_info: { name: string } | null } }>(
 		API.checkExistingDraft,
 		warehouse ? { warehouse, session_name: SESSION_NAME } : undefined,
 		warehouse ? undefined : null,
 	)
+	const itemsFetchErrorText = warehouse && itemsFetchError
+		? formatPowFetchError(itemsFetchError, 'Could not load warehouse items')
+		: null
+	const draftCheckErrorText = warehouse && draftCheckError
+		? formatPowFetchError(draftCheckError, 'Could not check draft status')
+		: null
 	const draftInfo = draftCheck?.message?.draft_info
 	const hasDraft = draftCheck?.message?.has_draft === true
 
@@ -118,7 +124,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 				toast.success(base, ts ? { description: `Count saved at: ${ts}` } : undefined)
 				onClose()
 			}
-		} catch (err: any) { toast.error(err?.message || 'Stock count failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Stock count failed')) }
 		finally { setSubmitting(false) }
 	}
 
@@ -131,7 +137,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Failed to save draft')
 			else { toast.success('Draft saved'); mutateDraftCheck() }
-		} catch (err: any) { toast.error(err?.message || 'Failed to save draft') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed to save draft')) }
 		finally { setSavingDraft(false) }
 	}
 
@@ -143,7 +149,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 			setPhysicalQtys({})
 			mutateDraftCheck()
 			toast.success('Draft deleted')
-		} catch (err: any) { toast.error(err?.message || 'Failed to delete draft') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed to delete draft')) }
 	}
 
 	if (!open) return null
@@ -175,6 +181,13 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 						</select>
 					</div>
 
+					{(itemsFetchErrorText || draftCheckErrorText) && (
+						<div className="p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded text-[11px] text-red-700 dark:text-red-300 space-y-1">
+							{itemsFetchErrorText && <p className="whitespace-pre-wrap break-words">{itemsFetchErrorText}</p>}
+							{draftCheckErrorText && <p className="whitespace-pre-wrap break-words">{draftCheckErrorText}</p>}
+						</div>
+					)}
+
 					{hasDraft && draftInfo && (
 						<div className="flex items-center justify-between gap-3 p-2.5 bg-amber-50 border border-amber-200 rounded">
 							<p className="text-xs font-bold text-amber-800">Draft: {draftInfo.name}</p>
@@ -190,7 +203,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 						</div>
 					)}
 
-					{!isLoading && items.length === 0 && (
+					{!isLoading && !itemsFetchErrorText && items.length === 0 && (
 						<div className="flex flex-col items-center py-12 text-center px-4">
 							<PackageSearch className="w-12 h-12 text-slate-700 dark:text-slate-200 mb-3" />
 							<p className="text-sm font-bold text-slate-800 dark:text-slate-100">No items here</p>

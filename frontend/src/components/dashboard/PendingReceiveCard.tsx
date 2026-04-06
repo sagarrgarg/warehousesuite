@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { AlertTriangle, X, ArrowRight } from 'lucide-react'
-import { API, unwrap, isError } from '@/lib/api'
+import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import type { TransferReceiveGroup, ConcernData } from '@/types'
 
 const DEFAULT_CONCERN: ConcernData = { concern_type: 'Quantity Mismatch', concern_description: '', priority: 'Medium', receiver_notes: '' }
@@ -72,7 +72,7 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
       } else {
         toast.success(`Received: ${result.stock_entry}`); setQtys({}); setReceived(true); onReceived()
       }
-    } catch (err: any) { toast.error(err?.message || 'Receive failed') }
+    } catch (err: unknown) { toast.error(formatPowFetchError(err, 'Receive failed')) }
     finally { setSubmitting(false) }
   }, [qtys, pendingItems, group.stock_entry, company, receiveTransfer, onReceived, powProfileName])
 
@@ -83,7 +83,7 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
       const result = unwrap(res)
       if (isError(result)) { toast.error(result.message) }
       else { toast.success('Concern raised'); setConcernFor(false); setConcern({ ...DEFAULT_CONCERN }); onReceived() }
-    } catch (err: any) { toast.error(err?.message || 'Failed') }
+    } catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed')) }
   }
 
   const hasAnyQty = pendingItems.some(i => (qtys[i.ste_detail] ?? 0) > 0)

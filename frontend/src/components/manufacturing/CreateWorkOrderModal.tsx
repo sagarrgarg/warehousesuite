@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2, Check, Factory, AlertTriangle, Package, RefreshCw } from 'lucide-react'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
 import type { ProfileWarehouses, DropdownItem, BOMDetails, BOMItem } from '@/types'
@@ -147,8 +147,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
       setBom(data)
       const oneBatch = Math.max(MIN_WO_QTY, data.qty || 1)
       setQtyInput(formatQtyForInput(oneBatch))
-    } catch (err: any) {
-      setBomError(err?.message || 'No active BOM found for this item')
+    } catch (err: unknown) {
+      setBomError(formatPowFetchError(err, 'No active BOM found for this item'))
     } finally {
       setBomLoading(false)
     }
@@ -253,11 +253,8 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
         setSuccess(result.work_order)
         toast.success(`Work Order ${result.work_order} created`)
       }
-    } catch (err: any) {
-      const raw = err?.message || ''
-      let msg = raw
-      try { msg = JSON.parse(raw)[0]?.message || raw } catch { /* use raw */ }
-      toast.error(msg || 'Failed to create Work Order')
+    } catch (err: unknown) {
+      toast.error(formatPowFetchError(err, 'Failed to create Work Order'))
     } finally {
       setSubmitting(false)
     }

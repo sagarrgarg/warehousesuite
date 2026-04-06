@@ -5,6 +5,8 @@ import WorkOrderCard from './WorkOrderCard'
 interface PendingWorkOrdersPanelProps {
   workOrders: PendingWorkOrder[]
   isLoading: boolean
+  /** Shown when the list API failed (replaces empty state). */
+  fetchError?: string | null
   onOpen: (woName: string) => void
   onCreateNew?: () => void
 }
@@ -12,6 +14,7 @@ interface PendingWorkOrdersPanelProps {
 export default function PendingWorkOrdersPanel({
   workOrders,
   isLoading,
+  fetchError,
   onOpen,
   onCreateNew,
 }: PendingWorkOrdersPanelProps) {
@@ -50,6 +53,10 @@ export default function PendingWorkOrdersPanel({
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 dark:border-slate-600 border-t-slate-400" />
+          </div>
+        ) : fetchError ? (
+          <div className="px-3 py-6 text-[11px] text-red-600 dark:text-red-400 whitespace-pre-wrap break-words" role="alert">
+            {fetchError}
           </div>
         ) : workOrders.length === 0 ? (
           <div className="flex items-center justify-center py-8 text-slate-500 text-[11px]">

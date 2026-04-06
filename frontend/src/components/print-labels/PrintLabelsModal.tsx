@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Download, Printer } from 'lucide-react'
-import { API, unwrap, isError } from '@/lib/api'
+import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useZebraPrint } from '@/hooks/useZebraPrint'
 
 interface PrintLabelsModalProps {
@@ -124,7 +124,7 @@ export default function PrintLabelsModal({ open, onClose, itemCode, itemData }: 
 				toast.success('ZPL downloaded')
 				onClose()
 			}
-		} catch (err: any) { toast.error(err?.message || 'Failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed')) }
 		finally { setGenerating(false) }
 	}
 
@@ -155,7 +155,7 @@ export default function PrintLabelsModal({ open, onClose, itemCode, itemData }: 
 				toast.success(`Sent ${qty} label(s) to printer`)
 				onClose()
 			}
-		} catch (err: any) { toast.error(err?.message || 'Print failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Print failed')) }
 		finally { setGenerating(false) }
 	}
 

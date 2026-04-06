@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Loader2, Check, Hammer, AlertTriangle, RefreshCw } from 'lucide-react'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { WODetail } from '@/types'
 
 interface ManufactureItem {
@@ -149,12 +149,8 @@ export default function WOManufactureModal({ open, wo, onClose, onDone, powProfi
         setSuccess(result.stock_entry)
         toast.success(`Manufacture entry: ${result.stock_entry}`)
       }
-    } catch (err: any) {
-      let msg = err?.message || 'Manufacture failed'
-      try {
-        const parsed = JSON.parse(msg)
-        if (Array.isArray(parsed)) msg = parsed.map((m: any) => m.message || m).join('\n')
-      } catch { /* keep raw */ }
+    } catch (err: unknown) {
+      const msg = formatPowFetchError(err, 'Manufacture failed')
       setSubmitError(msg)
       toast.error(msg)
     } finally {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { ArrowLeft, Loader2, RefreshCw, Table2, Layers, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { SOPendingLineRow, SOPendingSummaryRow, SOPendingPaginated } from '@/types'
 import { SoReportCustomerPicker, SoReportItemPicker } from '@/components/reports/SoReportAsyncPickers'
 
@@ -144,8 +144,7 @@ export default function SalesOrderPendingReportModal({
         }
       } catch (e: unknown) {
         if (!cancelled) {
-          const msg = e instanceof Error ? e.message : 'Failed to load report'
-          toast.error(msg)
+          toast.error(formatPowFetchError(e, 'Failed to load report'))
         }
       } finally {
         if (!cancelled) setLoading(false)

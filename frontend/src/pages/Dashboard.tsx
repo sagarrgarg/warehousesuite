@@ -22,7 +22,7 @@ import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X } from 'lucide-react'
-import { API } from '@/lib/api'
+import { API, formatPowFetchError } from '@/lib/api'
 import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
 import { useTheme } from '@/hooks/useTheme'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
@@ -43,7 +43,7 @@ type MobileTab = 'work-orders' | 'requests' | 'incoming'
 export default function Dashboard() {
   const {
     selectedProfile, selectedProfileName, setSelectedProfileName,
-    profiles, isLoading,
+    profiles, isLoading, profilesError,
   } = useSelectedProfile()
 
   const company = useCompany()
@@ -69,25 +69,44 @@ export default function Dashboard() {
     requests: pendingMRs,
     isLoading: mrsLoading,
     refresh: refreshMRs,
+    error: mrFetchError,
   } = usePendingMaterialRequests(selectedProfileName)
 
   const {
     receives: pendingReceives,
     isLoading: receivesLoading,
     refresh: refreshReceives,
+    error: receivesFetchError,
   } = usePendingPowReceives(selectedProfileName)
 
   const {
     workOrders,
     isLoading: woLoading,
     refresh: refreshWOs,
+    error: woFetchError,
   } = usePendingWorkOrders(selectedProfileName)
 
-  const { data: filterItemsData } = useFrappeGetCall<{ message: DropdownItem[] }>(
-    API.getItemsForDropdown,
-    {},
-  )
+  const {
+    data: filterItemsData,
+    error: filterItemsError,
+  } = useFrappeGetCall<{ message: DropdownItem[] }>(API.getItemsForDropdown, {})
   const filterItems = filterItemsData?.message ?? []
+  const filterItemsErrorText = filterItemsError
+    ? formatPowFetchError(filterItemsError, 'Could not load item list for filter')
+    : null
+
+  const profilesErrorText = profilesError
+    ? formatPowFetchError(profilesError, 'Could not load POW profiles')
+    : null
+  const woErrorText = woFetchError
+    ? formatPowFetchError(woFetchError, 'Could not load work orders')
+    : null
+  const mrErrorText = mrFetchError
+    ? formatPowFetchError(mrFetchError, 'Could not load transfer requests')
+    : null
+  const receivesErrorText = receivesFetchError
+    ? formatPowFetchError(receivesFetchError, 'Could not load incoming transfers')
+    : null
   const [itemFilterCode, setItemFilterCode] = useState<string | null>(null)
   const itemFilterInputRef = useRef<ItemSearchInputHandle>(null)
 
@@ -195,6 +214,17 @@ export default function Dashboard() {
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-300 dark:border-slate-600 border-t-slate-300" />
           <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (profilesErrorText) {
+    return (
+      <div className="flex items-center justify-center min-h-dvh bg-slate-50 dark:bg-slate-900 p-4">
+        <div className="text-center bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/50 rounded-lg p-8 max-w-md w-full">
+          <h2 className="text-sm font-bold text-red-700 dark:text-red-400 mb-2">Could not load POW profiles</h2>
+          <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words">{profilesErrorText}</p>
         </div>
       </div>
     )
@@ -345,6 +375,11 @@ export default function Dashboard() {
 
       {/* Item filter: MRs + incoming */}
       <div className="shrink-0 px-2.5 sm:px-3 py-1.5 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
+        {filterItemsErrorText && (
+          <p className="text-[10px] text-red-600 dark:text-red-400 mb-1.5 font-medium px-0.5 whitespace-pre-wrap break-words" role="alert">
+            Item filter: {filterItemsErrorText}
+          </p>
+        )}
         <div className="flex items-center gap-2 rounded-md border border-slate-200/90 dark:border-slate-600 bg-white/80 dark:bg-slate-800/60 px-2 py-1 sm:py-1.5">
           <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0" title="Filter transfer requests and incoming by line item">
             <Filter className="w-3 h-3 text-slate-500 dark:text-slate-400" />
@@ -379,6 +414,7 @@ export default function Dashboard() {
           <PendingWorkOrdersPanel
             workOrders={workOrders}
             isLoading={woLoading}
+            fetchError={woErrorText}
             onOpen={(woName) => setActiveWOName(woName)}
             onCreateNew={() => setShowCreateWO(true)}
           />
@@ -389,6 +425,7 @@ export default function Dashboard() {
           <PendingMaterialRequestsPanel
             requests={filteredMRs}
             isLoading={mrsLoading}
+            fetchError={mrErrorText}
             onFulfill={(mrName) => setFulfillMR(mrName)}
             onRaise={() => setShowRaiseMR(true)}
             filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
@@ -400,6 +437,7 @@ export default function Dashboard() {
           <PendingReceivesPanel
             receives={filteredReceives}
             isLoading={receivesLoading}
+            fetchError={receivesErrorText}
             company={company}
             onReceived={refreshAll}
             filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}

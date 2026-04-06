@@ -5,6 +5,7 @@ import MaterialRequestCard from './MaterialRequestCard'
 interface PendingMaterialRequestsPanelProps {
   requests: PendingMaterialRequest[]
   isLoading: boolean
+  fetchError?: string | null
   onFulfill: (mrName: string) => void
   onRaise?: () => void
   /** Shown under the empty-state line when filters exclude everything. */
@@ -14,6 +15,7 @@ interface PendingMaterialRequestsPanelProps {
 export default function PendingMaterialRequestsPanel({
   requests,
   isLoading,
+  fetchError,
   onFulfill,
   onRaise,
   filterEmptyHint,
@@ -53,6 +55,10 @@ export default function PendingMaterialRequestsPanel({
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600" />
+          </div>
+        ) : fetchError ? (
+          <div className="px-3 py-6 text-[11px] text-red-600 dark:text-red-400 whitespace-pre-wrap break-words" role="alert">
+            {fetchError}
           </div>
         ) : requests.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-[11px] px-4 text-center">

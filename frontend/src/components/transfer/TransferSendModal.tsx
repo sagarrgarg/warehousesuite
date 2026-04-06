@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2, Truck, ChevronDown, ChevronUp, FileText, Calendar } from 'lucide-react'
-import { API, unwrap, isError } from '@/lib/api'
+import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
@@ -52,7 +52,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
 
-	const { data: itemsData, mutate: refreshItems, isLoading: itemsLoading } = useFrappeGetCall<{ message: DropdownItem[] }>(
+	const { data: itemsData, mutate: refreshItems, isLoading: itemsLoading, error: itemsFetchError } = useFrappeGetCall<{ message: DropdownItem[] }>(
 		API.getItemsForDropdown,
 		sourceWarehouse
 			? { warehouse: sourceWarehouse, show_only_stock_items: 1, pow_profile: powProfileName ?? undefined }
@@ -61,7 +61,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	)
 	const items = itemsData?.message ?? []
 
-	const { data: pendingData } = useFrappeGetCall<{ message: PendingSentTransfer[] }>(
+	const { data: pendingData, error: pendingFetchError } = useFrappeGetCall<{ message: PendingSentTransfer[] }>(
 		API.getPendingSentTransfers,
 		powProfileName
 			? { pow_profile: powProfileName, source_warehouse: sourceWarehouse || undefined }
@@ -69,6 +69,13 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 		powProfileName || sourceWarehouse ? undefined : null,
 	)
 	const pendingTransfers = pendingData?.message ?? []
+
+	const itemsFetchErrorText = sourceWarehouse && itemsFetchError
+		? formatPowFetchError(itemsFetchError, 'Could not load items for this warehouse')
+		: null
+	const pendingFetchErrorText = (powProfileName || sourceWarehouse) && pendingFetchError
+		? formatPowFetchError(pendingFetchError, 'Could not load pending transfers')
+		: null
 
 	const { call: createTransfer } = useFrappePostCall(API.createTransfer)
 
@@ -121,7 +128,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Transfer failed')
 			else { toast.success(`Transfer created: ${result.stock_entry}`); onClose() }
-		} catch (err: any) { toast.error(err?.message || 'Transfer failed') }
+		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Transfer failed')) }
 		finally { setSubmitting(false); setShowOverstockConfirm(false); setOverstockItems([]) }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks, powProfileName])
@@ -162,6 +169,13 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 					</div>
 				</div>
 			</header>
+
+			{(itemsFetchErrorText || pendingFetchErrorText) && (
+				<div className="shrink-0 px-3 py-2 bg-red-50 dark:bg-red-950/40 border-b border-red-200 dark:border-red-900/50 text-[11px] text-red-700 dark:text-red-300 space-y-1">
+					{itemsFetchErrorText && <p className="whitespace-pre-wrap break-words">{itemsFetchErrorText}</p>}
+					{pendingFetchErrorText && <p className="whitespace-pre-wrap break-words">{pendingFetchErrorText}</p>}
+				</div>
+			)}
 
 			{/* Body */}
 			<div className="flex-1 overflow-y-auto overscroll-contain bg-slate-50">

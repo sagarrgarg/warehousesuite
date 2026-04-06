@@ -68,3 +68,147 @@ export function unwrap<T = any>(res: any): T {
 export function isError(result: any): boolean {
 	return result?.status === 'error'
 }
+
+/**
+ * Fallback messages inserted by frappe-react-sdk when the server body omits
+ * `message`. See node_modules/frappe-react-sdk/dist/*.js (search "There was an error").
+ */
+const GENERIC_FRAPPE_SDK_MESSAGES = new Set([
+	'There was an error.',
+	'There was an error while fetching the document.',
+	'There was an error while fetching the documents.',
+	'There was an error while creating the document.',
+	'There was an error while updating the document.',
+	'There was an error while deleting the document.',
+	'There was an error while getting the count.',
+	'There was an error while renaming the document.',
+	'There was an error while getting the value.',
+	'There was an error while setting the value.',
+	'There was an error while getting the value of single doctype.',
+	'There was an error while submitting the document.',
+	'There was an error while cancelling the document.',
+	'There was an error while uploading the file.',
+	'There was an error while logging in',
+	'There was an error while fetching the logged in user',
+	'There was an error while logging out',
+	'There was an error sending password reset email.',
+])
+
+export function isGenericFrappeSdkMessage(msg: string): boolean {
+	return GENERIC_FRAPPE_SDK_MESSAGES.has(String(msg).trim())
+}
+
+function parseFrappeServerMessages(raw: unknown): string {
+	if (typeof raw !== 'string' || !raw.trim()) return ''
+	try {
+		const outer = JSON.parse(raw)
+		if (!Array.isArray(outer)) return ''
+		const parts: string[] = []
+		for (const item of outer) {
+			if (typeof item !== 'string') continue
+			try {
+				const inner = JSON.parse(item) as { message?: string }
+				if (inner?.message) parts.push(String(inner.message))
+			} catch {
+				parts.push(item)
+			}
+		}
+		return parts.filter(Boolean).join(' ').trim()
+	} catch {
+		return ''
+	}
+}
+
+/** Pull a short user-facing line from a Frappe Python traceback string. */
+function extractMessageFromFrappeException(exception: string): string {
+	if (!exception?.trim()) return ''
+	const lines = exception.split('\n').map(l => l.trimEnd())
+	for (let i = lines.length - 1; i >= 0; i--) {
+		const line = lines[i].trim()
+		if (!line || /^File\s/.test(line) || line === 'Traceback (most recent call last):') continue
+		const m = line.match(/(?:^|[\w.]*\.)?(\w*(?:Error|Exception)):\s*(.+)$/)
+		if (m?.[2]) {
+			const body = m[2].trim()
+			if (body && body.length < 2000) return body
+		}
+	}
+	const last = lines[lines.length - 1]?.trim()
+	if (last && !/^File\s/.test(last) && last.length < 2000) return last
+	return ''
+}
+
+/**
+ * Human-readable text for failures from frappe-react-sdk / Axios (GET/POST calls).
+ * Prefer server `_server_messages`, then non-generic `message`, then `exception` traceback.
+ */
+export function formatPowFetchError(err: unknown, fallback = 'Request failed'): string {
+	if (err == null) return fallback
+	if (typeof err === 'string') {
+		const t = err.trim()
+		return t && !isGenericFrappeSdkMessage(t) ? t : fallback
+	}
+
+	const any = err as Record<string, unknown>
+	const serverMsg = parseFrappeServerMessages(any._server_messages)
+	if (serverMsg) return serverMsg
+
+	let msg = ''
+	if (typeof any.message === 'string') msg = any.message.trim()
+	else if (any.message != null && typeof any.message === 'object') {
+		const inner = (any.message as Record<string, unknown>).message
+		if (typeof inner === 'string') msg = inner.trim()
+	}
+
+	/** Frappe sometimes puts `_server_messages` payload only in `message` as a JSON array string. */
+	if (msg.startsWith('[')) {
+		const fromArr = parseFrappeServerMessages(msg)
+		if (fromArr) return fromArr
+		try {
+			const parsed = JSON.parse(msg) as unknown[]
+			if (Array.isArray(parsed)) {
+				const parts = parsed.map((row: unknown) => {
+					if (typeof row === 'string') {
+						try {
+							return String((JSON.parse(row) as { message?: string }).message ?? row)
+						} catch {
+							return row
+						}
+					}
+					if (row && typeof row === 'object' && 'message' in row) {
+						return String((row as { message: unknown }).message)
+					}
+					return String(row)
+				})
+				const joined = parts.filter(Boolean).join('\n').trim()
+				if (joined) return joined
+			}
+		} catch {
+			/* not JSON */
+		}
+	}
+
+	if (msg && !isGenericFrappeSdkMessage(msg)) return msg
+
+	const exception = typeof any.exception === 'string' ? any.exception : ''
+	const fromExc = extractMessageFromFrappeException(exception)
+	if (fromExc) return fromExc
+
+	const excType = typeof any.exc_type === 'string' ? any.exc_type.trim() : ''
+	if (excType) {
+		return excType
+	}
+
+	if (msg) return msg
+
+	if (err instanceof Error && err.message) {
+		return formatPowFetchError({ ...any, message: err.message }, fallback)
+	}
+
+	const httpStatus = typeof any.httpStatus === 'number' ? any.httpStatus : null
+	const httpStatusText = typeof any.httpStatusText === 'string' ? any.httpStatusText.trim() : ''
+	if (httpStatus != null) {
+		return `${fallback} (HTTP ${httpStatus}${httpStatusText ? ` ${httpStatusText}` : ''})`
+	}
+
+	return fallback
+}

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
-import { API, unwrap } from '@/lib/api'
+import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { FulfillmentLineOption, MaterialRequestFulfillmentPayload } from '@/types'
 
 export function useFulfillmentOptions(mrName: string | null, profileWarehouses: string[] | null) {
@@ -62,20 +62,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
         }
         return result
       } catch (err: unknown) {
-        const msg =
-          (err as { message?: string })?.message
-          || (err as { _server_messages?: string })?._server_messages
-          || 'Transfer failed. Please try again.'
-        let parsed = msg
-        try {
-          const arr = JSON.parse(msg)
-          if (Array.isArray(arr)) {
-            parsed = arr.map((m: string) => {
-              try { return JSON.parse(m)?.message || m } catch { return m }
-            }).join('\n')
-          }
-        } catch { /* not JSON */ }
-        setSubmitError(parsed)
+        setSubmitError(formatPowFetchError(err, 'Transfer failed. Please try again.'))
         return null
       } finally {
         setIsSubmitting(false)
