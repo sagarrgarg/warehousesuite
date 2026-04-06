@@ -105,7 +105,15 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `warehousesuite/services/pow_so_pending_report_service.py`, `warehousesuite/api/pow_so_pending_report.py`, `frontend` (`SalesOrderPendingReportModal`, `SoReportAsyncPickers`, `api.ts`, types).
 - **Migrations**: None. Rebuild frontend bundle for `/pow`.
 
-### 2026-04-06 — BOM reads respect Frappe document permissions
+### 2026-04-06 — BOM reads respect confidential_app permission hooks
+
+- **What changed**: All `frappe.get_all("BOM", ...)` calls replaced with `frappe.get_list("BOM", ...)`. Added explicit `frappe.has_permission("BOM", "read", bom_name)` checks before every `frappe.get_doc("BOM", ...)`.
+- **Why**: `frappe.get_all` sets `ignore_permissions=True` internally, which completely bypasses the confidential_app's `permission_query_conditions` hook. This caused all 7 confidential BOMs to leak into POW dropdown listings. `frappe.get_doc` from Python also does NOT trigger `has_permission` hooks — only the API layer does. Both paths had to be fixed.
+- **Root cause**: `frappe.get_all` ≠ `frappe.get_list`. The former is admin-level (no permission checks), the latter respects `permission_query_conditions` and user permissions.
+- **Impacted files**: `pow_dashboard.py` (`get_available_boms`, `get_bom_items`), `pow_work_order_service.py` (`get_bom_for_item`, `create_pow_work_order`).
+- **Migrations**: None.
+
+### 2026-04-06 — BOM reads respect Frappe document permissions (initial fix)
 
 - **What changed**: Replaced `frappe.db.get_value("BOM", ...)` and `frappe.db.exists("BOM", ...)` in `pow_work_order_service.py` with `frappe.get_all("BOM", ...)` and `frappe.get_doc("BOM", ...)` which enforce Frappe's role + user permission checks.
 - **Why**: When BOMs are marked confidential (via User Permissions or role restrictions), `db.get_value`/`db.exists` bypass the permission layer and leak BOM existence or data to unauthorized users. `get_all` and `get_doc` respect the full permission chain.

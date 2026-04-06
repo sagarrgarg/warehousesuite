@@ -58,6 +58,8 @@ Every **mutation and read** endpoint must validate the user's POW Profile member
 - Client-side-only enforcement for stock or permission rules (always mirror on server).
 - Trusting client-supplied warehouse names or profile parameters without server-side validation against `pow_warehouse_scope` — the frontend provides UX convenience; the server enforces authorization.
 - Returning global stock/bin data (across all warehouses) from `@frappe.whitelist()` endpoints — every Bin query must be scoped to the user's profile warehouses. Never expose `valuation_rate` to POW users.
+- Using `frappe.get_all` for permission-sensitive DocTypes (BOM, Stock Entry, Work Order) — `get_all` sets `ignore_permissions=True` and bypasses `permission_query_conditions` hooks. Always use `frappe.get_list` for these DocTypes.
+- Calling `frappe.get_doc(doctype, name)` without an explicit `frappe.has_permission` check when the name comes from user input — `get_doc` from Python does NOT trigger `has_permission` hooks. The hooks only fire through the API layer or explicit calls.
 - One-off `frappe.db.sql` for business logic when `get_doc` / `get_value` suffices—raw SQL is for reporting or proven hot paths only.
 - “Generic workflow engine” abstractions before a second real workflow proves the shape.
 - Storing third-party API keys in DocType fields without secrets handling.

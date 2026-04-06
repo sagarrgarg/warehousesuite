@@ -227,16 +227,19 @@ def get_bom_for_item(item_code, allowed_warehouses=None):
     Returns:
         dict with bom_no, item_name, items (list), scrap_items (list)
     """
-    boms = frappe.get_all(
+    boms = frappe.get_list(
         "BOM",
         filters={"item": item_code, "is_default": 1, "is_active": 1, "docstatus": 1},
         fields=["name"],
-        limit=1,
+        limit_page_length=1,
     )
     if not boms:
         frappe.throw(_("No active default BOM found for {0}").format(item_code))
 
-    bom = frappe.get_doc("BOM", boms[0].name)
+    bom_name = boms[0].name
+    if not frappe.has_permission("BOM", "read", bom_name):
+        frappe.throw(_("Not permitted to access BOM {0}").format(bom_name), frappe.PermissionError)
+    bom = frappe.get_doc("BOM", bom_name)
     item_name = frappe.db.get_value("Item", item_code, "item_name") or item_code
 
     items = []
@@ -347,7 +350,7 @@ def create_work_order(
     if not frappe.db.exists("Item", production_item):
         frappe.throw(_("Item {0} does not exist").format(production_item))
 
-    if not frappe.get_all("BOM", filters={"name": bom_no, "item": production_item, "docstatus": 1}, limit=1):
+    if not frappe.get_list("BOM", filters={"name": bom_no, "item": production_item, "docstatus": 1}, limit_page_length=1):
         frappe.throw(_("BOM {0} is not valid or not accessible for {1}").format(bom_no, production_item))
 
     wo = frappe.new_doc("Work Order")

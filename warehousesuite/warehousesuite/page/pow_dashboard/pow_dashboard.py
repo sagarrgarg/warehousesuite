@@ -2263,13 +2263,14 @@ def generate_zpl_label(item, barcode_data, uom_conversions, quantity, selected_u
 def get_available_boms():
     """Get available BOMs for Material Request"""
     try:
-        boms = frappe.get_all("BOM", 
+        boms = frappe.get_list("BOM",
             filters={
                 "is_active": 1,
                 "is_default": 1
             },
             fields=["name", "item", "item_name"],
-            order_by="item_name"
+            order_by="item_name",
+            limit_page_length=0,
         )
         
         return boms
@@ -2280,8 +2281,10 @@ def get_available_boms():
 
 @frappe.whitelist()
 def get_bom_items(bom_name, qty_to_produce=1):
-    """Get BOM items for Material Request"""
+    """Get BOM items for Material Request."""
     try:
+        if not frappe.has_permission("BOM", "read", bom_name):
+            frappe.throw(_("Not permitted to access BOM {0}").format(bom_name), frappe.PermissionError)
         bom = frappe.get_doc("BOM", bom_name)
         items = []
         
