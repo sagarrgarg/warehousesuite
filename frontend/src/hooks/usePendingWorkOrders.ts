@@ -4,9 +4,9 @@ import type { PendingWorkOrder } from '@/types'
 
 const REFRESH_INTERVAL = 30_000
 
-export function usePendingWorkOrders(warehouses: string[] | null) {
-  const params = warehouses?.length
-    ? { warehouses: JSON.stringify(warehouses) }
+export function usePendingWorkOrders(powProfileName: string | null) {
+  const params = powProfileName
+    ? { pow_profile: powProfileName }
     : undefined
 
   const { data, mutate, isLoading, error } = useFrappeGetCall<{
@@ -14,7 +14,7 @@ export function usePendingWorkOrders(warehouses: string[] | null) {
   }>(
     API.getPendingWorkOrders,
     params,
-    undefined,
+    powProfileName ? undefined : null,
     { refreshInterval: REFRESH_INTERVAL },
   )
 

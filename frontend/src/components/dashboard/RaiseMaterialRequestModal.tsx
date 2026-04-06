@@ -107,7 +107,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
 
     setLoadingAvail(lineId)
     try {
-      const res = await fetchAvailability({ item_code: itemCode })
+      const res = await fetchAvailability({ item_code: itemCode, pow_profile: powProfileName ?? undefined })
       const data = unwrap(res) as ItemAvailability
       updateLine(lineId, {
         stock_uom: data.stock_uom || item.stock_uom,

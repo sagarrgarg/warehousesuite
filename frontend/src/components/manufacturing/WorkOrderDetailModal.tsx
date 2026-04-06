@@ -11,6 +11,7 @@ interface Props {
   onClose: () => void
   onManufacture: (wo: WODetail) => void
   onRequestMaterials: (wo: WODetail) => void
+  powProfileName?: string | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -157,6 +158,7 @@ export default function WorkOrderDetailModal({
   onClose,
   onManufacture,
   onRequestMaterials,
+  powProfileName,
 }: Props) {
   const [wo, setWo] = useState<WODetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -171,7 +173,7 @@ export default function WorkOrderDetailModal({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetchWO({ wo_name: woName })
+      const res = await fetchWO({ wo_name: woName, pow_profile: powProfileName ?? undefined })
       setWo(unwrap(res) as WODetail)
     } catch (err: any) {
       setError(err?.message || 'Failed to load Work Order')

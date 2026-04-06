@@ -50,13 +50,14 @@ When listing or receiving incoming transfers, the filter is `custom_for_which_wa
 
 ## Security Architecture — POW Profile as authorization boundary
 
-Every mutation endpoint (create Stock Entry, Work Order, Material Request, Stock Count) must validate the user's POW Profile membership **and** that all warehouses in the request fall within the profile's scope before proceeding. `ignore_permissions=True` on `insert`/`submit` is acceptable only **after** POW-level scope checks pass. The reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` in `pow_warehouse_scope.py` enforce this pattern consistently. Debug/admin endpoints must be gated to System Manager.
+Every **mutation and read** endpoint must validate the user's POW Profile membership **and** that all warehouses in the request fall within the profile's scope before proceeding. Read endpoints must derive warehouse scope from `pow_profile` on the server rather than trusting client-supplied warehouse lists. `ignore_permissions=True` on `insert`/`submit` is acceptable only **after** POW-level scope checks pass. The reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` in `pow_warehouse_scope.py` enforce this pattern consistently. Debug/admin endpoints must be gated to System Manager.
 
 ## Anti-patterns
 
 - Duplicating Item/Warehouse master data in custom tables without a hard dependency on core.
 - Client-side-only enforcement for stock or permission rules (always mirror on server).
 - Trusting client-supplied warehouse names or profile parameters without server-side validation against `pow_warehouse_scope` — the frontend provides UX convenience; the server enforces authorization.
+- Returning global stock/bin data (across all warehouses) from `@frappe.whitelist()` endpoints — every Bin query must be scoped to the user's profile warehouses. Never expose `valuation_rate` to POW users.
 - One-off `frappe.db.sql` for business logic when `get_doc` / `get_value` suffices—raw SQL is for reporting or proven hot paths only.
 - “Generic workflow engine” abstractions before a second real workflow proves the shape.
 - Storing third-party API keys in DocType fields without secrets handling.

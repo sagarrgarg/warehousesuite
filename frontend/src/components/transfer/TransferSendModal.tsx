@@ -52,11 +52,10 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
 
-	/** Transfer send: only items with actual_qty &gt; 0 in the source warehouse; API returns stock_qty + stock_uom. */
 	const { data: itemsData, mutate: refreshItems, isLoading: itemsLoading } = useFrappeGetCall<{ message: DropdownItem[] }>(
 		API.getItemsForDropdown,
 		sourceWarehouse
-			? { warehouse: sourceWarehouse, show_only_stock_items: 1 }
+			? { warehouse: sourceWarehouse, show_only_stock_items: 1, pow_profile: powProfileName ?? undefined }
 			: undefined,
 		sourceWarehouse ? undefined : null,
 	)
@@ -64,8 +63,10 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 
 	const { data: pendingData } = useFrappeGetCall<{ message: PendingSentTransfer[] }>(
 		API.getPendingSentTransfers,
-		sourceWarehouse ? { source_warehouse: sourceWarehouse } : undefined,
-		sourceWarehouse ? undefined : null,
+		powProfileName
+			? { pow_profile: powProfileName, source_warehouse: sourceWarehouse || undefined }
+			: sourceWarehouse ? { source_warehouse: sourceWarehouse } : undefined,
+		powProfileName || sourceWarehouse ? undefined : null,
 	)
 	const pendingTransfers = pendingData?.message ?? []
 

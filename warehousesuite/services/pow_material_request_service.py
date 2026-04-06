@@ -187,13 +187,9 @@ def _eligible_warehouses_for_item(item_code, preferred_warehouse, profile_wareho
         warehouse_filter = profile_warehouses
 
     if not warehouse_filter:
-        bins = frappe.get_all(
-            "Bin",
-            filters={"item_code": item_code, "actual_qty": [">", 0]},
-            fields=["warehouse", "actual_qty"],
-            order_by="actual_qty desc",
-        )
-    else:
+        return []
+
+    if warehouse_filter:
         bins = frappe.get_all(
             "Bin",
             filters={

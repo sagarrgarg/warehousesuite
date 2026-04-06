@@ -25,15 +25,22 @@ from warehousesuite.services.pow_work_order_service import (
 
 
 @frappe.whitelist()
-def get_pending_pow_work_orders(warehouses=None):
+def get_pending_pow_work_orders(warehouses=None, pow_profile=None):
     """List open Work Orders scoped to the user's profile warehouses.
 
     Args:
-        warehouses: JSON array of warehouse names from POW profile.
+        warehouses: JSON array of warehouse names from POW profile (legacy).
+        pow_profile: POW Profile name — used to derive warehouse scope
+                     server-side, ignoring client ``warehouses`` when set.
 
     Returns:
         list of WO summary dicts.
     """
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        return get_pending_work_orders(warehouses=allowed or [])
+
     wh_list = _parse_list(warehouses)
     return get_pending_work_orders(warehouses=wh_list or None)
 
@@ -145,18 +152,25 @@ def create_pow_work_order(
 
 
 @frappe.whitelist()
-def get_wo_materials(wo_name):
+def get_wo_materials(wo_name, pow_profile=None):
     """Return Work Order required items with stock status and alternatives.
 
     Args:
         wo_name: Work Order name (required)
+        pow_profile: POW Profile for scoping warehouse bin reads.
 
     Returns:
         dict with WO details and required_items list.
     """
     if not wo_name:
         frappe.throw(_("wo_name is required"))
-    return get_work_order_materials(wo_name)
+
+    allowed = None
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+        _p, allowed = validate_pow_profile_access(pow_profile)
+
+    return get_work_order_materials(wo_name, allowed_warehouses=allowed)
 
 
 @frappe.whitelist()

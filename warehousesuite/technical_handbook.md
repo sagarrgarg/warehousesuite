@@ -105,6 +105,28 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `warehousesuite/services/pow_so_pending_report_service.py`, `warehousesuite/api/pow_so_pending_report.py`, `frontend` (`SalesOrderPendingReportModal`, `SoReportAsyncPickers`, `api.ts`, types).
 - **Migrations**: None. Rebuild frontend bundle for `/pow`.
 
+### 2026-04-06 — Server-side data scoping (eliminate client-trusted DB reads)
+
+- **What changed**: Comprehensive hardening of every `@frappe.whitelist()` read endpoint so data is scoped via `pow_profile` on the server, not via client-supplied warehouse lists.
+- **Endpoints hardened**:
+  - `get_item_availability` — accepts `pow_profile`, limits `Bin` SQL to profile warehouse scope.
+  - `get_item_inquiry_data` — accepts `pow_profile`, derives `allowed_warehouses` server-side; with no profile, returns no bins (empty `["in", []]`). Removed `valuation_rate` from Bin fields.
+  - `get_item_stock_info` / `get_stock_info_in_uom` — validate `warehouse` in profile scope.
+  - `get_items_for_dropdown` — validate `warehouse` in profile scope when `pow_profile` set.
+  - `get_warehouse_items_for_stock_count` — validate `warehouse` in profile scope.
+  - `get_pending_sent_transfers` — accept `pow_profile`, derive warehouse list server-side.
+  - `get_pending_pow_work_orders` (API) — accept `pow_profile`, derive warehouse scope.
+  - `get_pending_transfer_material_requests` (API) — accept `pow_profile`, derive warehouse scope.
+  - `get_wo_materials` (API) — accept `pow_profile`, pass `allowed_warehouses` to service.
+  - `close_pow_session` — added ownership check (only session owner or System Manager can close).
+- **Service layer changes**:
+  - `pow_work_order_service.get_work_order_materials` — accepts `allowed_warehouses`, scopes warehouse bin SQL to profile warehouses.
+  - `pow_material_request_service._eligible_warehouses_for_item` — returns empty list (instead of all-warehouse global scan) when no scope provided.
+- **Frontend changes**: Hooks (`usePendingWorkOrders`, `usePendingMaterialRequests`, `useSentBadge`, `useReceiveBadge`) now send `pow_profile` instead of client-side warehouse arrays. Components (`WorkOrderDetailModal`, `ItemInquiryModal`, `StockCountModal`, `TransferSendModal`, `RaiseMaterialRequestModal`) thread `pow_profile` to read endpoints.
+- **Why**: Prevent data leakage — client-supplied warehouse lists can be tampered with. The server must derive scope from the authenticated user's POW Profile.
+- **Impacted modules**: `pow_dashboard.py`, `pow_work_order.py`, `pow_material_request.py`, `pow_work_order_service.py`, `pow_material_request_service.py`, all React frontend hooks/components.
+- **Migrations**: None. Clear cache recommended.
+
 ### 2026-04-03 — Website `/pow` route for React shell
 
 - **What changed**: Registered `website_route_rules` for `/pow` → `www/pow` (Jinja + `pow.py` context). Guests redirect to login with `redirect-to=/pow`. Page loads built React assets under `/assets/warehousesuite/pow_dashboard_react/`.

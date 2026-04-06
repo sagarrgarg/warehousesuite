@@ -63,13 +63,13 @@ export default function Dashboard() {
     [warehouses],
   )
 
-  const { count: sentBadge, refresh: refreshSent } = useSentBadge(sourceWarehouseNames)
+  const { count: sentBadge, refresh: refreshSent } = useSentBadge(selectedProfileName)
 
   const {
     requests: pendingMRs,
     isLoading: mrsLoading,
     refresh: refreshMRs,
-  } = usePendingMaterialRequests(sourceWarehouseNames.length > 0 ? sourceWarehouseNames : null)
+  } = usePendingMaterialRequests(selectedProfileName)
 
   const {
     receives: pendingReceives,
@@ -77,12 +77,11 @@ export default function Dashboard() {
     refresh: refreshReceives,
   } = usePendingPowReceives(selectedProfileName)
 
-
   const {
     workOrders,
     isLoading: woLoading,
     refresh: refreshWOs,
-  } = usePendingWorkOrders(allWarehouseNames.length > 0 ? allWarehouseNames : null)
+  } = usePendingWorkOrders(selectedProfileName)
 
   const { data: filterItemsData } = useFrappeGetCall<{ message: DropdownItem[] }>(
     API.getItemsForDropdown,
@@ -473,7 +472,7 @@ export default function Dashboard() {
         <StockCountModal open onClose={closeModal} warehouses={warehouses} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'item-inquiry' && warehouses && (
-        <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} />
+        <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'so-pending-report' && selectedProfileName && (
         <SalesOrderPendingReportModal
@@ -499,6 +498,7 @@ export default function Dashboard() {
           onClose={closeWODetail}
           onManufacture={(wo) => { setWoForAction(wo); setWoDetailAction('manufacture') }}
           onRequestMaterials={(wo) => { setWoForAction(wo); setWoDetailAction('request') }}
+          powProfileName={selectedProfileName}
         />
       )}
       {woDetailAction === 'manufacture' && woForAction && (

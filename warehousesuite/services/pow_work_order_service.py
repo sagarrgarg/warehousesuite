@@ -450,11 +450,12 @@ def set_work_order_item_substitute(wo_name, wo_item_name, substitute_item_code):
 # Work Order Materials Detail
 # ---------------------------------------------------------------------------
 
-def get_work_order_materials(wo_name):
+def get_work_order_materials(wo_name, allowed_warehouses=None):
     """Return required items with stock availability and alternative item options.
 
     Args:
         wo_name: Work Order name
+        allowed_warehouses: list of warehouse names to restrict bin reads to.
 
     Returns:
         dict with wo details + items list
@@ -491,15 +492,19 @@ def get_work_order_materials(wo_name):
         if needed_consume > 0:
             item_fill_ratios.append(min(1.0, wip_avail / needed_consume))
 
-        # Per-warehouse breakdown for the transfer modal (all warehouses with stock)
-        warehouse_bins = frappe.db.sql("""
+        wh_sql = """
             SELECT b.warehouse, w.warehouse_name, b.actual_qty
             FROM `tabBin` b
             LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
             WHERE b.item_code = %s AND b.actual_qty > 0
-            ORDER BY b.actual_qty DESC
-            LIMIT 10
-        """, item.item_code, as_dict=True)
+        """
+        wh_params = [item.item_code]
+        if allowed_warehouses:
+            placeholders = ", ".join(["%s"] * len(allowed_warehouses))
+            wh_sql += f" AND b.warehouse IN ({placeholders})"
+            wh_params.extend(allowed_warehouses)
+        wh_sql += " ORDER BY b.actual_qty DESC LIMIT 10"
+        warehouse_bins = frappe.db.sql(wh_sql, wh_params, as_dict=True)
 
         alternatives = _get_alternative_items_for(item.item_code)
 

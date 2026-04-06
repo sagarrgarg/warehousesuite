@@ -78,7 +78,10 @@ def update_session_default_warehouse(session_name, default_warehouse):
 def close_pow_session(session_name):
     """Close the current POW session"""
     try:
-        # Check if session is already closed
+        assigned = frappe.db.get_value("POW Session", session_name, "assigned_user")
+        if assigned and assigned != frappe.session.user and "System Manager" not in frappe.get_roles():
+            frappe.throw(_("You can only close your own session."), frappe.PermissionError)
+
         current_status = frappe.db.get_value("POW Session", session_name, "session_status")
         if current_status == "Close":
             return {"status": "error", "message": "Session is already closed"}
@@ -200,10 +203,19 @@ def get_pow_profile_operations(pow_profile):
     }
 
 @frappe.whitelist()
-def get_items_for_dropdown(warehouse=None, show_only_stock_items=False):
-    """Get items for dropdown with item_code:item_name format and optional stock filtering"""
+def get_items_for_dropdown(warehouse=None, show_only_stock_items=False, pow_profile=None):
+    """Get items for dropdown with item_code:item_name format and optional stock filtering.
+
+    When ``pow_profile`` is set, validates that ``warehouse`` belongs to the
+    profile scope before returning stock data.
+    """
     try:
         show_only_stock_items = show_only_stock_items in (True, 1, "1", "true", "True")
+
+        if pow_profile and warehouse:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
         if warehouse and show_only_stock_items:
             # Use efficient JOIN query for items with stock (like stock count)
             items = frappe.db.sql("""
@@ -276,8 +288,12 @@ def get_item_uoms(item_code):
     return {"uoms": allowed_uoms, "uom_conversions": uom_conversions, "stock_uom": item.stock_uom}
 
 @frappe.whitelist()
-def get_item_availability(item_code):
-    """Return available UOMs with conversion factors and warehouse-wise stock for an item."""
+def get_item_availability(item_code, pow_profile=None):
+    """Return available UOMs with conversion factors and warehouse-wise stock for an item.
+
+    When ``pow_profile`` is set, stock is limited to the profile's source ∪ target
+    warehouse scope. Without it, returns stock across all warehouses (legacy / Desk).
+    """
     item = frappe.get_doc("Item", item_code)
 
     uoms = [item.stock_uom]
@@ -287,13 +303,26 @@ def get_item_availability(item_code):
             uoms.append(row.uom)
             uom_conversions.append({"uom": row.uom, "conversion_factor": row.conversion_factor or 1})
 
-    bins = frappe.db.sql("""
+    sql = """
         SELECT b.warehouse, w.warehouse_name, b.actual_qty
         FROM `tabBin` b
         LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
         WHERE b.item_code = %s AND b.actual_qty > 0
-        ORDER BY b.actual_qty DESC
-    """, item_code, as_dict=True)
+    """
+    params = [item_code]
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        if allowed:
+            placeholders = ", ".join(["%s"] * len(allowed))
+            sql += f" AND b.warehouse IN ({placeholders})"
+            params.extend(allowed)
+        else:
+            return {"uoms": uoms, "stock_uom": item.stock_uom, "uom_conversions": uom_conversions, "availability": []}
+
+    sql += " ORDER BY b.actual_qty DESC"
+    bins = frappe.db.sql(sql, params, as_dict=True)
 
     return {
         "uoms": uoms,
@@ -307,11 +336,20 @@ def get_item_availability(item_code):
 
 
 @frappe.whitelist()
-def get_item_stock_info(item_code, warehouse):
-    """Get stock information for an item in a warehouse"""
+def get_item_stock_info(item_code, warehouse, pow_profile=None):
+    """Get stock information for an item in a warehouse.
+
+    When ``pow_profile`` is provided, the warehouse is validated against the
+    profile's delivery scope before returning any data.
+    """
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
     stock_qty = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty") or 0
     stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
-    
+
     return {
         "stock_qty": stock_qty,
         "stock_uom": stock_uom
@@ -390,11 +428,10 @@ def get_uom_conversion_factor(item_code, from_uom, to_uom):
         }
 
 @frappe.whitelist()
-def get_stock_info_in_uom(item_code, warehouse, uom):
-    """Get stock information for an item in a specific UOM"""
+def get_stock_info_in_uom(item_code, warehouse, uom, pow_profile=None):
+    """Get stock information for an item in a specific UOM."""
     try:
-        # Get stock info in stock UOM
-        stock_info = get_item_stock_info(item_code, warehouse)
+        stock_info = get_item_stock_info(item_code, warehouse, pow_profile=pow_profile)
         stock_qty = stock_info["stock_qty"]
         stock_uom = stock_info["stock_uom"]
         
@@ -1108,11 +1145,16 @@ def get_pow_stock_counts(session_name=None, status=None):
         return [] 
 
 @frappe.whitelist()
-def get_warehouse_items_for_stock_count(warehouse):
-    """Get all items with stock in the specified warehouse for stock count"""
+def get_warehouse_items_for_stock_count(warehouse, pow_profile=None):
+    """Get all items with stock in the specified warehouse for stock count."""
     try:
         if not warehouse:
             return []
+
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
         
         # Get items with stock in the warehouse
         items = frappe.db.sql("""
@@ -1623,13 +1665,19 @@ def test_pow_stock_concern_creation():
         } 
 
 @frappe.whitelist()
-def get_item_inquiry_data(item_code, allowed_warehouses=None):
-    """Get comprehensive item information for inquiry modal"""
+def get_item_inquiry_data(item_code, allowed_warehouses=None, pow_profile=None):
+    """Get comprehensive item information for inquiry modal.
+
+    When ``pow_profile`` is set, the warehouse scope is derived server-side
+    (ignoring any client-supplied ``allowed_warehouses``).
+    """
     try:
-        # Get item master data
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+            _p, allowed_warehouses = validate_pow_profile_access(pow_profile)
+
         item = frappe.get_doc("Item", item_code)
-        
-        # Basic item information
+
         item_data = {
             "item_code": item.name,
             "item_name": item.item_name,
@@ -1664,31 +1712,22 @@ def get_item_inquiry_data(item_code, allowed_warehouses=None):
                 })
         item_data["uom_conversions"] = uom_conversions
         
-        # Get stock information for allowed warehouses only
         stock_info = []
         warehouse_filter = {"item_code": item_code}
-        
-        # Filter by allowed warehouses if provided
+
         if allowed_warehouses:
             if isinstance(allowed_warehouses, str):
                 allowed_warehouses = frappe.parse_json(allowed_warehouses)
             warehouse_filter["warehouse"] = ["in", allowed_warehouses]
-            
-            # Log for debugging
-            frappe.logger().info(f"Item Inquiry - Allowed warehouses: {allowed_warehouses}")
-            frappe.logger().info(f"Item Inquiry - Warehouse filter: {warehouse_filter}")
-            
+        else:
+            warehouse_filter["warehouse"] = ["in", []]
+
         bins = frappe.get_all("Bin",
             filters=warehouse_filter,
-            fields=["warehouse", "actual_qty", "ordered_qty", "planned_qty", 
-                   "reserved_qty", "projected_qty", "valuation_rate"],
+            fields=["warehouse", "actual_qty", "ordered_qty", "planned_qty",
+                   "reserved_qty", "projected_qty"],
             order_by="warehouse"
         )
-        
-        # Log for debugging
-        frappe.logger().info(f"Item Inquiry - Found {len(bins)} bins for item {item_code}")
-        for bin_data in bins:
-            frappe.logger().info(f"Item Inquiry - Bin: {bin_data.warehouse}, Qty: {bin_data.actual_qty}")
         
         for bin_data in bins:
             # Get warehouse type
@@ -2367,17 +2406,22 @@ def debug_stock_entry_warehouses(stock_entry_name):
 
 
 @frappe.whitelist()
-def get_pending_sent_transfers(source_warehouse=None, warehouses=None):
+def get_pending_sent_transfers(source_warehouse=None, warehouses=None, pow_profile=None):
     """Get pending sent transfers for one or more warehouses.
 
     Args:
         source_warehouse: Single warehouse name (legacy).
         warehouses: JSON list of warehouse names. Takes precedence over
                     ``source_warehouse`` when both are provided.
+        pow_profile: POW Profile for warehouse scope validation.
     """
     try:
         wh_list = None
-        if warehouses:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            wh_list = allowed
+        elif warehouses:
             wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
         if not wh_list and source_warehouse:
             wh_list = [source_warehouse]

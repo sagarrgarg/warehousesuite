@@ -8,11 +8,12 @@ interface ItemInquiryModalProps {
 	open: boolean
 	onClose: () => void
 	allowedWarehouses: string[]
+	powProfileName?: string | null
 }
 
 type Tab = 'stock' | 'barcodes' | 'uom' | 'attributes' | 'suppliers'
 
-export default function ItemInquiryModal({ open, onClose, allowedWarehouses }: ItemInquiryModalProps) {
+export default function ItemInquiryModal({ open, onClose, allowedWarehouses, powProfileName }: ItemInquiryModalProps) {
 	const [searchTerm, setSearchTerm] = useState('')
 	const [selectedItem, setSelectedItem] = useState<string | null>(null)
 	const [activeTab, setActiveTab] = useState<Tab>('stock')
@@ -23,7 +24,12 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses }: I
 			? API.getItemInquiryData
 			: undefined as any,
 		selectedItem
-			? { item_code: selectedItem, allowed_warehouses: JSON.stringify(allowedWarehouses) }
+			? {
+				item_code: selectedItem,
+				...(powProfileName
+					? { pow_profile: powProfileName }
+					: { allowed_warehouses: JSON.stringify(allowedWarehouses) }),
+			}
 			: undefined,
 		selectedItem ? undefined : null,
 	)

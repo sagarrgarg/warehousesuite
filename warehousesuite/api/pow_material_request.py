@@ -19,16 +19,22 @@ from warehousesuite.services.pow_material_request_service import (
 
 
 @frappe.whitelist()
-def get_pending_transfer_material_requests(warehouses=None):
+def get_pending_transfer_material_requests(warehouses=None, pow_profile=None):
     """List submitted Material Transfer MRs with remaining qty.
 
     Args:
-        warehouses: JSON array of warehouse names for scope filtering.
-                    If omitted, returns all open transfer MRs.
+        warehouses: JSON array of warehouse names for scope filtering (legacy).
+        pow_profile: POW Profile name — used to derive warehouse scope
+                     server-side, ignoring client ``warehouses`` when set.
 
     Returns:
         list of MR summary dicts with nested line data.
     """
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        return get_pending_transfer_requests(warehouses=allowed or [])
+
     wh_list = _parse_list(warehouses)
     return get_pending_transfer_requests(warehouses=wh_list or None)
 

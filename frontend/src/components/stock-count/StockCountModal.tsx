@@ -27,7 +27,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 
 	const { data: itemsData, isLoading } = useFrappeGetCall<{ message: StockCountWarehouseItem[] }>(
 		API.getWarehouseItemsForStockCount,
-		warehouse ? { warehouse } : undefined,
+		warehouse ? { warehouse, pow_profile: powProfileName ?? undefined } : undefined,
 		warehouse ? undefined : null,
 	)
 	const items = itemsData?.message ?? []

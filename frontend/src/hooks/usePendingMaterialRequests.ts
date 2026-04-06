@@ -4,9 +4,9 @@ import type { PendingMaterialRequest } from '@/types'
 
 const REFRESH_INTERVAL = 30_000
 
-export function usePendingMaterialRequests(warehouses: string[] | null) {
-  const params = warehouses?.length
-    ? { warehouses: JSON.stringify(warehouses) }
+export function usePendingMaterialRequests(powProfileName: string | null) {
+  const params = powProfileName
+    ? { pow_profile: powProfileName }
     : undefined
 
   const { data, mutate, isLoading, error } = useFrappeGetCall<{
@@ -14,7 +14,7 @@ export function usePendingMaterialRequests(warehouses: string[] | null) {
   }>(
     API.getPendingTransferMRs,
     params,
-    undefined,
+    powProfileName ? undefined : null,
     { refreshInterval: REFRESH_INTERVAL },
   )
 
