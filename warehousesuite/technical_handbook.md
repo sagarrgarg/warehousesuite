@@ -52,12 +52,10 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `frontend` `TransferSendModal.tsx`, `Dashboard.tsx`, `ItemSearchInput.tsx`; backend unchanged (`get_items_for_dropdown` already filters `Bin.actual_qty > 0`).
 - **Migrations**: None; rebuild `/pow` bundle.
 
-### 2026-04-06 — Fix: incoming transfer listing/receive leaking across profiles
+### 2026-04-06 — Fix: incoming transfer scope uses all profile-allowed warehouses
 
-- **What changed**: Fixed two bugs in the incoming transfer flow:
-  1. **Listing bug** (`get_transfer_receive_data`): When `pow_profile` was set, the code still ran each target warehouse through `_get_warehouses_for_receive_filter()` which adds parent group warehouses. This meant a profile with target `Finished Goods - RKCW` would also match transfers destined to sibling warehouses under the same parent group `Finished Goods`. Fix: when `profile_scoped=True`, use `get_pow_profile_target_receive_scope()` output directly without re-expanding through `_get_warehouses_for_receive_filter`.
-  2. **Receive bug** (`receive_transfer_stock_entry`): The check `if dest_wh and allowed and dest_wh not in allowed` short-circuited when `dest_wh` was None/empty, skipping permission validation entirely. Fix: if `dest_wh` is empty, throw PermissionError; if `allowed` is empty or `dest_wh` not in it, throw PermissionError.
-- **Why**: Users on Profile-A could see and receive incoming transfers destined to Profile-B's warehouses because parent warehouse expansion widened the SQL filter beyond the profile's actual target scope.
+- **What changed**: Both `get_transfer_receive_data` and `receive_transfer_stock_entry` now use `get_pow_profile_delivery_warehouse_scope` (source ∪ target + descendants) instead of the target-only `get_pow_profile_target_receive_scope`. When `pow_profile` is set, the warehouse list is used directly without re-expanding through `_get_warehouses_for_receive_filter` (which adds parent groups and widens scope). The receive endpoint also blocks when `dest_wh` is empty instead of silently skipping.
+- **Why**: Incoming transfers should be visible/receivable at any warehouse the profile allows (source or target), not just target warehouses. The previous target-only scope was too narrow. The parent-expansion bug also leaked transfers across profiles sharing a parent group.
 - **Impacted modules**: `pow_dashboard.py` (listing + receive endpoints).
 - **Migrations**: None.
 
