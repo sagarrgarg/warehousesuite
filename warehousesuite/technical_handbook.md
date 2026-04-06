@@ -52,11 +52,18 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Impacted modules**: `frontend` `TransferSendModal.tsx`, `Dashboard.tsx`, `ItemSearchInput.tsx`; backend unchanged (`get_items_for_dropdown` already filters `Bin.actual_qty > 0`).
 - **Migrations**: None; rebuild `/pow` bundle.
 
-### 2026-04-06 — Fix: incoming transfer scope uses all profile-allowed warehouses
+### 2026-04-06 — Fix: incoming transfers must scope to SOURCE (allowed) warehouses, not target
 
-- **What changed**: Both `get_transfer_receive_data` and `receive_transfer_stock_entry` now use `get_pow_profile_delivery_warehouse_scope` (source ∪ target + descendants) instead of the target-only `get_pow_profile_target_receive_scope`. When `pow_profile` is set, the warehouse list is used directly without re-expanding through `_get_warehouses_for_receive_filter` (which adds parent groups and widens scope). The receive endpoint also blocks when `dest_wh` is empty instead of silently skipping.
-- **Why**: Incoming transfers should be visible/receivable at any warehouse the profile allows (source or target), not just target warehouses. The previous target-only scope was too narrow. The parent-expansion bug also leaked transfers across profiles sharing a parent group.
-- **Impacted modules**: `pow_dashboard.py` (listing + receive endpoints).
+- **What changed**: Corrected the warehouse semantics for incoming transfer listing and receive:
+  - **Source warehouses** = "allowed" / "my" warehouses — user sends FROM and receives TO these.
+  - **Target warehouses** = "send-to" warehouses — user sends TO these, not receives at.
+  - Renamed `get_pow_profile_target_receive_scope` → `get_pow_profile_source_warehouse_scope`. Now expands only **source_warehouse** rows from the profile (+ non-group descendants). Old name kept as deprecated alias.
+  - `get_transfer_receive_data` and `receive_transfer_stock_entry` both use `get_pow_profile_source_warehouse_scope` for filtering — incoming transfers are matched where `custom_for_which_warehouse_to_transfer` is in the user's source warehouses.
+  - When `pow_profile` is set, skip `_get_warehouses_for_receive_filter` parent-expansion to prevent scope leakage.
+  - Receive blocks when `dest_wh` is empty (can't verify permissions).
+  - Added POW Profile Warehouse Rulebook to `psychological_handbook.md`.
+- **Why**: Previous code used **target** warehouses for incoming receives — semantically backwards. Users on Profile-A could see/receive transfers meant for Profile-B because target expansion pulled in wrong warehouses.
+- **Impacted modules**: `pow_warehouse_scope.py`, `pow_dashboard.py`, `psychological_handbook.md`.
 - **Migrations**: None.
 
 ### 2026-04-06 — Comprehensive POW Profile permission enforcement on all mutation endpoints

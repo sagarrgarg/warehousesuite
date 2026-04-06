@@ -727,11 +727,11 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
         if pow_profile:
             from warehousesuite.utils.pow_warehouse_scope import (
                 assert_user_on_pow_profile,
-                get_pow_profile_delivery_warehouse_scope,
+                get_pow_profile_source_warehouse_scope,
             )
 
             assert_user_on_pow_profile(pow_profile)
-            wh_list = get_pow_profile_delivery_warehouse_scope(pow_profile)
+            wh_list = get_pow_profile_source_warehouse_scope(pow_profile)
             wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
             if not wh_list:
                 return []
@@ -868,7 +868,7 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
         if pow_profile:
             from warehousesuite.utils.pow_warehouse_scope import (
                 assert_user_on_pow_profile,
-                get_pow_profile_delivery_warehouse_scope,
+                get_pow_profile_source_warehouse_scope,
             )
 
             assert_user_on_pow_profile(pow_profile)
@@ -879,7 +879,7 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
 
         if pow_profile:
             dest_wh = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
-            allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+            allowed = get_pow_profile_source_warehouse_scope(pow_profile)
             if not dest_wh:
                 frappe.throw(
                     _("This transfer has no destination warehouse set. Cannot verify permissions."),

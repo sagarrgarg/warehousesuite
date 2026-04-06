@@ -77,13 +77,12 @@ def get_pow_profile_delivery_warehouse_scope(pow_profile_name):
     return out
 
 
-def get_pow_profile_target_receive_scope(pow_profile_name):
-    """Target warehouses for incoming (in-transit) receives: profile targets + descendants only.
+def get_pow_profile_source_warehouse_scope(pow_profile_name):
+    """Source (allowed) warehouses + non-group descendants.
 
-    Incoming transfers are filtered by ``Stock Entry`` destination
-    (``custom_for_which_warehouse_to_transfer``). Source warehouses on the
-    profile must not expand the receive list, or unrelated company transfers
-    appear when parent warehouses are included.
+    These are the warehouses the user physically operates at: they **send
+    from** and **receive to** these warehouses. Used to scope incoming
+    transfer listing and receive permission checks.
 
     Args:
         pow_profile_name: ``POW Profile`` name.
@@ -105,7 +104,7 @@ def get_pow_profile_target_receive_scope(pow_profile_name):
             seen.add(name)
             out.append(name)
 
-    for row in list(profile.target_warehouse or []):
+    for row in list(profile.source_warehouse or []):
         w = (row.warehouse or "").strip()
         if not w:
             continue
@@ -116,6 +115,11 @@ def get_pow_profile_target_receive_scope(pow_profile_name):
             add(ch.get("name"))
 
     return out
+
+
+def get_pow_profile_target_receive_scope(pow_profile_name):
+    """Deprecated alias — use ``get_pow_profile_source_warehouse_scope`` instead."""
+    return get_pow_profile_source_warehouse_scope(pow_profile_name)
 
 
 # ── Reusable guards for whitelisted endpoints ───────────────────────────

@@ -27,9 +27,30 @@ Architectural intent, business reasoning, and anti-patterns. This complements `t
 
 - **Operational reports** (e.g. SO pending delivery) should show quantities in the UOM operators expect: transaction qty in the **order line UOM**, fulfilment progress in **stock UOM**, with an explicit conversion hint when they differ—without mixing UOMs in one number.
 
+## POW Profile Warehouse Rulebook
+
+A POW Profile defines two warehouse lists and one transit warehouse:
+
+| Profile field | Alias | The user can… |
+|---|---|---|
+| **Source warehouses** | "allowed" / "my" warehouses | **Send FROM** these warehouses (outbound transfer origin). **Receive TO** these warehouses (incoming transfer destination). **Stock count** at these warehouses. **Manufacture / WO** with FG landing here. |
+| **Target warehouses** | "send-to" warehouses | **Send TO** these warehouses (outbound transfer destination). These are the counterpart's warehouses — goods leave "my" source and arrive at a target. |
+| **In-transit warehouse** | transit | Intermediate ledger for goods in transit between source → target. |
+
+### Key rule: incoming transfers scope to SOURCE warehouses
+
+When listing or receiving incoming transfers, the filter is `custom_for_which_warehouse_to_transfer IN (source warehouses + descendants)`. The user physically operates at their source warehouses, so incoming goods land there. Target warehouses are where the user *sends* goods, not where they receive.
+
+### Scope expansion
+
+- `get_pow_profile_source_warehouse_scope(profile)` — source warehouses + non-group descendants. Used for incoming transfer listing and receive permission.
+- `get_pow_profile_delivery_warehouse_scope(profile)` — source ∪ target + descendants. Used for general mutation validation (the user touches both sides).
+- Group warehouses contribute only their leaf descendants; they are never used directly.
+- In-transit warehouse is excluded from expansion.
+
 ## Security Architecture — POW Profile as authorization boundary
 
-Every mutation endpoint (create Stock Entry, Work Order, Material Request, Stock Count) must validate the user's POW Profile membership **and** that all warehouses in the request fall within the profile's source/target scope before proceeding. `ignore_permissions=True` on `insert`/`submit` is acceptable only **after** POW-level scope checks pass. The reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` in `pow_warehouse_scope.py` enforce this pattern consistently. Debug/admin endpoints must be gated to System Manager.
+Every mutation endpoint (create Stock Entry, Work Order, Material Request, Stock Count) must validate the user's POW Profile membership **and** that all warehouses in the request fall within the profile's scope before proceeding. `ignore_permissions=True` on `insert`/`submit` is acceptable only **after** POW-level scope checks pass. The reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` in `pow_warehouse_scope.py` enforce this pattern consistently. Debug/admin endpoints must be gated to System Manager.
 
 ## Anti-patterns
 
