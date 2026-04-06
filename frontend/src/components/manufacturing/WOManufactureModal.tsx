@@ -28,6 +28,7 @@ interface Props {
   wo: WODetail
   onClose: () => void
   onDone: () => void
+  powProfileName?: string | null
 }
 
 const MIN_MFG_QTY = 0.001
@@ -40,7 +41,7 @@ function qtyFromInput(s: string): number {
   return parseFloat(s.replace(/,/g, '').trim())
 }
 
-export default function WOManufactureModal({ open, wo, onClose, onDone }: Props) {
+export default function WOManufactureModal({ open, wo, onClose, onDone, powProfileName }: Props) {
   const remaining = wo.qty - wo.produced_qty
   const [qtyInput, setQtyInput] = useState(() =>
     String(remaining > 0 ? remaining : 0),
@@ -141,6 +142,7 @@ export default function WOManufactureModal({ open, wo, onClose, onDone }: Props)
         qty: qtyParsed,
         item_overrides: itemOverrides ? JSON.stringify(itemOverrides) : undefined,
         item_substitutions: itemSubstitutions.length ? JSON.stringify(itemSubstitutions) : undefined,
+        pow_profile: powProfileName ?? undefined,
       })
       const result = unwrap(res)
       if (result?.stock_entry) {

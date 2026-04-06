@@ -31,6 +31,13 @@ Living reference for modules, integrations, and change discipline. Update this f
 
 ## Change Log (recent)
 
+### 2026-04-06 — Receive transfer enforces POW Profile destination warehouse
+
+- **What changed**: ``receive_transfer_stock_entry`` accepts optional ``pow_profile``. When set, server calls ``assert_user_on_pow_profile`` and checks the SE destination (``custom_for_which_warehouse_to_transfer``) against ``get_pow_profile_target_receive_scope``; mismatches throw ``PermissionError``. Client ``PendingReceiveCard`` sends ``pow_profile`` from the selected profile; threaded via ``PendingReceivesPanel`` → ``Dashboard``.
+- **Why**: Previously the receive endpoint had **no** profile or destination check — any authenticated user could POST a stock entry name and receive into any destination.
+- **Impacted modules**: ``pow_dashboard.py`` (``receive_transfer_stock_entry``), ``PendingReceiveCard.tsx``, ``PendingReceivesPanel.tsx``, ``Dashboard.tsx``, ``pow.html``.
+- **Migrations**: None.
+
 ### 2026-04-05 — Incoming transfers scoped to POW profile **targets** only
 
 - **What changed**: ``get_transfer_receive_data`` accepts optional ``pow_profile``; when set, the server asserts the user is on that profile and filters destinations using **target** warehouses + descendants only (``get_pow_profile_target_receive_scope``). Client ``warehouses`` / ``default_warehouse`` are ignored when ``pow_profile`` is passed. Dashboard hook ``usePendingPowReceives`` now sends ``pow_profile`` instead of a source∪target list (which expanded parents/children from **sources** and showed unrelated incomings).
@@ -44,6 +51,15 @@ Living reference for modules, integrations, and change discipline. Update this f
 - **Why**: Operators should not scroll through items with zero quantity when sending transfers.
 - **Impacted modules**: `frontend` `TransferSendModal.tsx`, `Dashboard.tsx`, `ItemSearchInput.tsx`; backend unchanged (`get_items_for_dropdown` already filters `Bin.actual_qty > 0`).
 - **Migrations**: None; rebuild `/pow` bundle.
+
+### 2026-04-06 — Comprehensive POW Profile permission enforcement on all mutation endpoints
+
+- **What changed**: Full security audit and hardening of every `@frappe.whitelist()` mutation endpoint that creates or modifies documents (Stock Entry, Work Order, Material Request, POW Stock Count, Stock Reconciliation). Added `pow_profile` parameter to every mutation path; server now validates user membership on the profile and that all warehouses are within profile scope before proceeding. Reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` added to `pow_warehouse_scope.py`. Debug endpoints (`debug_stock_entry_warehouses`, `fix_stock_entry_warehouses`, `test_pow_stock_concern_creation`) gated to System Manager only. Frontend threads `powProfileName` to every API mutation call.
+- **Why**: All mutation endpoints used `ignore_permissions=True` on `insert`/`submit` but accepted client-supplied warehouses without profile-scoping validation — any authenticated user could transfer, count, manufacture, or request materials at arbitrary warehouses. Only `receive_transfer_stock_entry` and SO report had checks; all others were open.
+- **Endpoints hardened (backend)**: `create_transfer_stock_entry`, `create_and_submit_pow_stock_count`, `save_pow_stock_count_draft`, `create_stock_match_entry`, `create_material_request` (all in `pow_dashboard.py`); `create_pow_work_order`, `transfer_wo_materials`, `manufacture_wo`, `raise_mr_for_work_order` (in `pow_work_order.py`); `create_transfer_from_material_request`, `create_material_transfer_request` (in `pow_material_request.py`).
+- **Frontend components updated**: `TransferSendModal`, `StockCountModal`, `CreateWorkOrderModal`, `WOManufactureModal`, `WORequestMaterialsModal`, `MRFulfillmentModal`, `RaiseMaterialRequestModal`, `useMaterialRequestFulfillment` hook, and `Dashboard.tsx` threading.
+- **Impacted modules**: `pow_warehouse_scope.py`, `pow_dashboard.py`, `pow_work_order.py`, `pow_material_request.py`, all POW dashboard React components.
+- **Migrations**: None; rebuild frontend bundle for `/pow`.
 
 ### 2026-04-05 — POW React: WO qty suggests BOM batch size
 

@@ -13,6 +13,7 @@ interface Props {
 	onClose: () => void
 	warehouses: ProfileWarehouses
 	defaultWarehouse: string | null
+	powProfileName: string | null
 }
 
 interface Line {
@@ -37,7 +38,7 @@ function lineStockQty(line: Line): number {
 	return +(line.qty * cf).toFixed(3)
 }
 
-export default function TransferSendModal({ open, onClose, warehouses, defaultWarehouse }: Props) {
+export default function TransferSendModal({ open, onClose, warehouses, defaultWarehouse, powProfileName }: Props) {
 	const company = useCompany()
 	const [sourceWarehouse, setSourceWarehouse] = useState(defaultWarehouse ?? warehouses.source_warehouses[0]?.warehouse ?? '')
 	const [targetWarehouse, setTargetWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
@@ -115,14 +116,14 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 		setSubmitting(true)
 		try {
 			const transferItems = valid.map(l => ({ item_code: l.item_code, qty: l.qty, uom: l.uom || l.stock_uom }))
-			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse, items: JSON.stringify(transferItems), company, remarks })
+			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse, items: JSON.stringify(transferItems), company, remarks, pow_profile: powProfileName ?? undefined })
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Transfer failed')
 			else { toast.success(`Transfer created: ${result.stock_entry}`); onClose() }
 		} catch (err: any) { toast.error(err?.message || 'Transfer failed') }
 		finally { setSubmitting(false); setShowOverstockConfirm(false); setOverstockItems([]) }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks])
+	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks, powProfileName])
 
 	const handleSubmit = () => {
 		const valid = lines.filter(l => l.item_code && l.qty > 0)

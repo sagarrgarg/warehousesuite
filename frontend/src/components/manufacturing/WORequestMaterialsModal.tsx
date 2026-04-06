@@ -12,13 +12,14 @@ interface Props {
   warehouses: ProfileWarehouses
   onClose: () => void
   onDone: () => void
+  powProfileName?: string | null
 }
 
 function shortWh(name: string) {
   return name.replace(/ - [A-Z0-9]+$/i, '')
 }
 
-export default function WORequestMaterialsModal({ open, wo, warehouses, onClose, onDone }: Props) {
+export default function WORequestMaterialsModal({ open, wo, warehouses, onClose, onDone, powProfileName }: Props) {
   const [shortfall, setShortfall] = useState<WOShortfallItem[]>([])
   const [loadingShortfall, setLoadingShortfall] = useState(true)
   const [requestType, setRequestType] = useState<'Purchase' | 'Material Transfer'>('Material Transfer')
@@ -76,6 +77,7 @@ export default function WORequestMaterialsModal({ open, wo, warehouses, onClose,
         request_type: requestType,
         target_warehouse: requestType === 'Material Transfer' ? targetWarehouse : undefined,
         from_warehouse: fromWarehouse || undefined,
+        pow_profile: powProfileName ?? undefined,
       })
       const result = unwrap(res)
       if (result?.material_request) {

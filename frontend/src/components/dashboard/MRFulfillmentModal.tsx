@@ -11,6 +11,7 @@ interface MRFulfillmentModalProps {
   profileWarehouses: ProfileWarehouses
   sourceWarehouses: string[]
   defaultWarehouse: string | null
+  powProfileName?: string | null
 }
 
 interface LineQty {
@@ -30,6 +31,7 @@ export default function MRFulfillmentModal({
   profileWarehouses,
   sourceWarehouses,
   defaultWarehouse,
+  powProfileName,
 }: MRFulfillmentModalProps) {
   const { options, isLoading: optionsLoading } = useFulfillmentOptions(mrName, sourceWarehouses)
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('')
@@ -121,6 +123,7 @@ export default function MRFulfillmentModal({
       target_warehouse: targetWarehouse,
       items,
       company,
+      pow_profile: powProfileName ?? undefined,
     })
 
     if (result?.status === 'success') {

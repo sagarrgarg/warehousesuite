@@ -9,6 +9,7 @@ interface PendingReceivesPanelProps {
   company: string
   onReceived: () => void
   filterEmptyHint?: string
+  powProfileName: string | null
 }
 
 function shortWarehouse(name: string) {
@@ -21,6 +22,7 @@ export default function PendingReceivesPanel({
   company,
   onReceived,
   filterEmptyHint,
+  powProfileName,
 }: PendingReceivesPanelProps) {
   const pendingReceives = receives.filter(r => r.status !== 'Complete')
 
@@ -97,6 +99,7 @@ export default function PendingReceivesPanel({
                   company={company}
                   onReceived={onReceived}
                   index={stripeIndex}
+                  powProfileName={powProfileName}
                 />
               ))}
             </div>

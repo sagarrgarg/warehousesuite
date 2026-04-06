@@ -27,10 +27,15 @@ Architectural intent, business reasoning, and anti-patterns. This complements `t
 
 - **Operational reports** (e.g. SO pending delivery) should show quantities in the UOM operators expect: transaction qty in the **order line UOM**, fulfilment progress in **stock UOM**, with an explicit conversion hint when they differ—without mixing UOMs in one number.
 
+## Security Architecture — POW Profile as authorization boundary
+
+Every mutation endpoint (create Stock Entry, Work Order, Material Request, Stock Count) must validate the user's POW Profile membership **and** that all warehouses in the request fall within the profile's source/target scope before proceeding. `ignore_permissions=True` on `insert`/`submit` is acceptable only **after** POW-level scope checks pass. The reusable guards `validate_pow_profile_access()` and `assert_warehouses_in_scope()` in `pow_warehouse_scope.py` enforce this pattern consistently. Debug/admin endpoints must be gated to System Manager.
+
 ## Anti-patterns
 
 - Duplicating Item/Warehouse master data in custom tables without a hard dependency on core.
 - Client-side-only enforcement for stock or permission rules (always mirror on server).
+- Trusting client-supplied warehouse names or profile parameters without server-side validation against `pow_warehouse_scope` — the frontend provides UX convenience; the server enforces authorization.
 - One-off `frappe.db.sql` for business logic when `get_doc` / `get_value` suffices—raw SQL is for reporting or proven hot paths only.
 - “Generic workflow engine” abstractions before a second real workflow proves the shape.
 - Storing third-party API keys in DocType fields without secrets handling.

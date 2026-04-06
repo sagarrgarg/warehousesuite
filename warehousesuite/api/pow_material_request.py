@@ -61,6 +61,7 @@ def create_transfer_from_material_request(
     items,
     company,
     remarks=None,
+    pow_profile=None,
 ):
     """Create a Material Transfer Stock Entry linked to MR lines.
 
@@ -72,12 +73,18 @@ def create_transfer_from_material_request(
         items: JSON array of {mr_item_name, item_code, qty, uom}
         company: company name
         remarks: optional string
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, stock_entry, message.
     """
     if not mr_name or not source_warehouse or not in_transit_warehouse or not target_warehouse:
         frappe.throw(_("mr_name, source_warehouse, in_transit_warehouse, and target_warehouse are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        assert_warehouses_in_scope([source_warehouse, target_warehouse], allowed, label="Warehouse")
 
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
 
@@ -116,6 +123,7 @@ def create_material_transfer_request(
     from_warehouse=None,
     schedule_date=None,
     remarks=None,
+    pow_profile=None,
 ):
     """Raise a new Material Request (Material Transfer) from POW.
 
@@ -126,12 +134,21 @@ def create_material_transfer_request(
         from_warehouse: optional preferred source warehouse
         schedule_date: optional required-by date
         remarks: optional string
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, material_request, message.
     """
     if not target_warehouse or not company:
         frappe.throw(_("target_warehouse and company are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        wh_to_check = [target_warehouse]
+        if from_warehouse:
+            wh_to_check.append(from_warehouse)
+        assert_warehouses_in_scope(wh_to_check, allowed, label="Warehouse")
 
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
 

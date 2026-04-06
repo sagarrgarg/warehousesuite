@@ -404,6 +404,7 @@ export default function Dashboard() {
             company={company}
             onReceived={refreshAll}
             filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
+            powProfileName={selectedProfileName}
           />
         </div>
       </section>
@@ -460,16 +461,16 @@ export default function Dashboard() {
 
       {/* ── Standard Modals ────────────────────────────────── */}
       {showRaiseMR && warehouses && selectedProfile && (
-        <RaiseMaterialRequestModal open onClose={closeRaiseMR} warehouses={warehouses} defaultWarehouse={null} />
+        <RaiseMaterialRequestModal open onClose={closeRaiseMR} warehouses={warehouses} defaultWarehouse={null} powProfileName={selectedProfileName} />
       )}
       {fulfillMR && warehouses && selectedProfile && (
-        <MRFulfillmentModal open onClose={closeFulfillment} mrName={fulfillMR} company={selectedProfile.company} profileWarehouses={warehouses} sourceWarehouses={sourceWarehouseNames} defaultWarehouse={null} />
+        <MRFulfillmentModal open onClose={closeFulfillment} mrName={fulfillMR} company={selectedProfile.company} profileWarehouses={warehouses} sourceWarehouses={sourceWarehouseNames} defaultWarehouse={null} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'transfer-send' && warehouses && selectedProfile && (
-        <TransferSendModal open onClose={closeModal} warehouses={warehouses} defaultWarehouse={null} />
+        <TransferSendModal open onClose={closeModal} warehouses={warehouses} defaultWarehouse={null} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'stock-count' && warehouses && selectedProfile && (
-        <StockCountModal open onClose={closeModal} warehouses={warehouses} />
+        <StockCountModal open onClose={closeModal} warehouses={warehouses} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'item-inquiry' && warehouses && (
         <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} />
@@ -506,6 +507,7 @@ export default function Dashboard() {
           wo={woForAction}
           onClose={closeWOAction}
           onDone={handleWODone}
+          powProfileName={selectedProfileName}
         />
       )}
       {woDetailAction === 'request' && woForAction && warehouses && (
@@ -515,6 +517,7 @@ export default function Dashboard() {
           warehouses={warehouses}
           onClose={closeWOAction}
           onDone={handleWODone}
+          powProfileName={selectedProfileName}
         />
       )}
     </div>

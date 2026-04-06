@@ -12,6 +12,7 @@ interface Props {
   onClose: () => void
   warehouses: ProfileWarehouses
   defaultWarehouse: string | null
+  powProfileName?: string | null
 }
 
 interface UomConversion { uom: string; conversion_factor: number }
@@ -52,7 +53,7 @@ function shortWh(name: string) {
   return name.replace(/ - [A-Z0-9]+$/i, '')
 }
 
-export default function RaiseMaterialRequestModal({ open, onClose, warehouses, defaultWarehouse }: Props) {
+export default function RaiseMaterialRequestModal({ open, onClose, warehouses, defaultWarehouse, powProfileName }: Props) {
   const company = useCompany()
   const [targetWarehouse, setTargetWarehouse] = useState(defaultWarehouse ?? warehouses.target_warehouses[0]?.warehouse ?? '')
   const [fromWarehouse, setFromWarehouse] = useState('')
@@ -171,6 +172,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
           uom: l.uom,
         }))),
         company,
+        pow_profile: powProfileName ?? undefined,
       })
       const result = unwrap(res)
       if (result?.status === 'success') {

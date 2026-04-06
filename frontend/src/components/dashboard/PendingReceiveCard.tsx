@@ -13,9 +13,10 @@ interface PendingReceiveCardProps {
   onReceived: () => void
   /** Global list index for card-level zebra striping */
   index?: number
+  powProfileName: string | null
 }
 
-export default function PendingReceiveCard({ group, company, onReceived, index = 0 }: PendingReceiveCardProps) {
+export default function PendingReceiveCard({ group, company, onReceived, index = 0, powProfileName }: PendingReceiveCardProps) {
   const [qtys, setQtys] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [received, setReceived] = useState(false)
@@ -58,7 +59,12 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
 
     setSubmitting(true)
     try {
-      const res = await receiveTransfer({ stock_entry_name: group.stock_entry, items_data: JSON.stringify(toReceive), company })
+      const res = await receiveTransfer({
+        stock_entry_name: group.stock_entry,
+        items_data: JSON.stringify(toReceive),
+        company,
+        pow_profile: powProfileName ?? undefined,
+      })
       const result = unwrap(res)
       if (isError(result)) {
         if (result.error_type === 'already_received') { setReceived(true); onReceived() }
@@ -68,7 +74,7 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
       }
     } catch (err: any) { toast.error(err?.message || 'Receive failed') }
     finally { setSubmitting(false) }
-  }, [qtys, pendingItems, group.stock_entry, company, receiveTransfer, onReceived])
+  }, [qtys, pendingItems, group.stock_entry, company, receiveTransfer, onReceived, powProfileName])
 
   const handleConcernSubmit = async () => {
     if (!concern.concern_description.trim()) { toast.error('Description required'); return }

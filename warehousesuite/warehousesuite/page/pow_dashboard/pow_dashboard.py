@@ -463,18 +463,26 @@ def get_stock_info_in_uom(item_code, warehouse, uom):
         }
 
 @frappe.whitelist()
-def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None):
+def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None, pow_profile=None):
     """Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
     try:
-        # Log input parameters
-        frappe.logger().debug(f"Creating transfer with params: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}, items={items}, company={company}, session={session_name}")
-        
+        from warehousesuite.utils.pow_warehouse_scope import (
+            validate_pow_profile_access,
+            assert_warehouses_in_scope,
+        )
+
+        if pow_profile:
+            _profile, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope(
+                [source_warehouse, target_warehouse],
+                allowed,
+                label="Warehouse",
+            )
+
         # Parse items
         try:
             items = frappe.parse_json(items)
-            frappe.logger().debug(f"Parsed items: {items}")
         except Exception as e:
-            frappe.logger().error(f"Error parsing items JSON: {str(e)}")
             frappe.throw(_("Invalid items data format"))
         
         # Basic input validation
@@ -832,14 +840,44 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
         frappe.throw(f"Error getting transfer receive data: {str(e)}")
 
 @frappe.whitelist()
-def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None):
-    """Create stock entry for receiving transfer (in-transit -> destination)"""
+def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None, pow_profile=None):
+    """Create stock entry for receiving transfer (in-transit -> destination).
+
+    Args:
+        stock_entry_name: outbound transit Stock Entry name.
+        items_data: JSON list of ``{item_code, qty, ste_detail}``.
+        company: company name.
+        session_name: optional POW Session reference.
+        pow_profile: POW Profile name (required from the POW dashboard).
+                     The server asserts the user is on the profile and that
+                     the SE destination warehouse falls within the profile's
+                     **target** scope.  If omitted, the check is skipped
+                     (desk / API callers that do not use POW profiles).
+    """
     try:
         from erpnext.stock.doctype.stock_entry.stock_entry import make_stock_in_entry
-        
+
+        # ── POW Profile authorisation ──
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import (
+                assert_user_on_pow_profile,
+                get_pow_profile_target_receive_scope,
+            )
+
+            assert_user_on_pow_profile(pow_profile)
+
         items_data = frappe.parse_json(items_data)
-        
+
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
+
+        if pow_profile:
+            dest_wh = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
+            allowed = get_pow_profile_target_receive_scope(pow_profile)
+            if dest_wh and allowed and dest_wh not in allowed:
+                frappe.throw(
+                    _("You are not allowed to receive at warehouse {0} under this profile.").format(dest_wh),
+                    frappe.PermissionError,
+                )
 
         items_to_receive = {}
         for item in items_data:
@@ -1160,9 +1198,14 @@ def check_existing_draft_stock_count(warehouse, session_name):
         return {"has_draft": False, "draft_info": None}
 
 @frappe.whitelist()
-def save_pow_stock_count_draft(warehouse, company, session_name, items_data):
+def save_pow_stock_count_draft(warehouse, company, session_name, items_data, pow_profile=None):
     """Save a POW Stock Count as draft"""
     try:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
         items_data = frappe.parse_json(items_data)
         
         # Check for existing draft
@@ -1215,9 +1258,14 @@ def save_pow_stock_count_draft(warehouse, company, session_name, items_data):
         }
 
 @frappe.whitelist()
-def create_and_submit_pow_stock_count(warehouse, company, session_name, items_data):
+def create_and_submit_pow_stock_count(warehouse, company, session_name, items_data, pow_profile=None):
     """Create and submit a new POW Stock Count with items"""
     try:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
         items_data = frappe.parse_json(items_data)
         
         # Check for existing draft and delete it if exists
@@ -1290,9 +1338,14 @@ def create_and_submit_pow_stock_count(warehouse, company, session_name, items_da
         } 
 
 @frappe.whitelist()
-def create_stock_match_entry(warehouse, company, session_name, items_count):
+def create_stock_match_entry(warehouse, company, session_name, items_count, pow_profile=None):
     """Create a POW Stock Count entry for when all quantities match (no differences)"""
     try:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
         # Check for existing draft and delete it if exists
         existing_check = check_existing_draft_stock_count(warehouse, session_name)
         if existing_check["has_draft"]:
@@ -1506,7 +1559,9 @@ def create_concerns_from_discrepancies(concern_data, source_document_type, sourc
 
 @frappe.whitelist()
 def test_pow_stock_concern_creation():
-    """Test function to verify POW Stock Concern doctype is working"""
+    """Test function to verify POW Stock Concern doctype is working (System Manager only)."""
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
     try:
         frappe.logger().info("Testing POW Stock Concern creation...")
         
@@ -2198,9 +2253,14 @@ def get_bom_items(bom_name, qty_to_produce=1):
         return []
 
 @frappe.whitelist()
-def create_material_request(warehouse, delivery_date, items, session_name=None):
+def create_material_request(warehouse, delivery_date, items, session_name=None, pow_profile=None):
     """Create Material Request from POW Dashboard"""
     try:
+        if pow_profile:
+            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+            _p, allowed = validate_pow_profile_access(pow_profile)
+            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
         # Validate inputs
         if not warehouse:
             return {"status": "error", "message": "Warehouse is required"}
@@ -2256,7 +2316,9 @@ def create_material_request(warehouse, delivery_date, items, session_name=None):
 
 @frappe.whitelist()
 def debug_stock_entry_warehouses(stock_entry_name):
-    """Debug function to check warehouse information in a stock entry"""
+    """Debug function to check warehouse information in a stock entry (System Manager only)."""
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
     try:
         stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
         
@@ -2395,7 +2457,9 @@ def get_pending_sent_transfers(source_warehouse=None, warehouses=None):
 
 @frappe.whitelist()
 def fix_stock_entry_warehouses(stock_entry_name):
-    """Fix stock entry warehouse information if missing"""
+    """Fix stock entry warehouse information if missing (System Manager only)."""
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
     try:
         stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
         

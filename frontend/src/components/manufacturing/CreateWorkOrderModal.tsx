@@ -246,6 +246,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
         wip_warehouse: wipWarehouse || fgWarehouse,
         planned_start_date: plannedStartDate,
         item_substitutions: substitutionPayload.length ? JSON.stringify(substitutionPayload) : undefined,
+        pow_profile: powProfileName ?? undefined,
       })
       const result = unwrap(res)
       if (result?.work_order) {

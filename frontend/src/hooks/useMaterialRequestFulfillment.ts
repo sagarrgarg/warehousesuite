@@ -41,6 +41,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
       items: MaterialRequestFulfillmentPayload[]
       company: string
       remarks?: string
+      pow_profile?: string
     }) => {
       setIsSubmitting(true)
       setSubmitError(null)
@@ -53,6 +54,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
           items: JSON.stringify(params.items),
           company: params.company,
           remarks: params.remarks || '',
+          pow_profile: params.pow_profile,
         })
         const result = unwrap(res)
         if (result?.status === 'success') {

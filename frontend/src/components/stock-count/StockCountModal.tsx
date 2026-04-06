@@ -9,9 +9,9 @@ import type { ProfileWarehouses, StockCountWarehouseItem } from '@/types'
 
 const SESSION_NAME = ''
 
-interface Props { open: boolean; onClose: () => void; warehouses: ProfileWarehouses }
+interface Props { open: boolean; onClose: () => void; warehouses: ProfileWarehouses; powProfileName: string | null }
 
-export default function StockCountModal({ open, onClose, warehouses }: Props) {
+export default function StockCountModal({ open, onClose, warehouses, powProfileName }: Props) {
 	const company = useCompany()
 
 	const allWarehouseObjs = [...warehouses.source_warehouses, ...warehouses.target_warehouses]
@@ -106,9 +106,9 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 			const varianceItems = getDifferences()
 			let res: any
 			if (hasDifferences) {
-				res = await submitCount({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(varianceItems) })
+				res = await submitCount({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(varianceItems), pow_profile: powProfileName ?? undefined })
 			} else {
-				res = await submitMatch({ warehouse, company, session_name: SESSION_NAME, items_count: allItems.length })
+				res = await submitMatch({ warehouse, company, session_name: SESSION_NAME, items_count: allItems.length, pow_profile: powProfileName ?? undefined })
 			}
 			const result = unwrap(res)
 			if (isError(result)) { toast.error(result.message) }
@@ -127,7 +127,7 @@ export default function StockCountModal({ open, onClose, warehouses }: Props) {
 		setSavingDraft(true)
 		try {
 			const varianceOnly = getDifferences()
-			const res = await saveDraft({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(varianceOnly) })
+			const res = await saveDraft({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(varianceOnly), pow_profile: powProfileName ?? undefined })
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Failed to save draft')
 			else { toast.success('Draft saved'); mutateDraftCheck() }

@@ -116,3 +116,38 @@ def get_pow_profile_target_receive_scope(pow_profile_name):
             add(ch.get("name"))
 
     return out
+
+
+# ── Reusable guards for whitelisted endpoints ───────────────────────────
+
+
+def validate_pow_profile_access(pow_profile_name):
+    """Assert user membership on profile and return the full scope (source ∪ target).
+
+    Returns:
+        tuple(profile_doc, allowed_warehouses: list[str])
+    """
+    if not pow_profile_name:
+        frappe.throw(_("POW Profile is required for this operation."))
+    profile = assert_user_on_pow_profile(pow_profile_name)
+    allowed = get_pow_profile_delivery_warehouse_scope(pow_profile_name)
+    return profile, allowed
+
+
+def assert_warehouses_in_scope(warehouses, allowed, label="warehouse"):
+    """Throw PermissionError if any warehouse is not in the allowed list.
+
+    Args:
+        warehouses: iterable of warehouse names to check.
+        allowed: list/set of permitted warehouse names.
+        label: human label for the error message.
+    """
+    allowed_set = set(allowed)
+    for wh in warehouses:
+        if wh and wh not in allowed_set:
+            frappe.throw(
+                _("{0} '{1}' is not permitted under your POW Profile.").format(
+                    label.title(), wh
+                ),
+                frappe.PermissionError,
+            )

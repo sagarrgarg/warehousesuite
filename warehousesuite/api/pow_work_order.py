@@ -94,6 +94,7 @@ def create_pow_work_order(
     wip_warehouse=None,
     planned_start_date=None,
     item_substitutions=None,
+    pow_profile=None,
 ):
     """Create and submit a new Work Order.
 
@@ -107,12 +108,23 @@ def create_pow_work_order(
         wip_warehouse: work-in-progress warehouse — optional
         planned_start_date: ISO date string — defaults to today if omitted
         item_substitutions: optional JSON map/list for BOM item substitutions
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, work_order, message.
     """
     if not all([production_item, bom_no, qty, company, fg_warehouse]):
         frappe.throw(_("production_item, bom_no, qty, company, and fg_warehouse are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        wh_to_check = [fg_warehouse]
+        if wip_warehouse:
+            wh_to_check.append(wip_warehouse)
+        if source_warehouse:
+            wh_to_check.append(source_warehouse)
+        assert_warehouses_in_scope(wh_to_check, allowed, label="Warehouse")
 
     from frappe.utils import flt
     qty_val = flt(qty)
@@ -148,12 +160,13 @@ def get_wo_materials(wo_name):
 
 
 @frappe.whitelist()
-def transfer_wo_materials(wo_name, items):
+def transfer_wo_materials(wo_name, items, pow_profile=None):
     """Create a Material Transfer for Manufacture Stock Entry.
 
     Args:
         wo_name: Work Order name (required)
         items: JSON array of {item_code, qty, source_warehouse, wo_item_name, original_item?}
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, stock_entry.
@@ -164,6 +177,13 @@ def transfer_wo_materials(wo_name, items):
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
     if not parsed_items:
         frappe.throw(_("items is required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        src_warehouses = [i.get("source_warehouse") for i in parsed_items if i.get("source_warehouse")]
+        if src_warehouses:
+            assert_warehouses_in_scope(src_warehouses, allowed, label="Source warehouse")
 
     return transfer_materials_for_manufacture(wo_name=wo_name, items=parsed_items)
 
@@ -197,7 +217,7 @@ def get_manufacture_items(wo_name, qty):
 
 
 @frappe.whitelist()
-def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None):
+def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None, pow_profile=None):
     """Create a Manufacture Stock Entry to produce finished goods.
 
     Args:
@@ -207,12 +227,22 @@ def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None):
                         BOM-calculated raw material consumption.
         item_substitutions: optional JSON array of
                         {original_item_code, substitute_item_code}.
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, stock_entry.
     """
     if not wo_name or not qty:
         frappe.throw(_("wo_name and qty are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        wo = frappe.get_doc("Work Order", wo_name)
+        wh_to_check = [wo.fg_warehouse]
+        if wo.wip_warehouse:
+            wh_to_check.append(wo.wip_warehouse)
+        assert_warehouses_in_scope(wh_to_check, allowed, label="Warehouse")
 
     from frappe.utils import flt
     qty_val = flt(qty)
@@ -259,6 +289,7 @@ def raise_mr_for_work_order(
     request_type,
     target_warehouse=None,
     from_warehouse=None,
+    pow_profile=None,
 ):
     """Create a Material Request (Purchase or Transfer) for WO raw material shortfall.
 
@@ -268,12 +299,24 @@ def raise_mr_for_work_order(
         request_type: "Purchase" or "Material Transfer"
         target_warehouse: required for Material Transfer requests
         from_warehouse: optional preferred source for Material Transfer
+        pow_profile: POW Profile for warehouse scope validation
 
     Returns:
         dict with status, material_request.
     """
     if not wo_name or not items or not request_type:
         frappe.throw(_("wo_name, items, and request_type are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        wh_to_check = []
+        if target_warehouse:
+            wh_to_check.append(target_warehouse)
+        if from_warehouse:
+            wh_to_check.append(from_warehouse)
+        if wh_to_check:
+            assert_warehouses_in_scope(wh_to_check, allowed, label="Warehouse")
 
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
 
