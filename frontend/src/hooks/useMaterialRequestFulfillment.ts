@@ -43,6 +43,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
       remarks?: string
       pow_profile?: string
       allow_insufficient_stock?: number
+      batch_serial_data?: string
     }) => {
       setIsSubmitting(true)
       setSubmitError(null)
@@ -57,6 +58,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
           remarks: params.remarks || '',
           pow_profile: params.pow_profile,
           allow_insufficient_stock: params.allow_insufficient_stock ?? 0,
+          batch_serial_data: params.batch_serial_data || undefined,
         })
         const result = unwrap(res)
         if (result?.status === 'success') {

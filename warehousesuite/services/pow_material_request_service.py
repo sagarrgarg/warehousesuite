@@ -154,12 +154,24 @@ def get_fulfillment_options(mr_name, profile_warehouses=None):
     lines = _get_mr_lines_with_remaining(mr_name)
     result = []
 
+    # Pre-fetch batch/serial flags for all items in one pass
+    item_codes = list({l["item_code"] for l in lines})
+    batch_serial_flags = {}
+    if item_codes:
+        flags = frappe.get_all(
+            "Item",
+            filters={"name": ["in", item_codes]},
+            fields=["name", "has_batch_no", "has_serial_no"],
+        )
+        batch_serial_flags = {f.name: f for f in flags}
+
     for line in lines:
         candidates = _eligible_warehouses_for_item(
             line["item_code"],
             line["from_warehouse"],
             profile_warehouses,
         )
+        item_flags = batch_serial_flags.get(line["item_code"], {})
         result.append({
             "mr_item_name": line["name"],
             "item_code": line["item_code"],
@@ -171,6 +183,8 @@ def get_fulfillment_options(mr_name, profile_warehouses=None):
             "conversion_factor": line["conversion_factor"],
             "target_warehouse": line["warehouse"],
             "from_warehouse": line["from_warehouse"],
+            "has_batch_no": item_flags.get("has_batch_no", 0),
+            "has_serial_no": item_flags.get("has_serial_no", 0),
             "candidates": candidates,
         })
 
@@ -224,6 +238,7 @@ def create_transfer_from_mr(
     company,
     remarks=None,
     allow_insufficient_stock=False,
+    batch_serial_data=None,
 ):
     """Create a Material Transfer Stock Entry linked back to MR lines.
 
@@ -235,12 +250,19 @@ def create_transfer_from_mr(
         items: list[dict] with keys mr_item_name, item_code, qty, uom
         company: company name
         remarks: optional text
+        batch_serial_data: optional dict keyed by mr_item_name with
+            list of {batch_no, serial_no, qty} entries
 
     Returns:
         dict with status, stock_entry name, message
     """
     if isinstance(items, str):
         items = frappe.parse_json(items)
+
+    if isinstance(batch_serial_data, str):
+        batch_serial_data = frappe.parse_json(batch_serial_data)
+    if not batch_serial_data:
+        batch_serial_data = {}
 
     if not items:
         frappe.throw(_("At least one item is required"))
@@ -351,24 +373,45 @@ def create_transfer_from_mr(
             or 0
         )
 
-        se.append("items", {
+        base_item_data = {
             "item_code": mr_row.item_code,
             "item_name": item_doc.item_name,
             "description": item_doc.description,
-            "qty": send_qty,
-            "transfer_qty": flt(send_qty * conversion_factor),
             "uom": uom,
             "stock_uom": item_doc.stock_uom,
             "conversion_factor": conversion_factor,
             "s_warehouse": source_warehouse,
             "t_warehouse": in_transit_warehouse,
             "basic_rate": flt(valuation_rate),
-            "basic_amount": flt(valuation_rate * send_qty),
             "valuation_rate": valuation_rate,
             "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
             "material_request": mr_name,
             "material_request_item": mr_item_name,
-        })
+        }
+
+        # Split into per-batch rows if batch/serial data provided
+        bs_entries = batch_serial_data.get(mr_item_name)
+        if bs_entries and len(bs_entries) > 0:
+            for bs_entry in bs_entries:
+                entry_qty = flt(bs_entry.get("qty", 0))
+                if entry_qty <= 0:
+                    continue
+                row = dict(base_item_data)
+                row["qty"] = entry_qty
+                row["transfer_qty"] = flt(entry_qty * conversion_factor)
+                row["basic_amount"] = flt(valuation_rate * entry_qty)
+                if bs_entry.get("batch_no"):
+                    row["batch_no"] = bs_entry["batch_no"]
+                    row["use_serial_batch_fields"] = 1
+                if bs_entry.get("serial_no"):
+                    row["serial_no"] = bs_entry["serial_no"]
+                    row["use_serial_batch_fields"] = 1
+                se.append("items", row)
+        else:
+            base_item_data["qty"] = send_qty
+            base_item_data["transfer_qty"] = flt(send_qty * conversion_factor)
+            base_item_data["basic_amount"] = flt(valuation_rate * send_qty)
+            se.append("items", base_item_data)
 
     if not se.items:
         frappe.throw(_("No valid items to transfer"))

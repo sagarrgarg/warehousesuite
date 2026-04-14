@@ -220,25 +220,29 @@ def get_items_for_dropdown(warehouse=None, show_only_stock_items=False, pow_prof
         if warehouse and show_only_stock_items:
             # Use efficient JOIN query for items with stock (like stock count)
             items = frappe.db.sql("""
-                SELECT 
+                SELECT
                     b.item_code,
                     i.item_name,
                     i.stock_uom,
-                    b.actual_qty as stock_qty
+                    b.actual_qty as stock_qty,
+                    i.has_batch_no,
+                    i.has_serial_no
                 FROM `tabBin` b
                 INNER JOIN `tabItem` i ON b.item_code = i.name
-                WHERE b.warehouse = %s 
+                WHERE b.warehouse = %s
                     AND b.actual_qty > 0
                     AND i.disabled = 0
                 ORDER BY i.item_name
             """, warehouse, as_dict=True)
-            
+
             # Format the results
             result = [{
                 "item_code": item.item_code,
                 "item_name": item.item_name or item.item_code,
                 "stock_qty": item.stock_qty,
-                "stock_uom": item.stock_uom
+                "stock_uom": item.stock_uom,
+                "has_batch_no": item.has_batch_no,
+                "has_serial_no": item.has_serial_no,
             } for item in items]
             
         else:
@@ -246,16 +250,18 @@ def get_items_for_dropdown(warehouse=None, show_only_stock_items=False, pow_prof
             items = frappe.get_all(
                 "Item",
                 filters={"disabled": 0},
-                fields=["name as item_code", "item_name", "stock_uom"]
+                fields=["name as item_code", "item_name", "stock_uom", "has_batch_no", "has_serial_no"],
             )
-            
+
             result = []
             for item in items:
                 item_data = {
                     "item_code": item.item_code,
                     "item_name": item.item_name or item.item_code,
                     "stock_uom": item.stock_uom,
-                    "stock_qty": 0
+                    "stock_qty": 0,
+                    "has_batch_no": item.has_batch_no,
+                    "has_serial_no": item.has_serial_no,
                 }
                 
                 # Get stock information if warehouse is specified
@@ -501,7 +507,7 @@ def get_stock_info_in_uom(item_code, warehouse, uom, pow_profile=None):
         }
 
 @frappe.whitelist()
-def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None, pow_profile=None):
+def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None, pow_profile=None, batch_serial_data=None):
     """Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
     try:
         from warehousesuite.utils.pow_warehouse_scope import (
@@ -523,6 +529,14 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
         except Exception as e:
             frappe.throw(_("Invalid items data format"))
         
+        # Parse batch/serial data if provided
+        bs_data = {}
+        if batch_serial_data:
+            try:
+                bs_data = frappe.parse_json(batch_serial_data)
+            except Exception:
+                frappe.throw(_("Invalid batch/serial data format"))
+
         # Basic input validation
         if not source_warehouse or not target_warehouse or not in_transit_warehouse:
             frappe.logger().warning(f"Missing warehouse: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}")
@@ -542,19 +556,16 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
         stock_entry.posting_date = frappe.utils.today()
         stock_entry.posting_time = frappe.utils.nowtime()
         
-        # Add items with proper stock ledger fields
+        # Add items — if batch/serial data exists, split into per-batch rows
         for item in items:
             if not item.get("item_code") or not item.get("qty") or not item.get("uom"):
                 frappe.throw(_("Item Code, Quantity and UOM are required for all items"))
-            
-            # Get item details
+
             item_doc = frappe.get_doc("Item", item["item_code"])
-            
-            # Get conversion factor
+
             conversion_factor = frappe.get_value("UOM Conversion Detail",
                 {"parent": item["item_code"], "uom": item["uom"]}, "conversion_factor") or 1.0
-            
-            # Get valuation rate
+
             valuation_rate = frappe.get_value("Stock Ledger Entry",
                 {
                     "item_code": item["item_code"],
@@ -564,41 +575,55 @@ def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_w
                 "valuation_rate",
                 order_by="posting_date desc, posting_time desc, creation desc"
             ) or 0
-            
-            # Calculate quantities
-            qty = flt(item["qty"])
-            transfer_qty = flt(qty * conversion_factor)
-            
-            # Calculate stock value
-            basic_rate = flt(valuation_rate)
-            basic_amount = flt(basic_rate * qty)
-            
-            # Log item details
-            frappe.logger().debug(
-                f"Adding item: code={item['item_code']}, qty={qty}, "
-                f"transfer_qty={transfer_qty}, rate={basic_rate}, amount={basic_amount}"
-            )
-            
-            stock_entry.append("items", {
-                "item_code": item["item_code"],
-                "item_name": item_doc.item_name,
-                "description": item_doc.description,
-                "qty": qty,
-                "transfer_qty": transfer_qty,
-                "uom": item["uom"],
-                "stock_uom": item_doc.stock_uom,
-                "conversion_factor": conversion_factor,
-                "s_warehouse": source_warehouse,
-                "t_warehouse": in_transit_warehouse,
-                "basic_rate": basic_rate,
-                "basic_amount": basic_amount,
-                "valuation_rate": valuation_rate,
-                "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
-                "is_finished_item": item_doc.is_stock_item,
-                "retain_sample": item_doc.retain_sample,
-                "sample_quantity": (item_doc.sample_quantity if item_doc.retain_sample else 0)
-            })
-        
+
+            # Check if this item has batch/serial selections
+            item_bs = bs_data.get(item["item_code"]) if bs_data else None
+
+            if item_bs and isinstance(item_bs, list) and len(item_bs) > 0:
+                # Multi-batch: one SE Detail row per batch entry
+                for bs_entry in item_bs:
+                    entry_qty = flt(bs_entry.get("qty", 0))
+                    if entry_qty <= 0:
+                        continue
+                    stock_entry.append("items", {
+                        "item_code": item["item_code"],
+                        "item_name": item_doc.item_name,
+                        "description": item_doc.description,
+                        "qty": entry_qty,
+                        "transfer_qty": flt(entry_qty * conversion_factor),
+                        "uom": item["uom"],
+                        "stock_uom": item_doc.stock_uom,
+                        "conversion_factor": conversion_factor,
+                        "s_warehouse": source_warehouse,
+                        "t_warehouse": in_transit_warehouse,
+                        "basic_rate": flt(valuation_rate),
+                        "basic_amount": flt(valuation_rate * entry_qty),
+                        "valuation_rate": valuation_rate,
+                        "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
+                        "batch_no": bs_entry.get("batch_no") or None,
+                        "serial_no": bs_entry.get("serial_no") or None,
+                        "use_serial_batch_fields": 1 if (bs_entry.get("batch_no") or bs_entry.get("serial_no")) else 0,
+                    })
+            else:
+                # No batch/serial — single row
+                qty = flt(item["qty"])
+                stock_entry.append("items", {
+                    "item_code": item["item_code"],
+                    "item_name": item_doc.item_name,
+                    "description": item_doc.description,
+                    "qty": qty,
+                    "transfer_qty": flt(qty * conversion_factor),
+                    "uom": item["uom"],
+                    "stock_uom": item_doc.stock_uom,
+                    "conversion_factor": conversion_factor,
+                    "s_warehouse": source_warehouse,
+                    "t_warehouse": in_transit_warehouse,
+                    "basic_rate": flt(valuation_rate),
+                    "basic_amount": flt(valuation_rate * qty),
+                    "valuation_rate": valuation_rate,
+                    "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
+                })
+
         # Set custom field for final target warehouse
         stock_entry.custom_for_which_warehouse_to_transfer = target_warehouse
 
@@ -745,18 +770,25 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
             IFNULL(sei.transferred_qty, 0) AS transferred_qty,
             u.full_name AS created_by,
             se.custom_pow_session_id AS pow_session_id,
-            se.remarks AS remarks
+            se.remarks AS remarks,
+            sei.serial_and_batch_bundle,
+            sei.batch_no,
+            i.has_batch_no,
+            i.has_serial_no
 
-        FROM 
+        FROM
             `tabStock Entry` se
-        INNER JOIN 
+        INNER JOIN
             `tabStock Entry Detail` sei ON se.name = sei.parent
-        LEFT JOIN 
+        INNER JOIN
+            `tabItem` i ON sei.item_code = i.name
+        LEFT JOIN
             `tabUser` u ON se.owner = u.email
-        WHERE 
+        WHERE
             se.add_to_transit = 1
             AND se.docstatus = 1
             AND (sei.qty > IFNULL(sei.transferred_qty, 0))
+            AND (se.outgoing_stock_entry IS NULL OR se.outgoing_stock_entry = '')
         """
 
         params = []
@@ -834,7 +866,7 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
             stock_uom_must_be_whole_number = frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
             
             grouped_data[stock_entry]['items'].append({
-                'ste_detail': row['ste_detail'],  # Track specific child row
+                'ste_detail': row['ste_detail'],
                 'item_code': row['item_code'],
                 'item_name': row['item_name'],
                 'qty': row['qty'],
@@ -844,7 +876,11 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
                 'uom_must_be_whole_number': uom_must_be_whole_number,
                 'stock_uom_must_be_whole_number': stock_uom_must_be_whole_number,
                 'transferred_qty': row['transferred_qty'],
-                'remaining_qty': row['qty'] - row['transferred_qty']
+                'remaining_qty': row['qty'] - row['transferred_qty'],
+                'has_batch_no': row.get('has_batch_no', 0),
+                'has_serial_no': row.get('has_serial_no', 0),
+                'serial_and_batch_bundle': row.get('serial_and_batch_bundle'),
+                'batch_no': row.get('batch_no'),
             })
         
         # Add completion status and progress information
@@ -885,7 +921,7 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
         frappe.throw(f"Error getting transfer receive data: {str(e)}")
 
 @frappe.whitelist()
-def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None, pow_profile=None):
+def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None, pow_profile=None, batch_serial_data=None):
     """Create stock entry for receiving transfer (in-transit -> destination).
 
     Args:
@@ -912,6 +948,7 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
             assert_user_on_pow_profile(pow_profile)
 
         items_data = frappe.parse_json(items_data)
+        batch_serial_map = frappe.parse_json(batch_serial_data) if batch_serial_data else {}
 
         original_se = frappe.get_doc("Stock Entry", stock_entry_name)
 
@@ -989,6 +1026,21 @@ def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_
             # Start a new transaction
             frappe.db.begin()
             
+            # Set batch_no + use_serial_batch_fields on receive items
+            if batch_serial_map:
+                for item in new_se.items:
+                    ste_detail_key = item.ste_detail
+                    if ste_detail_key and ste_detail_key in batch_serial_map:
+                        entries = batch_serial_map[ste_detail_key]
+                        if entries and len(entries) > 0:
+                            first_entry = entries[0]
+                            if first_entry.get("batch_no"):
+                                item.batch_no = first_entry["batch_no"]
+                                item.use_serial_batch_fields = 1
+                            if first_entry.get("serial_no"):
+                                item.serial_no = first_entry["serial_no"]
+                                item.use_serial_batch_fields = 1
+
             # First try to insert without submitting to catch validation errors
             new_se.insert(ignore_permissions=True)
             
@@ -1157,20 +1209,46 @@ def get_warehouse_items_for_stock_count(warehouse, pow_profile=None):
             _p, allowed = validate_pow_profile_access(pow_profile)
             assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
         
-        # Get items with stock in the warehouse
+        # Get items with stock in the warehouse, including batch/serial flags
         items = frappe.db.sql("""
-            SELECT 
+            SELECT
                 b.item_code,
                 i.item_name,
                 i.stock_uom,
-                b.actual_qty as current_qty
+                b.actual_qty as current_qty,
+                i.has_batch_no,
+                i.has_serial_no
             FROM `tabBin` b
             INNER JOIN `tabItem` i ON b.item_code = i.name
             WHERE b.warehouse = %s AND b.actual_qty > 0
             ORDER BY i.item_name
         """, warehouse, as_dict=True)
-        
-        return items
+
+        # Expand batched items: one line per batch instead of one line per item
+        from warehousesuite.services.pow_batch_serial_service import get_available_batches
+
+        result = []
+        for item in items:
+            if item.get("has_batch_no"):
+                batches = get_available_batches(item["item_code"], warehouse)
+                if batches:
+                    for batch in batches:
+                        result.append({
+                            "item_code": item["item_code"],
+                            "item_name": item["item_name"],
+                            "stock_uom": item["stock_uom"],
+                            "current_qty": batch["qty"],
+                            "has_batch_no": item["has_batch_no"],
+                            "has_serial_no": item["has_serial_no"],
+                            "batch_no": batch["batch_no"],
+                        })
+                else:
+                    # Batch item but no batches found — show aggregate line
+                    result.append(item)
+            else:
+                result.append(item)
+
+        return result
         
     except Exception as e:
         frappe.logger().error(f"Error in get_warehouse_items_for_stock_count: {str(e)}")
@@ -1200,14 +1278,17 @@ def create_pow_stock_count_with_items(warehouse, company, session_name, items_da
             phy = float(item["physical_qty"])
             if not item_row_has_difference(phy, item.get("current_qty")):
                 continue
-            stock_count.append("items", {
+            row_data = {
                 "item_code": item["item_code"],
                 "item_name": item["item_name"],
                 "warehouse": warehouse,
                 "current_stock": item["current_qty"],
                 "counted_qty": phy,
                 "uom": item["stock_uom"],
-            })
+            }
+            if item.get("batch_no"):
+                row_data["batch_no"] = item["batch_no"]
+            stock_count.append("items", row_data)
             appended += 1
 
         stock_count.insert()
@@ -1286,14 +1367,17 @@ def save_pow_stock_count_draft(warehouse, company, session_name, items_data, pow
             phy = float(item["physical_qty"])
             if not item_row_has_difference(phy, item.get("current_qty")):
                 continue
-            stock_count.append("items", {
+            row_data = {
                 "item_code": item["item_code"],
                 "item_name": item["item_name"],
                 "warehouse": warehouse,
                 "current_stock": item["current_qty"],
                 "counted_qty": phy,
                 "uom": item["stock_uom"],
-            })
+            }
+            if item.get("batch_no"):
+                row_data["batch_no"] = item["batch_no"]
+            stock_count.append("items", row_data)
 
         # Save as draft (don't submit) - this will have docstatus = 0
         stock_count.flags.ignore_draft_validation = True  # Skip draft validation during save
@@ -1356,14 +1440,17 @@ def create_and_submit_pow_stock_count(warehouse, company, session_name, items_da
             frappe.throw(_("No stock differences to submit."))
 
         for item in diff_rows:
-            stock_count.append("items", {
+            row_data = {
                 "item_code": item["item_code"],
                 "item_name": item["item_name"],
                 "warehouse": warehouse,
                 "current_stock": item["current_qty"],
                 "counted_qty": float(item["physical_qty"]),
                 "uom": item["stock_uom"],
-            })
+            }
+            if item.get("batch_no"):
+                row_data["batch_no"] = item["batch_no"]
+            stock_count.append("items", row_data)
 
         # Insert and submit the stock count
         stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation

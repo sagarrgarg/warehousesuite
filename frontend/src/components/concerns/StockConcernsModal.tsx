@@ -239,7 +239,7 @@ export default function StockConcernsModal({ open, onClose, powProfileName }: Pr
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto overscroll-contain bg-slate-50">
-          <div className="max-w-2xl mx-auto divide-y divide-slate-200">
+          <div className="max-w-4xl mx-auto divide-y divide-slate-200">
             {concerns.map(c => {
               const isExpanded = expandedConcern === c.name
 

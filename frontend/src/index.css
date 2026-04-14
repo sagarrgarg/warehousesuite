@@ -31,10 +31,50 @@
 }
 
 html {
-  font-size: 112.5%;
+  font-size: 118.75%; /* 19px base — bigger for warehouse floor readability */
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
+
+/* POW global size overrides — bump tiny pixel sizes used throughout the app */
+/* These override Tailwind arbitrary values that bypass rem scaling */
+#root {
+  --pow-text-micro: 10px;   /* was 8px */
+  --pow-text-tiny: 11px;    /* was 9px */
+  --pow-text-small: 13px;   /* was 10px */
+  --pow-text-label: 11px;   /* was 10px uppercase labels */
+  --pow-touch-min: 48px;    /* min touch target */
+}
+
+/* Override common tiny text sizes globally in #root */
+#root .text-\[8px\]  { font-size: var(--pow-text-micro) !important; }
+#root .text-\[9px\]  { font-size: var(--pow-text-tiny) !important; }
+#root .text-\[10px\] { font-size: var(--pow-text-small) !important; }
+#root .text-\[11px\] { font-size: var(--pow-text-small) !important; }
+
+/* Boost text-xs (12px) to 13px and text-sm (14px) to 15px */
+#root .text-xs { font-size: 13px !important; }
+#root .text-sm { font-size: 15px !important; }
+
+/* Bigger touch targets — all buttons and interactive elements */
+#root button, #root select, #root [role="button"] {
+  min-height: 40px;
+}
+#root input[type="number"], #root input[type="text"], #root textarea {
+  min-height: 40px;
+  font-size: 16px !important;
+}
+
+/* Wider content on tablet/desktop — less wasted space in the middle */
+@media (min-width: 768px) {
+  #root .max-w-sm { max-width: 32rem; }
+}
+
+/* Increase padding on cards and panels for easier reading */
+#root .px-2\.5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+#root .px-3 { padding-left: 1rem !important; padding-right: 1rem !important; }
+#root .py-2 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
+#root .py-2\.5 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

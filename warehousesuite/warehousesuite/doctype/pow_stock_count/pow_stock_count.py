@@ -105,12 +105,15 @@ class POWStockCount(Document):
             # Add items with differences
             for item in self.items:
                 if item_row_has_difference(item.counted_qty, item.current_stock):
-                    stock_reconciliation.append("items", {
+                    row_data = {
                         "item_code": item.item_code,
                         "warehouse": self.warehouse,
                         "qty": item.counted_qty,
-                        "valuation_rate": frappe.db.get_value("Item", item.item_code, "last_purchase_rate") or 0
-                    })
+                        "valuation_rate": frappe.db.get_value("Item", item.item_code, "last_purchase_rate") or 0,
+                    }
+                    if item.batch_no:
+                        row_data["batch_no"] = item.batch_no
+                    stock_reconciliation.append("items", row_data)
             
             stock_reconciliation.insert()
             stock_reconciliation.submit()

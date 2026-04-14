@@ -567,13 +567,17 @@ def get_work_order_materials(wo_name, allowed_warehouses=None):
 # Material Transfer for Manufacture
 # ---------------------------------------------------------------------------
 
-def transfer_materials_for_manufacture(wo_name, items):
+def transfer_materials_for_manufacture(wo_name, items, batch_serial_data=None):
     """Create a Material Transfer for Manufacture Stock Entry.
 
     Args:
         wo_name: Work Order name
         items: list[dict] with item_code, qty (in stock_uom), source_warehouse,
                wo_item_name (child row name), original_item (if alternate used)
+        batch_serial_data: optional dict keyed by item_code, values are lists of
+                           {batch_no, serial_no, qty} for batch/serial tracked items.
+                           When provided, a Serial and Batch Bundle is created for
+                           each matching item (type_of_transaction="Outward").
 
     Returns:
         dict with status, stock_entry
@@ -583,6 +587,9 @@ def transfer_materials_for_manufacture(wo_name, items):
 
     if not items:
         frappe.throw(_("At least one item is required"))
+
+    if batch_serial_data and isinstance(batch_serial_data, str):
+        batch_serial_data = frappe.parse_json(batch_serial_data)
 
     wo = frappe.get_doc("Work Order", wo_name)
     if wo.docstatus != 1:
@@ -676,6 +683,20 @@ def transfer_materials_for_manufacture(wo_name, items):
     if not se.items:
         frappe.throw(_("No valid items to transfer"))
 
+    # Set batch_no + use_serial_batch_fields on SE items
+    if batch_serial_data:
+        for se_item in se.items:
+            entries = batch_serial_data.get(se_item.item_code)
+            if not entries or len(entries) == 0:
+                continue
+            first_entry = entries[0]
+            if first_entry.get("batch_no"):
+                se_item.batch_no = first_entry["batch_no"]
+                se_item.use_serial_batch_fields = 1
+            if first_entry.get("serial_no"):
+                se_item.serial_no = first_entry["serial_no"]
+                se_item.use_serial_batch_fields = 1
+
     frappe.db.begin()
     try:
         se.insert(ignore_permissions=True)
@@ -752,7 +773,10 @@ def get_manufacture_preview(wo_name, qty):
     }
 
 
-def manufacture_work_order(wo_name, qty, item_overrides=None, item_substitutions=None):
+def manufacture_work_order(
+    wo_name, qty, item_overrides=None, item_substitutions=None,
+    pow_fg_batch_no=None, batch_serial_data=None,
+):
     """Create a Manufacture Stock Entry to produce finished goods.
 
     Uses ERPNext's native make_stock_entry to ensure BOM explosion, backflush,
@@ -767,6 +791,12 @@ def manufacture_work_order(wo_name, qty, item_overrides=None, item_substitutions
                         qty for matching items.
         item_substitutions: optional original->substitute mapping to swap
                         consumed raw material item codes.
+        pow_fg_batch_no: optional batch number for the finished good. When the
+                         FG item has batch tracking enabled, a Serial and Batch
+                         Bundle (Inward) is created and linked to the FG row.
+        batch_serial_data: optional dict keyed by item_code, values are lists of
+                           {batch_no, serial_no, qty} for consumed raw materials.
+                           SBBs with type_of_transaction="Outward" are created.
 
     Returns:
         dict with status, stock_entry
@@ -807,6 +837,31 @@ def manufacture_work_order(wo_name, qty, item_overrides=None, item_substitutions
                 if new_qty >= 0:
                     item.qty = new_qty
                     item.transfer_qty = new_qty * flt(item.conversion_factor or 1)
+
+    # Parse batch_serial_data if provided as JSON string
+    if batch_serial_data and isinstance(batch_serial_data, str):
+        batch_serial_data = frappe.parse_json(batch_serial_data)
+
+    # Set batch_no directly on SE items — ERPNext auto-creates SBB on submit
+    from warehousesuite.services.pow_batch_serial_service import get_item_batch_serial_info
+
+    for item in se.items:
+        if cint(item.is_finished_item):
+            if pow_fg_batch_no:
+                fg_info = get_item_batch_serial_info(item.item_code)
+                if cint(fg_info.get("has_batch_no")):
+                    item.batch_no = pow_fg_batch_no
+                    item.use_serial_batch_fields = 1
+        elif not cint(item.is_scrap_item) and batch_serial_data:
+            entries = batch_serial_data.get(item.item_code)
+            if entries and len(entries) > 0:
+                first_entry = entries[0]
+                if first_entry.get("batch_no"):
+                    item.batch_no = first_entry["batch_no"]
+                    item.use_serial_batch_fields = 1
+                if first_entry.get("serial_no"):
+                    item.serial_no = first_entry["serial_no"]
+                    item.use_serial_batch_fields = 1
 
     frappe.db.begin()
     try:

@@ -6,7 +6,8 @@ import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
-import type { ProfileWarehouses, DropdownItem, PendingSentTransfer } from '@/types'
+import BatchSerialInput from '@/components/shared/BatchSerialInput'
+import type { ProfileWarehouses, DropdownItem, PendingSentTransfer, BatchSerialSelection } from '@/types'
 
 interface Props {
 	open: boolean
@@ -26,10 +27,12 @@ interface Line {
 	available_qty: number
 	uom_options: string[]
 	uom_conversions: Record<string, number>
+	has_batch_no: 0 | 1
+	has_serial_no: 0 | 1
 }
 
 function newLine(): Line {
-	return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [], uom_conversions: {} }
+	return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [], uom_conversions: {}, has_batch_no: 0, has_serial_no: 0 }
 }
 
 function lineStockQty(line: Line): number {
@@ -48,6 +51,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const [showPending, setShowPending] = useState(false)
 	const [showOverstockConfirm, setShowOverstockConfirm] = useState(false)
 	const [overstockItems, setOverstockItems] = useState<Line[]>([])
+	const [batchSerialSelections, setBatchSerialSelections] = useState<Record<string, BatchSerialSelection[]>>({})
 
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
@@ -80,7 +84,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 	const { call: createTransfer } = useFrappePostCall(API.createTransfer)
 
 	useEffect(() => {
-		if (sourceWarehouse) { refreshItems(); setLines([newLine()]) }
+		if (sourceWarehouse) { refreshItems(); setLines([newLine()]); setBatchSerialSelections({}) }
 	}, [sourceWarehouse]) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const selectItem = useCallback(async (lineId: string, itemCode: string) => {
@@ -106,7 +110,11 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 			uom: item.stock_uom, stock_uom: item.stock_uom,
 			available_qty: item.stock_qty ?? 0, uom_options: uomOptions,
 			uom_conversions: uomConversions,
+			has_batch_no: item.has_batch_no ?? 0,
+			has_serial_no: item.has_serial_no ?? 0,
 		} : l))
+		// Clear any previous batch/serial selections for this line
+		setBatchSerialSelections(prev => { const next = { ...prev }; delete next[lineId]; return next })
 	}, [items])
 
 	const updateLine = useCallback((id: string, updates: Partial<Line>) => {
@@ -123,15 +131,29 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 
 		setSubmitting(true)
 		try {
-			const transferItems = valid.map(l => ({ item_code: l.item_code, qty: l.qty, uom: l.uom || l.stock_uom }))
-			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse, items: JSON.stringify(transferItems), company, remarks, pow_profile: powProfileName ?? undefined })
+			const transferItems = valid.map(l => ({
+				item_code: l.item_code, qty: l.qty, uom: l.uom || l.stock_uom,
+				batch_serial: (batchSerialSelections[l.id] ?? []).length > 0
+					? batchSerialSelections[l.id].map(s => ({ batch_no: s.batch_no, serial_no: s.serial_no, qty: s.qty }))
+					: undefined,
+			}))
+			// Build batch_serial_data keyed by item_code for backend
+			const bsData: Record<string, { batch_no?: string; serial_no?: string; qty: number }[]> = {}
+			for (const l of valid) {
+				const sels = batchSerialSelections[l.id]
+				if (sels && sels.length > 0) {
+					bsData[l.item_code] = sels.map(s => ({ batch_no: s.batch_no, serial_no: s.serial_no, qty: s.qty }))
+				}
+			}
+			const hasBsData = Object.keys(bsData).length > 0
+			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse, items: JSON.stringify(transferItems), company, remarks, pow_profile: powProfileName ?? undefined, ...(hasBsData ? { batch_serial_data: JSON.stringify(bsData) } : {}) })
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Transfer failed')
 			else { toast.success(`Transfer created: ${result.stock_entry}`); onClose() }
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Transfer failed')) }
 		finally { setSubmitting(false); setShowOverstockConfirm(false); setOverstockItems([]) }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks, powProfileName])
+	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks, powProfileName, batchSerialSelections])
 
 	const handleSubmit = () => {
 		const valid = lines.filter(l => l.item_code && l.qty > 0)
@@ -141,6 +163,14 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 
 		const seen = new Set<string>()
 		for (const l of valid) { if (seen.has(l.item_code)) { toast.error(`Duplicate: ${l.item_code}`); return }; seen.add(l.item_code) }
+
+		// Validate batch/serial selections for items that require them
+		for (const l of valid) {
+			if ((l.has_batch_no === 1 || l.has_serial_no === 1) && !(batchSerialSelections[l.id]?.length > 0)) {
+				toast.error(`${l.item_code} requires ${l.has_batch_no === 1 ? 'batch' : 'serial'} selection`)
+				return
+			}
+		}
 
 		const overStock = valid.filter(l => lineStockQty(l) > l.available_qty && l.available_qty > 0)
 		if (overStock.length > 0) {
@@ -264,23 +294,37 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 											)}
 										</div>
 										{line.item_code && (
-											<div className="flex items-center gap-2 pl-0.5">
-												<div>
-													<input type="number" min="0" step="1" className={`w-20 bg-white border rounded px-2 py-1.5 text-xs text-center font-bold focus:outline-none focus:ring-1 ${exceedsStock ? 'border-red-300 focus:ring-red-400' : 'border-slate-200 focus:ring-blue-400'}`} value={line.qty || ''} onChange={e => updateLine(line.id, { qty: parseFloat(e.target.value) || 0 })} placeholder="Qty" />
-													{!sameUom && line.qty > 0 && (
-														<p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsStock ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
-															= {stockQty} {line.stock_uom}
-														</p>
-													)}
+											<>
+												<div className="flex items-center gap-2 pl-0.5">
+													<div>
+														<input type="number" min="0" step="1" className={`w-20 bg-white border rounded px-2 py-1.5 text-xs text-center font-bold focus:outline-none focus:ring-1 ${exceedsStock ? 'border-red-300 focus:ring-red-400' : 'border-slate-200 focus:ring-blue-400'}`} value={line.qty || ''} onChange={e => updateLine(line.id, { qty: parseFloat(e.target.value) || 0 })} placeholder="Qty" />
+														{!sameUom && line.qty > 0 && (
+															<p className={`text-[8px] tabular-nums mt-0.5 text-center ${exceedsStock ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
+																= {stockQty} {line.stock_uom}
+															</p>
+														)}
+													</div>
+													<select className="w-20 bg-white border border-slate-200 rounded px-1.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400" value={line.uom} onChange={e => updateLine(line.id, { uom: e.target.value })} disabled={!line.uom_options.length}>
+														{line.uom_options.length === 0 && <option value="">UOM</option>}
+														{line.uom_options.map(u => <option key={u} value={u}>{u}</option>)}
+													</select>
+													<span className={`text-[10px] font-semibold tabular-nums ml-auto ${exceedsStock ? 'text-red-600' : 'text-emerald-600'}`}>
+														{line.available_qty > 0 ? `${line.available_qty} ${line.stock_uom}` : '—'}
+													</span>
 												</div>
-												<select className="w-20 bg-white border border-slate-200 rounded px-1.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-slate-400" value={line.uom} onChange={e => updateLine(line.id, { uom: e.target.value })} disabled={!line.uom_options.length}>
-													{line.uom_options.length === 0 && <option value="">UOM</option>}
-													{line.uom_options.map(u => <option key={u} value={u}>{u}</option>)}
-												</select>
-												<span className={`text-[10px] font-semibold tabular-nums ml-auto ${exceedsStock ? 'text-red-600' : 'text-emerald-600'}`}>
-													{line.available_qty > 0 ? `${line.available_qty} ${line.stock_uom}` : '—'}
-												</span>
-											</div>
+												{(line.has_batch_no === 1 || line.has_serial_no === 1) && line.qty > 0 && (
+													<BatchSerialInput
+														itemCode={line.item_code}
+														warehouse={sourceWarehouse}
+														qty={line.qty}
+														mode="outward"
+														hasBatchNo={line.has_batch_no === 1}
+														hasSerialNo={line.has_serial_no === 1}
+														value={batchSerialSelections[line.id] ?? []}
+														onChange={(sels) => setBatchSerialSelections(prev => ({ ...prev, [line.id]: sels }))}
+													/>
+												)}
+											</>
 										)}
 									</div>
 								)

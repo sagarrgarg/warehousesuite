@@ -8,6 +8,7 @@
  "field_order": [
   "item_code",
   "item_name",
+  "batch_no",
   "uom",
   "warehouse",
   "current_stock",
@@ -30,6 +31,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch No",
+   "options": "Batch",
    "read_only": 1
   },
   {

@@ -70,7 +70,7 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
         if (result.error_type === 'already_received') { setReceived(true); onReceived() }
         toast.error(result.message)
       } else {
-        toast.success(`Received: ${result.stock_entry}`); setQtys({}); setReceived(true); onReceived()
+        toast.success(`Received: ${result.stock_entry}`); setQtys({}); onReceived()
       }
     } catch (err: unknown) { toast.error(formatPowFetchError(err, 'Receive failed')) }
     finally { setSubmitting(false) }
@@ -142,7 +142,14 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
                 return (
                 <div key={item.ste_detail} className={`flex items-center gap-1.5 text-[10px] rounded px-1.5 py-1 transition-colors duration-150 ${lineStripe}`}>
                   <div className="flex-1 min-w-0">
-                    <span className="text-slate-700 dark:text-slate-100 font-semibold truncate block leading-tight">{item.item_name || item.item_code}</span>
+                    <span className="text-slate-700 dark:text-slate-100 font-semibold truncate block leading-tight">
+                      {item.item_name || item.item_code}
+                      {(item.has_batch_no === 1 || item.has_serial_no === 1) && item.batch_no && (
+                        <span className="ml-1 inline-flex items-center text-[8px] font-mono font-normal text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 rounded px-1 py-px leading-none align-middle">
+                          {item.batch_no}
+                        </span>
+                      )}
+                    </span>
                     <span className="text-[8px] text-slate-500 dark:text-slate-400 font-mono truncate block leading-tight">{item.item_code}</span>
                   </div>
                   <span className="text-right tabular-nums shrink-0">

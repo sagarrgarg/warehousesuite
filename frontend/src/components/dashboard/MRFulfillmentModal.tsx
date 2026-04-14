@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, Warehouse, Package, ArrowRight, Loader2, Check, AlertTriangle } from 'lucide-react'
 import { useFulfillmentOptions, useCreateTransferFromMR } from '@/hooks/useMaterialRequestFulfillment'
 import { formatPowFetchError } from '@/lib/api'
-import type { FulfillmentLineOption, MaterialRequestFulfillmentPayload, ProfileWarehouses } from '@/types'
+import BatchSerialInput from '@/components/shared/BatchSerialInput'
+import type { FulfillmentLineOption, MaterialRequestFulfillmentPayload, ProfileWarehouses, BatchSerialSelection } from '@/types'
 
 interface MRFulfillmentModalProps {
   open: boolean
@@ -40,6 +41,7 @@ export default function MRFulfillmentModal({
     : null
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('')
   const [lineQtys, setLineQtys] = useState<LineQty[]>([])
+  const [batchSerialSelections, setBatchSerialSelections] = useState<Record<string, BatchSerialSelection[]>>({})
   const [success, setSuccess] = useState<string | null>(null)
 
   const { createTransfer, isSubmitting, submitError, clearError } = useCreateTransferFromMR(() => {
@@ -122,6 +124,16 @@ export default function MRFulfillmentModal({
     const inTransit = profileWarehouses.in_transit_warehouse?.warehouse || ''
     const targetWarehouse = options[0]?.target_warehouse || defaultWarehouse || ''
 
+    // Build batch_serial_data only for lines that have selections
+    const bsData: Record<string, BatchSerialSelection[]> = {}
+    for (const item of items) {
+      const selections = batchSerialSelections[item.mr_item_name]
+      if (selections && selections.length > 0) {
+        bsData[item.mr_item_name] = selections
+      }
+    }
+    const hasBsData = Object.keys(bsData).length > 0
+
     const result = await createTransfer({
       mr_name: mrName,
       source_warehouse: selectedWarehouse,
@@ -131,6 +143,7 @@ export default function MRFulfillmentModal({
       company,
       pow_profile: powProfileName ?? undefined,
       allow_insufficient_stock: stockOverrideConfirmed ? 1 : 0,
+      batch_serial_data: hasBsData ? JSON.stringify(bsData) : undefined,
     })
 
     if (result?.status === 'success') {
@@ -178,7 +191,7 @@ export default function MRFulfillmentModal({
         <>
           {/* Body */}
           <div className="flex-1 overflow-y-auto overscroll-contain bg-slate-50">
-            <div className="max-w-2xl mx-auto px-3 py-3 space-y-3">
+            <div className="max-w-4xl mx-auto px-3 py-3 space-y-3">
               {/* Source warehouse */}
               <div className="bg-white border border-slate-200 rounded p-3">
                 <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Send from</label>
@@ -187,7 +200,7 @@ export default function MRFulfillmentModal({
                   <select
                     className="w-full appearance-none bg-slate-50 border border-slate-200 rounded pl-7 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
                     value={selectedWarehouse}
-                    onChange={e => { setSelectedWarehouse(e.target.value); setStockOverrideConfirmed(false) }}
+                    onChange={e => { setSelectedWarehouse(e.target.value); setStockOverrideConfirmed(false); setBatchSerialSelections({}) }}
                   >
                     <option value="">Select warehouse...</option>
                     {allWarehouses().map(wh => <option key={wh} value={wh}>{wh}</option>)}
@@ -295,6 +308,20 @@ export default function MRFulfillmentModal({
                             <ArrowRight className="w-2.5 h-2.5" /> To {line.target_warehouse}
                           </div>
                         )}
+                        {selectedWarehouse && (lq?.qty ?? 0) > 0 && (line.has_batch_no || line.has_serial_no) && (
+                          <BatchSerialInput
+                            itemCode={line.item_code}
+                            warehouse={selectedWarehouse}
+                            qty={lq?.qty ?? 0}
+                            mode="outward"
+                            hasBatchNo={!!line.has_batch_no}
+                            hasSerialNo={!!line.has_serial_no}
+                            value={batchSerialSelections[line.mr_item_name] ?? []}
+                            onChange={(selections) =>
+                              setBatchSerialSelections(prev => ({ ...prev, [line.mr_item_name]: selections }))
+                            }
+                          />
+                        )}
                       </div>
                     )
                   })}
@@ -304,7 +331,7 @@ export default function MRFulfillmentModal({
           </div>
 
           {/* Footer */}
-          <div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-2xl mx-auto w-full">
+          <div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-4xl mx-auto w-full">
             <button
               onClick={handleSubmit}
               disabled={isSubmitting || !selectedWarehouse || lineQtys.every(l => l.qty <= 0) || (hasStockWarning && !stockOverrideConfirmed)}

@@ -3,6 +3,7 @@ const MR_BASE = 'warehousesuite.api.pow_material_request'
 const WO_BASE = 'warehousesuite.api.pow_work_order'
 const SO_REP_BASE = 'warehousesuite.api.pow_so_pending_report'
 const CONCERN_BASE = 'warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern'
+const BATCH_BASE = 'warehousesuite.api.pow_batch_serial'
 
 export const API = {
 	getProfiles: `${BASE}.get_applicable_pow_profiles`,
@@ -67,6 +68,11 @@ export const API = {
 	getConcernStatusOptions: `${CONCERN_BASE}.get_concern_status_options`,
 	getSourceEntryItems: `${CONCERN_BASE}.get_source_entry_items`,
 	createRevertTransfer: `${CONCERN_BASE}.create_revert_transfer`,
+
+	// Batch & Serial
+	getBatchSerialInfo: `${BATCH_BASE}.get_batch_serial_info`,
+	getBatches: `${BATCH_BASE}.get_batches`,
+	getSerialNos: `${BATCH_BASE}.get_serial_nos`,
 } as const
 
 /** Extract result from frappe-react-sdk response. Handles {message: {status, ...}} pattern. */

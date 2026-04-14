@@ -69,6 +69,7 @@ def create_transfer_from_material_request(
     remarks=None,
     pow_profile=None,
     allow_insufficient_stock=False,
+    batch_serial_data=None,
 ):
     """Create a Material Transfer Stock Entry linked to MR lines.
 
@@ -95,6 +96,8 @@ def create_transfer_from_material_request(
 
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
 
+    parsed_bs_data = frappe.parse_json(batch_serial_data) if isinstance(batch_serial_data, str) else batch_serial_data
+
     return create_transfer_from_mr(
         mr_name=mr_name,
         source_warehouse=source_warehouse,
@@ -104,6 +107,7 @@ def create_transfer_from_material_request(
         company=company,
         remarks=remarks,
         allow_insufficient_stock=bool(allow_insufficient_stock),
+        batch_serial_data=parsed_bs_data,
     )
 
 

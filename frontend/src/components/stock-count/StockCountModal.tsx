@@ -9,6 +9,11 @@ import type { ProfileWarehouses, StockCountWarehouseItem } from '@/types'
 
 const SESSION_NAME = ''
 
+/** Unique key for a stock count line — includes batch_no for batched items. */
+function lineKey(item: { item_code: string; batch_no?: string }): string {
+	return item.batch_no ? `${item.item_code}::${item.batch_no}` : item.item_code
+}
+
 interface Props { open: boolean; onClose: () => void; warehouses: ProfileWarehouses; powProfileName: string | null }
 
 export default function StockCountModal({ open, onClose, warehouses, powProfileName }: Props) {
@@ -63,7 +68,10 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 				if (doc?.items && Array.isArray(doc.items)) {
 					const qtys: Record<string, number> = {}
 					for (const row of doc.items) {
-						if (row.item_code != null && row.counted_qty != null) qtys[row.item_code] = row.counted_qty
+						if (row.item_code != null && row.counted_qty != null) {
+							const key = row.batch_no ? `${row.item_code}::${row.batch_no}` : row.item_code
+							qtys[key] = row.counted_qty
+						}
 					}
 					setPhysicalQtys(qtys)
 				}
@@ -81,7 +89,8 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const { call: deleteDoc } = useFrappePostCall(API.deleteDoc)
 
 	const buildItems = () => items.map(item => {
-		const physical = physicalQtys[item.item_code] ?? item.current_qty
+		const key = lineKey(item)
+		const physical = physicalQtys[key] ?? item.current_qty
 		return {
 			item_code: item.item_code,
 			item_name: item.item_name,
@@ -89,6 +98,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 			physical_qty: physical,
 			difference: physical - item.current_qty,
 			stock_uom: item.stock_uom,
+			...(item.batch_no ? { batch_no: item.batch_no } : {}),
 		}
 	})
 
@@ -214,11 +224,12 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 					{/* Items — multi-column grid */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
 						{items.map(item => {
-							const physical = physicalQtys[item.item_code]
+							const key = lineKey(item)
+							const physical = physicalQtys[key]
 							const hasDiff = physical !== undefined && physical !== item.current_qty
 							return (
 								<div
-									key={item.item_code}
+									key={key}
 									className={`rounded-lg p-2.5 border-2 transition-shadow bg-white dark:bg-slate-900 ${
 										hasDiff
 											? 'border-amber-500 dark:border-amber-400 bg-amber-50/50 dark:bg-amber-950/25'
@@ -229,6 +240,11 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 										<div className="min-w-0 flex-1">
 											<p className="text-[10px] font-extrabold text-slate-900 dark:text-white truncate">{item.item_code}</p>
 											<p className="text-[9px] text-slate-700 dark:text-slate-300 truncate font-medium">{item.item_name}</p>
+											{item.batch_no && (
+												<span className="inline-block mt-0.5 px-1.5 py-0.5 text-[9px] font-mono font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded">
+													{item.batch_no}
+												</span>
+											)}
 										</div>
 									<div className="text-right shrink-0 bg-slate-200/90 dark:bg-slate-700 px-2 py-1 rounded-md border border-slate-300/80 dark:border-slate-500">
 										<p className="text-[8px] text-slate-700 dark:text-slate-200 uppercase leading-none font-bold">Sys</p>
@@ -236,7 +252,7 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 									</div>
 									</div>
 								<div className="relative">
-									<input type="number" min="0" step="1" className={`w-full border-2 rounded-lg px-2 py-2 pr-12 text-sm font-bold text-center text-slate-900 dark:text-white transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${hasDiff ? 'border-amber-500 bg-white dark:bg-slate-950' : 'border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-800'}`} value={physical ?? ''} onChange={e => setPhysicalQtys(p => ({ ...p, [item.item_code]: parseFloat(e.target.value) || 0 }))} placeholder={String(item.current_qty)} />
+									<input type="number" min="0" step="1" className={`w-full border-2 rounded-lg px-2 py-2 pr-12 text-sm font-bold text-center text-slate-900 dark:text-white transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${hasDiff ? 'border-amber-500 bg-white dark:bg-slate-950' : 'border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-800'}`} value={physical ?? ''} onChange={e => setPhysicalQtys(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))} placeholder={String(item.current_qty)} />
 									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-semibold text-slate-700 dark:text-slate-200 pointer-events-none">{item.stock_uom}</span>
 								</div>
 								{hasDiff && (
@@ -293,10 +309,11 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 							</p>
 							<div className="space-y-1.5">
 								{differences.map(d => (
-									<div key={d.item_code} className={`flex items-center justify-between p-2 rounded text-xs ${d.difference > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900'}`}>
+									<div key={d.batch_no ? `${d.item_code}::${d.batch_no}` : d.item_code} className={`flex items-center justify-between p-2 rounded text-xs ${d.difference > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900'}`}>
 										<div>
 											<p className="font-bold text-slate-800 dark:text-slate-100">{d.item_code}</p>
 											<p className="text-slate-600 dark:text-slate-400 text-[10px]">{d.item_name}</p>
+											{d.batch_no && <span className="inline-block mt-0.5 px-1 py-0.5 text-[9px] font-mono font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded">{d.batch_no}</span>}
 										</div>
 										<div className="text-right">
 											<p className="text-slate-600 dark:text-slate-400">Sys: {d.current_qty} &rarr; Act: {d.physical_qty}</p>

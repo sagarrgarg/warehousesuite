@@ -5,7 +5,8 @@ import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Calendar, User } fro
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import type { TransferReceiveGroup, ConcernData } from '@/types'
+import BatchSerialInput from '@/components/shared/BatchSerialInput'
+import type { TransferReceiveGroup, ConcernData, BatchSerialSelection } from '@/types'
 
 const DEFAULT_CONCERN: ConcernData = { concern_type: 'Quantity Mismatch', concern_description: '', priority: 'Medium', receiver_notes: '' }
 
@@ -19,6 +20,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 	const [concern, setConcern] = useState<ConcernData>({ ...DEFAULT_CONCERN })
 	const [showReceiveConfirm, setShowReceiveConfirm] = useState(false)
 	const [pendingReceive, setPendingReceive] = useState<{ entry: string; items: TransferReceiveGroup['items'] } | null>(null)
+	const [batchSerialSelections, setBatchSerialSelections] = useState<Record<string, BatchSerialSelection[]>>({})
 
 	const { data: transfersData, mutate, error: transfersFetchError } = useFrappeGetCall<{ message: TransferReceiveGroup[] }>(
 		API.getTransferReceiveData,
@@ -34,7 +36,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 	const { call: raiseConcern } = useFrappePostCall(API.createConcern)
 
 	useEffect(() => {
-		if (open) setReceiveQtys({})
+		if (open) { setReceiveQtys({}); setBatchSerialSelections({}) }
 	}, [open])
 
 	const setQty = (entry: string, steDetail: string, qty: number) => {
@@ -54,17 +56,31 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 			.map(i => ({ item_code: i.item_code, qty: qtys[i.ste_detail], ste_detail: i.ste_detail }))
 		if (!toReceive.length) { toast.error('Enter quantities to receive'); return }
 
+		// Build batch_serial_data keyed by ste_detail
+		const batchSerialData: Record<string, BatchSerialSelection[]> = {}
+		for (const item of toReceive) {
+			const selections = batchSerialSelections[item.ste_detail]
+			if (selections && selections.length > 0) {
+				batchSerialData[item.ste_detail] = selections
+			}
+		}
+
 		setSubmitting(entry)
 		setShowReceiveConfirm(false)
 		setPendingReceive(null)
 		try {
-			const res = await receiveTransfer({ stock_entry_name: entry, items_data: JSON.stringify(toReceive), company })
+			const res = await receiveTransfer({
+				stock_entry_name: entry,
+				items_data: JSON.stringify(toReceive),
+				company,
+				...(Object.keys(batchSerialData).length > 0 && { batch_serial_data: JSON.stringify(batchSerialData) }),
+			})
 			const result = unwrap(res)
 			if (isError(result)) { toast.error(result.message) }
-			else { toast.success(`Received: ${result.stock_entry}`); mutate(); clearQtys(entry) }
+			else { toast.success(`Received: ${result.stock_entry}`); mutate(); clearQtys(entry); setBatchSerialSelections({}) }
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Receive failed')) }
 		finally { setSubmitting(null) }
-	}, [receiveQtys, receiveTransfer, company, mutate])
+	}, [receiveQtys, batchSerialSelections, receiveTransfer, company, mutate])
 
 	const handleReceive = (entry: string, items: TransferReceiveGroup['items']) => {
 		const qtys = receiveQtys[entry] ?? {}
@@ -157,25 +173,50 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 
 									{/* Items */}
 									<div className="border-t border-slate-100">
-										{t.items.map((item) => (
-											<div key={item.ste_detail} className="flex items-center gap-2 px-3 py-2 border-b border-slate-50 last:border-b-0">
-												<div className="flex-1 min-w-0">
-													<p className="text-xs font-semibold text-slate-800 truncate">{item.item_code}</p>
-													<p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{item.item_name}</p>
+										{t.items.map((item) => {
+											const needsBatchSerial = item.has_batch_no === 1 || item.has_serial_no === 1
+											const itemQty = qtys[item.ste_detail] ?? 0
+											return (
+											<div key={item.ste_detail} className="px-3 py-2 border-b border-slate-50 last:border-b-0">
+												<div className="flex items-center gap-2">
+													<div className="flex-1 min-w-0">
+														<p className="text-xs font-semibold text-slate-800 truncate">{item.item_code}</p>
+														<p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+															{item.item_name}
+															{item.batch_no && (
+																<span className="ml-1 text-[8px] font-mono text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 rounded px-1 py-px">
+																	{item.batch_no}
+																</span>
+															)}
+														</p>
+													</div>
+													<div className="text-right text-[10px] text-slate-500 shrink-0">
+														<span className="text-emerald-600 font-bold">{item.remaining_qty}</span> / {item.qty} {item.uom}
+													</div>
+													<input
+														type="number" min="0" max={item.remaining_qty} step="0.01"
+														disabled={hasConcerns}
+														className="w-16 border border-slate-200 rounded px-1.5 py-1 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-40"
+														value={qtys[item.ste_detail] ?? ''}
+														onChange={e => setQty(t.stock_entry, item.ste_detail, Math.min(parseFloat(e.target.value) || 0, item.remaining_qty))}
+														placeholder="0"
+													/>
 												</div>
-												<div className="text-right text-[10px] text-slate-500 shrink-0">
-													<span className="text-emerald-600 font-bold">{item.remaining_qty}</span> / {item.qty} {item.uom}
-												</div>
-												<input
-													type="number" min="0" max={item.remaining_qty} step="0.01"
-													disabled={hasConcerns}
-													className="w-16 border border-slate-200 rounded px-1.5 py-1 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-40"
-													value={qtys[item.ste_detail] ?? ''}
-													onChange={e => setQty(t.stock_entry, item.ste_detail, Math.min(parseFloat(e.target.value) || 0, item.remaining_qty))}
-													placeholder="0"
-												/>
+												{needsBatchSerial && itemQty > 0 && (
+													<BatchSerialInput
+														itemCode={item.item_code}
+														warehouse={t.dest_warehouse || defaultWarehouse || ''}
+														qty={itemQty}
+														mode="inward"
+														hasBatchNo={item.has_batch_no === 1}
+														hasSerialNo={item.has_serial_no === 1}
+														value={batchSerialSelections[item.ste_detail] ?? []}
+														onChange={(selections) => setBatchSerialSelections(prev => ({ ...prev, [item.ste_detail]: selections }))}
+													/>
+												)}
 											</div>
-										))}
+											)
+										})}
 									</div>
 
 									{!hasConcerns && (

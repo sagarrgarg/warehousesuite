@@ -174,13 +174,15 @@ def get_wo_materials(wo_name, pow_profile=None):
 
 
 @frappe.whitelist()
-def transfer_wo_materials(wo_name, items, pow_profile=None):
+def transfer_wo_materials(wo_name, items, pow_profile=None, batch_serial_data=None):
     """Create a Material Transfer for Manufacture Stock Entry.
 
     Args:
         wo_name: Work Order name (required)
         items: JSON array of {item_code, qty, source_warehouse, wo_item_name, original_item?}
         pow_profile: POW Profile for warehouse scope validation
+        batch_serial_data: optional JSON dict keyed by item_code, values are lists of
+                           {batch_no, serial_no, qty} for batch/serial tracked items.
 
     Returns:
         dict with status, stock_entry.
@@ -199,7 +201,13 @@ def transfer_wo_materials(wo_name, items, pow_profile=None):
         if src_warehouses:
             assert_warehouses_in_scope(src_warehouses, allowed, label="Source warehouse")
 
-    return transfer_materials_for_manufacture(wo_name=wo_name, items=parsed_items)
+    parsed_batch_serial = None
+    if batch_serial_data:
+        parsed_batch_serial = frappe.parse_json(batch_serial_data) if isinstance(batch_serial_data, str) else batch_serial_data
+
+    return transfer_materials_for_manufacture(
+        wo_name=wo_name, items=parsed_items, batch_serial_data=parsed_batch_serial,
+    )
 
 
 @frappe.whitelist()
@@ -231,7 +239,10 @@ def get_manufacture_items(wo_name, qty):
 
 
 @frappe.whitelist()
-def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None, pow_profile=None):
+def manufacture_wo(
+    wo_name, qty, item_overrides=None, item_substitutions=None,
+    pow_profile=None, pow_fg_batch_no=None, batch_serial_data=None,
+):
     """Create a Manufacture Stock Entry to produce finished goods.
 
     Args:
@@ -242,6 +253,11 @@ def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None, p
         item_substitutions: optional JSON array of
                         {original_item_code, substitute_item_code}.
         pow_profile: POW Profile for warehouse scope validation
+        pow_fg_batch_no: optional batch number for the finished good. When the
+                         FG item has batch tracking, an Inward SBB is created.
+        batch_serial_data: optional JSON dict keyed by item_code, values are
+                           lists of {batch_no, serial_no, qty} for consumed
+                           raw materials (Outward SBBs).
 
     Returns:
         dict with status, stock_entry.
@@ -273,11 +289,17 @@ def manufacture_wo(wo_name, qty, item_overrides=None, item_substitutions=None, p
             frappe.parse_json(item_substitutions) if isinstance(item_substitutions, str) else item_substitutions
         )
 
+    parsed_batch_serial = None
+    if batch_serial_data:
+        parsed_batch_serial = frappe.parse_json(batch_serial_data) if isinstance(batch_serial_data, str) else batch_serial_data
+
     return manufacture_work_order(
         wo_name=wo_name,
         qty=qty_val,
         item_overrides=parsed_overrides,
         item_substitutions=parsed_substitutions,
+        pow_fg_batch_no=pow_fg_batch_no or None,
+        batch_serial_data=parsed_batch_serial,
     )
 
 

@@ -90,6 +90,8 @@ export interface DropdownItem {
 	item_name: string
 	stock_qty: number
 	stock_uom: string
+	has_batch_no?: 0 | 1
+	has_serial_no?: 0 | 1
 }
 
 // ─── Transfer ──────────────────────────────────────────────
@@ -120,6 +122,10 @@ export interface TransferReceiveItem {
 	conversion_factor: number
 	transferred_qty: number
 	remaining_qty: number
+	has_batch_no?: 0 | 1
+	has_serial_no?: 0 | 1
+	serial_and_batch_bundle?: string | null
+	batch_no?: string | null
 }
 
 export interface PendingSentTransfer {
@@ -146,6 +152,9 @@ export interface StockCountWarehouseItem {
 	item_name: string
 	stock_uom: string
 	current_qty: number
+	batch_no?: string
+	has_batch_no?: 0 | 1
+	has_serial_no?: 0 | 1
 }
 
 // ─── Concern ───────────────────────────────────────────────
@@ -209,6 +218,8 @@ export interface FulfillmentLineOption {
 	conversion_factor: number
 	target_warehouse: string
 	from_warehouse: string | null
+	has_batch_no: 0 | 1
+	has_serial_no: 0 | 1
 	candidates: FulfillmentWarehouseOption[]
 }
 
@@ -337,6 +348,35 @@ export interface WOShortfallItem {
 	shortfall_qty: number
 	stock_uom: string
 	has_shortfall: boolean
+}
+
+// ─── Batch & Serial ────────────────────────────────────────
+
+export interface BatchInfo {
+	batch_no: string
+	qty: number
+	expiry_date: string
+	manufacturing_date: string
+}
+
+export interface SerialNoInfo {
+	serial_no: string
+	batch_no: string | null
+	warranty_expiry_date: string | null
+}
+
+export interface BatchSerialSelection {
+	batch_no?: string
+	serial_no?: string
+	qty: number
+}
+
+export interface ItemBatchSerialInfo {
+	has_batch_no: 0 | 1
+	has_serial_no: 0 | 1
+	create_new_batch: 0 | 1
+	batch_number_series: string | null
+	serial_no_series: string | null
 }
 
 // ─── WMSuite Settings ──────────────────────────────────────
