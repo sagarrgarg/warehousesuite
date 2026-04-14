@@ -1,266 +1,129 @@
-# WarehouseSuite - Advanced Warehouse Management for ERPNext
+# WarehouseSuite
 
-> **🚀 Production Ready & Actively Used in 6 Companies**  
-> **📱 Mobile-First Design for Warehouse Operations**  
-> **🎯 Built for ERPNext Community**
+Mobile-first warehouse management for ERPNext. Replaces spreadsheets and WhatsApp with a structured, touch-friendly system for warehouse floor operations.
 
-## Overview
+**Production-ready. Deployed across 7 companies. Built for Indian mid-market manufacturers and distributors.**
 
-WarehouseSuite is a comprehensive, mobile-first warehouse management solution designed specifically for ERPNext. It transforms traditional warehouse operations into streamlined, touch-friendly processes that enhance productivity, reduce errors, and provide real-time visibility into warehouse activities.
+## What It Does
 
-**Currently deployed and actively used across 6 companies**, WarehouseSuite has proven its value in real-world warehouse environments, delivering measurable improvements in operational efficiency and accuracy.
+WarehouseSuite adds a **Point of Work (POW) Dashboard** to ERPNext — a React single-page app at `/pow` that warehouse operators use on their phones and tablets for daily operations.
 
-## ✅ Completed Features (Production Ready)
+### Core Operations
 
-### 1. **POW (Point of Work) Dashboard** ✅
-- Session management with user assignments
-- Profile-based configuration for different operational scenarios
-- Real-time monitoring with auto-refresh capabilities
-- Mobile responsive design optimized for tablets and mobile devices
-- Multi-operation support from single interface
+- **Transfer Send & Receive** — Multi-warehouse material transfers with transit warehouse support. Real-time stock validation, UOM conversion, batch/serial number tracking.
+- **Stock Counting** — Session-based physical inventory counts with variance-only submission. Batch-wise counting for batched items. Converts directly to ERPNext Stock Reconciliation.
+- **Stock Concerns** — Structured discrepancy management. Receiver flags issues, resolver can accept or revert (creates reverse transfer from transit to source). Full audit trail.
+- **Material Requests** — Raise transfer requests and fulfill them from the dashboard. Works even when source warehouse has insufficient stock (override with confirmation).
+- **Manufacturing** — BOM-based work orders: create, transfer materials, manufacture with batch tracking on raw materials and finished goods.
+- **Item Inquiry** — Item lookup with stock by warehouse, UOM conversions, barcodes, and Zebra label printing.
+- **Sales Order Pending Report** — Track pending deliveries with filtering and search.
 
-### 2. **Intelligent Transfer Management** ✅
-- Multi-warehouse transfers with transit warehouse support
-- Real-time stock validation before transfer initiation
-- Automatic UOM conversion with whole number validation
-- Route optimization through transit warehouses
-- Batch processing for multiple transfers
+### Batch & Serial Number Support
 
-### 3. **Advanced Stock Counting** ✅
-- Session-based counting within work sessions
-- Draft management with save/resume functionality
-- Automatic difference calculation and variance tracking
-- Direct conversion to ERPNext Stock Reconciliation
-- Cycle counting support with ABC analysis
+Full batch and serial number awareness across all operations. FEFO (First Expired, First Out) sorted batch picker. Per-batch stock counting. Batch tracking on manufacture output.
 
-### 4. **Comprehensive Concern Management** ✅
-- Multi-level concerns (quantity mismatches, quality issues, damaged goods)
-- Assignment workflow with automatic personnel assignment
-- Status tracking with clear resolution progress visibility
-- Integration control (automatic operation disabling until resolution)
-- Root cause analysis tools
+### Dashboard Features
 
-### 5. **Item Inquiry System** ✅
-- Comprehensive item lookup with photo, code, name, barcodes
-- UOM conversions and additional UOMs with conversion factors
-- Warehouse-wise stock information (filtered by allowed warehouses)
-- Weight and weight UOM display
-- Collapsible barcode display for multiple barcodes
+- **POW Profile** — Role-based access control. Each profile defines allowed warehouses, operations, and users. Operators only see what they're authorized for.
+- **Notification Banner** — Scrolling announcements with criticality levels (Low/Medium/High/Critical), time-based scheduling, and profile targeting.
+- **Warehouse Filter** — Filter all panels by warehouse.
+- **Dark Mode** — Full dark mode support.
+- **Resizable Columns** — Drag to resize the three-column desktop layout.
 
-### 6. **Advanced Validation Framework** ✅
-- Business rule engine with configurable validation rules
-- Value difference control with role-based overrides
-- Auto transit management for material transfers
-- Real-time validation with instant feedback
-- Conditional validation based on operation type
+## Requirements
 
-### 7. **Session-Based Operations** ✅
-- Create and manage warehouse work sessions
-- User assignment and accountability tracking
-- Profile-based configuration for different scenarios
-- Complete audit trail of warehouse activities
-- Session status management (Open/Close/Cancelled)
+- **Frappe Framework** v15+
+- **ERPNext** v15+
+- **Node.js** 20+ (for frontend build)
+- **Python** 3.10+
 
-### 8. **Mobile-First Design** ✅
-- Touch-optimized interface for warehouse floor operations
-- Responsive layout adapting to different screen sizes
-- Gesture-based navigation and controls
-- Barcode scanning integration support
-- Offline capability for basic functionality
+## Installation
 
-## 🔄 Features in Development (Thoroughly Tested & Updated)
+```bash
+# Standard bench installation
+bench get-app https://github.com/sagarrgarg/warehousesuite
+bench --site your-site.local install-app warehousesuite
+bench --site your-site.local migrate
+bench build --app warehousesuite
+```
 
-### 1. **BOM-Based Manufacturing Operations** 🔄
-- **Status**: In development, will be thoroughly tested
-- Direct integration with ERPNext Bill of Materials
-- Real-time tracking of raw material consumption
-- Automated production scheduling based on BOM requirements
-- Quality control at each manufacturing stage
-- Yield management and scrap tracking
-- **Note**: Only quantity could move (no complex manufacturing workflows)
+After installation:
+1. Open **WMSuite Settings** and configure transit warehouse behavior
+2. Create **POW Profiles** — define warehouses, allowed operations, and assign users
+3. Access the dashboard at `/pow`
 
-### 2. **Advanced Repack Operations** 🔄
-- **Status**: In development, will be thoroughly tested
-- Repack planning based on demand
-- Kitting operations for complex assembly
-- Configurable approval workflows
-- Quality assurance for repack operations
-- Cost tracking and batch management
+## How It Works
 
-### 3. **Purchase Receipt Management** 🔄
-- **Status**: In development, will be thoroughly tested
-- Receiving planning based on purchase orders
-- Quality inspection workflows
-- Partial receiving support
-- Over/short receiving handling
-- Supplier performance tracking
+### Architecture
 
-### 4. **Delivery Note Operations** 🔄
-- **Status**: In development, will be thoroughly tested
-- Automated order fulfillment workflows
-- Optimized picking routes and sequences
-- Packing operations for complex requirements
-- Shipping integration
-- Customer communication automation
+```
+Browser (Phone/Tablet)
+  └── React SPA at /pow
+       ├── frappe-react-sdk (SWR-based API hooks)
+       ├── Jotai (state management)
+       └── Tailwind CSS v4
 
-## 🚀 Next Development Goals
+Frappe Backend
+  ├── warehousesuite/api/          → Whitelisted API endpoints
+  ├── warehousesuite/services/     → Business logic layer
+  └── warehousesuite/warehousesuite/
+       ├── doctype/                → POW Profile, POW Session, POW Stock Count,
+       │                             POW Stock Concern, WMSuite Settings
+       ├── page/pow_dashboard/     → Legacy page APIs (item queries, stock, labels)
+       └── overrides/              → Stock Entry hooks (auto-transit, value validation)
+```
 
-### Phase 1: PWA (Progressive Web App) Enhancement
-- **Timeline**: Q4 2025
-- **Features**:
-  - Enhanced offline capabilities
-  - Push notifications for warehouse events
-  - Improved mobile performance
-  - Native app-like experience
-  - Background sync capabilities
+### POW Profile System
 
-### Phase 2: Native Mobile Applications
-- **Timeline**: Q2 or Q4 2025 (Based on App Store/Play Store availability)
-- **Platforms**: iOS and Android
-- **Features**:
-  - Native mobile performance
-  - Advanced camera integration for barcode scanning
-  - Offline-first architecture
-  - Native device features integration
-  - Enhanced user experience
+Each warehouse user is assigned to one or more POW Profiles. A profile defines:
+- **Warehouses Allowed** — which warehouses the user can operate in
+- **Target Warehouses** — destination warehouses for transfers
+- **In Transit Warehouse** — transit warehouse for the transfer route
+- **Allowed Operations** — Material Transfer, Stock Count, Manufacturing, Purchase Receipt, Delivery Note, Repack, Stock Concern, SO Pending Report
+- **Applicable Users** — who can use this profile
 
-## 📊 Real-World Impact (6 Companies Using)
+### Transfer Flow
 
-### Operational Improvements Achieved
-- **40-60% reduction** in warehouse operation setup time
-- **30-50% reduction** in transfer errors and discrepancies
-- **25-40% improvement** in stock count accuracy
-- **60-80% faster** issue resolution through structured workflows
-- **35-55% improvement** in manufacturing efficiency (where applicable)
+```
+Send:    Source WH ──→ Transit WH    (Stock Entry with add_to_transit=1)
+Receive: Transit WH ──→ Target WH   (Stock Entry linked via outgoing_stock_entry)
+Concern: Receiver flags issue ──→ Resolver accepts or reverts
+Revert:  Transit WH ──→ Source WH   (Reverse Stock Entry, partial qty supported)
+```
 
-### Cost Savings Realized
-- **Reduced labor costs** through automation and validation
-- **Lower error-related costs** through built-in validation
-- **Improved training efficiency** with intuitive interface
-- **Better inventory accuracy** reducing carrying costs
-- **Reduced waste** through better tracking and control
+## Configuration
 
-## 🏢 Target Market & Use Cases
+### WMSuite Settings
 
-### Primary Markets
-- **ERPNext Users**: Existing ERPNext customers seeking enhanced warehouse capabilities
-- **Distribution Centers**: Companies with complex warehouse operations
-- **Manufacturing**: Organizations with significant inventory management needs
-- **E-commerce**: E-commerce companies with warehouse operations
-- **Retail**: Retail chains with multiple warehouse locations
+| Setting | Description |
+|---|---|
+| Auto Set Transit | Automatically set transit warehouse on Material Transfers |
+| Disallow Value Difference | Block stock entries with value discrepancies |
+| Maximum Value Difference | Threshold for allowed value difference |
+| Override Roles | Roles that can bypass value difference restriction |
+| POW Dashboard Notifications | Scrolling notification messages with criticality and scheduling |
 
-### Geographic Focus
-- **Primary**: India and Asia-Pacific regions
-- **Secondary**: Global ERPNext community
-- **Expansion**: Based on community demand and support
+### Custom Fields on Stock Entry
 
-## 🔧 Technical Architecture
+| Field | Purpose |
+|---|---|
+| `custom_for_which_warehouse_to_transfer` | Final destination warehouse |
+| `custom_pow_session_id` | POW Session that created this entry |
+| `pow_stock_concern` | Stock Concern that triggered a revert transfer |
 
-### ERPNext Integration
-- **Native Doctype Extension**: Seamless integration with existing ERPNext workflows
-- **Permission Management**: Leverages ERPNext's role-based access control
-- **Data Consistency**: Maintains data integrity across all operations
-- **Reporting Integration**: Compatible with existing ERPNext reports
+## Screenshots
 
-### Mobile-First Design
-- **Touch-Optimized Interface**: Designed for tablet and mobile usage
-- **Responsive Layout**: Adapts to different screen sizes
-- **Offline Capability**: Basic functionality without continuous internet
-- **Barcode Integration**: Built-in support for scanning operations
+*Screenshots available on the Frappe Marketplace listing.*
 
-### Validation & Control Framework
-- **Business Rule Engine**: Configurable validation rules
-- **Value Difference Control**: Prevent or limit stock entries with discrepancies
-- **Auto Transit Management**: Automatic transit warehouse handling
-- **Role-Based Overrides**: Flexible permission system
+## Support
 
-## 📚 Documentation
-
-### Comprehensive Guides
-- **[📖 Installation Guide](wiki/installation.md)** - Detailed installation for ERPNext 14+ and 15+
-- **[🚀 Getting Started](wiki/getting-started.md)** - Quick start guide for new users
-- **[👥 User Guide](wiki/user-guide.md)** - Complete user manual for all features
-- **[📋 Wiki Home](wiki/README.md)** - Complete documentation index
-
-### Feature-Specific Documentation
-- **[🎯 POW Dashboard](wiki/features/pow-dashboard.md)** - Dashboard operations and configuration
-- **[📦 Transfer Management](wiki/features/transfer-management.md)** - Transfer send/receive workflows
-- **[📊 Stock Counting](wiki/features/stock-counting.md)** - Stock counting and reconciliation
-- **[🔍 Item Inquiry](wiki/features/item-inquiry.md)** - Item lookup and stock inquiry
-- **[⚙️ POW Profiles](wiki/configuration/pow-profiles.md)** - Profile configuration and management
-
-## 🚀 Getting Started
-
-### Installation
-1. **Bench Installation**: Standard Frappe bench installation
-2. **Configuration**: Initial WMSuite Settings setup
-3. **User Setup**: Role assignment and profile creation
-4. **Testing**: Comprehensive workflow testing
-5. **Training**: User training and go-live support
-
-### Quick Start Guide
-1. Create POW Profiles for different operational scenarios
-2. Assign users to appropriate profiles
-3. Create work sessions for warehouse operations
-4. Start using transfer, counting, and inquiry features
-5. Monitor operations through the dashboard
-
-**📖 For detailed installation and setup instructions, see our [Installation Guide](wiki/installation.md)**
-
-## 📈 Roadmap & Vision
-
-### Immediate Goals (Q1 2025)
-- **Marketplace Launch**: Complete Frappe Marketplace listing
-- **Documentation**: Comprehensive user and admin guides
-- **Community Building**: Active participation in ERPNext community
-- **Feature Completion**: Finalize manufacturing and repack features
-
-### Medium-term Goals (Q2-Q3 2025)
-- **PWA Development**: Progressive Web App enhancement
-- **Mobile Apps**: Native iOS and Android applications
-- **Advanced Analytics**: Warehouse performance metrics
-- **API Development**: Third-party integration capabilities
-
-### Long-term Vision (Q4 2025+)
-- **Community Edition**: Community-driven development
-- **Global Expansion**: International market penetration
-- **Innovation Features**: AI/ML integration and IoT support
-
----
-
-## 🤝 Community & Support
-
-**WarehouseSuite** is more than just a warehouse management solution - it's a community-driven project aimed at revolutionizing warehouse operations for ERPNext users worldwide.
-
-### Join the Community
-- **GitHub**: [https://github.com/sagarrgarg/warehousesuite](https://github.com/sagarrgarg/warehousesuite)
+- **GitHub Issues**: [github.com/sagarrgarg/warehousesuite/issues](https://github.com/sagarrgarg/warehousesuite/issues)
 - **Email**: sagar1ratan1garg1@gmail.com
-- **Documentation**: [Comprehensive guides available](wiki/README.md)
-- **Support**: Active support for all users
 
-### Contribute
-- **Feature Requests**: Submit ideas for new features
-- **Bug Reports**: Help improve the solution
-- **Documentation**: Contribute to guides and tutorials
-- **Testing**: Participate in beta testing programs
+## License
 
----
+Commercial License. See [LICENSE](license.txt) for details.
 
-**Ready to transform your warehouse operations? WarehouseSuite brings enterprise-grade warehouse management to ERPNext with a mobile-first approach.**
+## Privacy Policy
 
-*Built with ❤️ for the ERPNext community - Currently serving 6 companies with proven results*
-
----
-
-## Legal Information
-
-- **[License](https://github.com/sagarrgarg/warehousesuite/blob/main/LICENSE)** - Commercial License
-- **[Privacy Policy](https://github.com/sagarrgarg/warehousesuite/blob/main/PRIVACY.md)** - Data protection and privacy information
-
----
-
-## Project Background
-
-This was an in-house project developed to solve real warehouse management challenges. Just like POS (Point of Sale) systems revolutionized retail operations, POW (Point of Work) transforms warehouse operations with a touch-friendly, mobile-first approach.
-
-**Note**: This is not a consulting service. We do not provide training services. The solution is designed to be self-sufficient with comprehensive documentation and community support.
+See [PRIVACY.md](PRIVACY.md) for data handling practices.

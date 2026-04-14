@@ -3,7 +3,7 @@ name = "warehousesuite"
 authors = [
     { name = "Sagar Ratan Garg", email = "sagar1ratan1garg1@gmail.com"}
 ]
-description = "WarehouseSuite is a mobile-first warehouse management solution for ERPNext."
+description = "Mobile-first warehouse management for ERPNext with batch tracking, stock concerns, and manufacturing support."
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

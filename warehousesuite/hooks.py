@@ -1,5 +1,5 @@
 app_name = "warehousesuite"
-app_title = "Warehousesuite"
+app_title = "WarehouseSuite"
 app_publisher = "Sagar Ratan Garg"
 app_description = "WarehouseSuite is a mobile-first warehouse management solution for ERPNext."
 app_email = "sagar1ratan1garg1@gmail.com"
@@ -23,7 +23,7 @@ add_to_apps_screen = [
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["erpnext"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen_old = [

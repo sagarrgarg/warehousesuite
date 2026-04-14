@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Last Updated**: January 2025  
-**Version**: 1.0.0
+**Last Updated**: April 2026  
+**Version**: 1.1.0
 
 ## Introduction
 
@@ -123,7 +123,7 @@ This Privacy Policy describes how WarehouseSuite ("we," "our," or "us") collects
 - **Consent**: Continued use constitutes acceptance of changes
 
 ### Version History
-- **Current Version**: 1.0.0 (January 2025)
+- **Current Version**: 1.1.0 (April 2026)
 - **Previous Versions**: Available upon request
 - **Change Log**: Detailed change log maintained
 
