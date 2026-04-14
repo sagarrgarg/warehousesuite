@@ -1,5 +1,25 @@
 # Frappe Cloud Marketplace Publishing Checklist
 
+## CRITICAL: License Requirement
+
+Frappe Cloud Marketplace **requires open source license (MIT or GPL-compatible)**.
+Current license is **Commercial** (`license.txt`).
+
+**Options:**
+1. **Change to MIT/GPL** — required for Frappe Cloud Marketplace
+2. **Keep Commercial** — distribute independently (not via marketplace)
+3. **Dual license** — open-source core on marketplace, premium features via separate add-on
+
+**Decision needed before proceeding.**
+
+## Version Compatibility
+
+- [x] Frappe v15 — tested, production-deployed
+- [x] Frappe v16 — compatible (uses standard APIs: get_doc, get_all, whitelist, get_cached_doc, get_meta, db.get_value, db.exists). No deprecated patterns. `use_serial_batch_fields` on Stock Entry Detail exists in both v15 and v16.
+- [x] Python 3.10-3.12
+- [x] Node.js 20+
+- [x] ERPNext v15 and v16
+
 ## App Listing Requirements
 
 ### Account Setup

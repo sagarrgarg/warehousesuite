@@ -4,7 +4,7 @@ authors = [
     { name = "Sagar Ratan Garg", email = "sagar1ratan1garg1@gmail.com"}
 ]
 description = "Mobile-first warehouse management for ERPNext with batch tracking, stock concerns, and manufacturing support."
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
