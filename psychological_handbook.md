@@ -1,5 +1,11 @@
 # Psychological Handbook
 
+## Decision note (2026-04-07, POW desktop column control)
+- The three-queue desktop layout must not force equal width when hardware is marginal: **operator-chosen emphasis** (wider WO vs requests vs incoming) reduces scanning cost on small or low-resolution monitors.
+- **Persistence in the browser** matches “my station, my layout” without coupling to Frappe user settings or migrations; presets give a fast reset when a shift changes primary work.
+- **Motion** is used for width changes and gutter feedback, but respects **reduced motion** so accessibility preferences are not overridden.
+- Mobile stays **one pane + tabs**: drag resizing is a desktop affordance where horizontal space exists.
+
 ## Decision note (2026-04-05, SO pending report in POW)
 - Pending delivery is exposed only when a **POW Profile** explicitly enables it, so sales visibility stays an administrator choice per floor role.
 - The report is **company-scoped** from the profile (same company as other POW work), not warehouse-scoped, because open sales lines are a commercial backlog rather than a bin-level question.

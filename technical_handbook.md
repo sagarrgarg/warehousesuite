@@ -1,5 +1,22 @@
 # Technical Handbook
 
+## 2026-04-07 - POW dashboard: resizable three-column layout (desktop)
+
+### What changed
+- **Frontend**
+  - `frontend/src/hooks/usePowColumnLayout.ts`: persists relative column weights in `localStorage` (`warehousesuite.pow.columnFlex`); two drag gutters adjust WO ↔ transfer requests ↔ incoming; clamps per-column weights; `setPreset('equal' | 'wo' | 'mr' | 'incoming')`; exposes width fractions for CSS `calc((100% - gutterPx) * w)` with `POW_COLUMN_GUTTER_TOTAL_PX = 14` aligned to two `w-1.5` gutters.
+  - `frontend/src/pages/Dashboard.tsx`: **lg and up** — toolbar with preset buttons + draggable separators; columns use animated width transitions unless `prefers-reduced-motion: reduce` or while dragging; **below lg** — unchanged stacked panels + bottom tabs (no duplicate gutters).
+- Width transition: ~320ms easing on column width; gutters use hover/active color and slight scale for feedback.
+
+### Why it changed
+- On low-DPI or narrow desktop widths, equal `flex-1` thirds made each queue too cramped; operators need to widen one list and keep proportions across sessions.
+
+### Impacted modules
+- POW React dashboard only (`Dashboard.tsx`, new hook).
+
+### Migration implications
+- None (browser-only persistence). Ship with `yarn build` under `frontend/` (or `bench build --app warehousesuite`).
+
 ## 2026-04-05 - POW: Sales Order pending delivery report (profile-gated, two tabs)
 
 ### What changed
