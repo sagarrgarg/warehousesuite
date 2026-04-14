@@ -1,6 +1,6 @@
 import {
   ArrowUpFromLine, ClipboardCheck, Search,
-  PackagePlus, Truck, PackageOpen, ListChecks, Table2,
+  PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -94,6 +94,15 @@ const ACTIONS: ActionDef[] = [
     textClass: 'text-white',
     operationKey: 'repack',
     reactView: false,
+  },
+  {
+    id: 'stock-concerns',
+    label: 'Concerns',
+    icon: <AlertTriangle className="w-4 h-4" />,
+    color: 'bg-red-700 hover:bg-red-800 dark:bg-red-700 dark:hover:bg-red-600',
+    textClass: 'text-white',
+    operationKey: 'stock_concern',
+    reactView: true,
   },
 ]
 

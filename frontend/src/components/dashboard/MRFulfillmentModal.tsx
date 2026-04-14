@@ -101,10 +101,12 @@ export default function MRFulfillmentModal({
     return warnings
   }, [lineQtys, selectedWarehouse, options])
 
-  const hasStockIssue = stockWarnings.length > 0
+  const hasStockWarning = stockWarnings.length > 0
+  const [stockOverrideConfirmed, setStockOverrideConfirmed] = useState(false)
 
   const handleSubmit = async () => {
-    if (!selectedWarehouse || isSubmitting || hasStockIssue) return
+    if (!selectedWarehouse || isSubmitting) return
+    if (hasStockWarning && !stockOverrideConfirmed) return
 
     const items: MaterialRequestFulfillmentPayload[] = lineQtys
       .filter(l => l.qty > 0)
@@ -128,6 +130,7 @@ export default function MRFulfillmentModal({
       items,
       company,
       pow_profile: powProfileName ?? undefined,
+      allow_insufficient_stock: stockOverrideConfirmed ? 1 : 0,
     })
 
     if (result?.status === 'success') {
@@ -184,7 +187,7 @@ export default function MRFulfillmentModal({
                   <select
                     className="w-full appearance-none bg-slate-50 border border-slate-200 rounded pl-7 pr-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-400"
                     value={selectedWarehouse}
-                    onChange={e => setSelectedWarehouse(e.target.value)}
+                    onChange={e => { setSelectedWarehouse(e.target.value); setStockOverrideConfirmed(false) }}
                   >
                     <option value="">Select warehouse...</option>
                     {allWarehouses().map(wh => <option key={wh} value={wh}>{wh}</option>)}
@@ -192,18 +195,27 @@ export default function MRFulfillmentModal({
                 </div>
               </div>
 
-              {/* Stock warnings */}
-              {hasStockIssue && (
-                <div className="bg-red-50 border border-red-200 rounded p-2.5">
+              {/* Stock warnings — user can override */}
+              {hasStockWarning && (
+                <div className={`border rounded p-2.5 ${stockOverrideConfirmed ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'}`}>
                   <div className="flex items-center gap-1.5 mb-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                    <span className="text-[10px] font-bold text-red-700 uppercase">Insufficient stock</span>
+                    <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${stockOverrideConfirmed ? 'text-amber-600' : 'text-red-600'}`} />
+                    <span className={`text-[10px] font-bold uppercase ${stockOverrideConfirmed ? 'text-amber-700' : 'text-red-700'}`}>Insufficient stock</span>
                   </div>
                   {stockWarnings.map(w => (
-                    <p key={w.item_code} className="text-[10px] text-red-600 ml-5">
+                    <p key={w.item_code} className={`text-[10px] ml-5 ${stockOverrideConfirmed ? 'text-amber-600' : 'text-red-600'}`}>
                       {w.item_code}: need {w.requested} {w.uom}{w.uom !== w.stock_uom ? ` (${w.stock_qty} ${w.stock_uom})` : ''}, only {w.available} {w.stock_uom} available
                     </p>
                   ))}
+                  <label className="flex items-center gap-2 mt-2 ml-5 cursor-pointer touch-manipulation">
+                    <input
+                      type="checkbox"
+                      checked={stockOverrideConfirmed}
+                      onChange={e => setStockOverrideConfirmed(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 accent-amber-600"
+                    />
+                    <span className="text-[10px] font-semibold text-slate-700">Transfer anyway despite insufficient stock</span>
+                  </label>
                 </div>
               )}
 
@@ -233,7 +245,7 @@ export default function MRFulfillmentModal({
                     const inputStockQty = lq ? +(lq.qty * lq.conversion_factor).toFixed(3) : 0
 
                     return (
-                      <div key={line.mr_item_name} className={`px-3 py-2.5 ${lineWarning ? 'bg-red-50/50' : ''}`}>
+                      <div key={line.mr_item_name} className={`px-3 py-2.5 ${lineWarning ? (stockOverrideConfirmed ? 'bg-amber-50/50' : 'bg-red-50/50') : ''}`}>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-slate-900 truncate">{line.item_code}</p>
@@ -295,7 +307,7 @@ export default function MRFulfillmentModal({
           <div className="shrink-0 bg-white border-t border-slate-200 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-2xl mx-auto w-full">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || !selectedWarehouse || lineQtys.every(l => l.qty <= 0) || hasStockIssue}
+              disabled={isSubmitting || !selectedWarehouse || lineQtys.every(l => l.qty <= 0) || (hasStockWarning && !stockOverrideConfirmed)}
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded active:opacity-80 touch-manipulation flex items-center justify-center gap-2"
             >
               {isSubmitting ? (

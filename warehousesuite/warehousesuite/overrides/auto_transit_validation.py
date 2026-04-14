@@ -23,6 +23,10 @@ def auto_set_transit_for_material_transfer(doc, method):
     if not settings.get('auto_set_transit'):
         return
     
+    # Skip revert transfers from stock concerns — these go transit → source directly
+    if getattr(doc, "pow_stock_concern", None):
+        return
+
     # Only apply to Material Transfer entries
     if doc.stock_entry_type == "Material Transfer":
         # Set add_to_transit to 1 for the main document

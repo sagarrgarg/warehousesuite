@@ -22,6 +22,7 @@
   "receiver_notes",
   "section_break_resolution",
   "resolver_notes",
+  "pow_revert_stock_entry",
   "section_break_tracking",
   "reported_by",
   "reported_date",
@@ -48,7 +49,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Open\nResolve Will Receive\nResolve Will Revert",
+   "options": "Open\nResolve Will Receive\nResolve Reverted\nResolve Partial",
    "default": "Open",
    "reqd": 1,
    "read_only": 1
@@ -124,6 +125,14 @@
    "description": "Notes added by the assigned resolver"
   },
   {
+   "fieldname": "pow_revert_stock_entry",
+   "fieldtype": "Link",
+   "label": "Revert Stock Entry",
+   "options": "Stock Entry",
+   "read_only": 1,
+   "description": "Reverse transfer created to send stock back to source warehouse"
+  },
+  {
    "fieldname": "section_break_tracking",
    "fieldtype": "Section Break",
    "label": "Tracking Information"
@@ -158,7 +167,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-01-27 10:00:00.000000",
+ "modified": "2026-04-15 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Stock Concern",

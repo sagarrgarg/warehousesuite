@@ -15,7 +15,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Allowed Doctype",
-   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"Purchase Receipt\",\"Delivery Note\",\"Stock Entry\"]]]",
+   "link_filters": "[[\"DocType\",\"name\",\"in\",[\"Purchase Receipt\",\"Delivery Note\",\"Stock Entry\",\"POW Stock Concern\"]]]",
    "options": "DocType"
   }
  ],
@@ -23,7 +23,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-23 01:02:23.968595",
+ "modified": "2026-04-14 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Allowed Operations",

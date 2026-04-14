@@ -124,6 +124,11 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
             )}
           </div>
 
+          {/* Sender remarks */}
+          {group.remarks && (
+            <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 rounded px-2 py-1 italic truncate">{group.remarks}</p>
+          )}
+
           {/* Item lines with receive inputs */}
           {pendingItems.length > 0 && !group.has_open_concerns && (
             <div className="mt-1.5 space-y-0.5">

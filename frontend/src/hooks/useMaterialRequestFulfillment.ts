@@ -42,6 +42,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
       company: string
       remarks?: string
       pow_profile?: string
+      allow_insufficient_stock?: number
     }) => {
       setIsSubmitting(true)
       setSubmitError(null)
@@ -55,6 +56,7 @@ export function useCreateTransferFromMR(onSuccess?: () => void) {
           company: params.company,
           remarks: params.remarks || '',
           pow_profile: params.pow_profile,
+          allow_insufficient_stock: params.allow_insufficient_stock ?? 0,
         })
         const result = unwrap(res)
         if (result?.status === 'success') {

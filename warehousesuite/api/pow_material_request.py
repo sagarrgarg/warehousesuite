@@ -68,6 +68,7 @@ def create_transfer_from_material_request(
     company,
     remarks=None,
     pow_profile=None,
+    allow_insufficient_stock=False,
 ):
     """Create a Material Transfer Stock Entry linked to MR lines.
 
@@ -102,6 +103,7 @@ def create_transfer_from_material_request(
         items=parsed_items,
         company=company,
         remarks=remarks,
+        allow_insufficient_stock=bool(allow_insufficient_stock),
     )
 
 

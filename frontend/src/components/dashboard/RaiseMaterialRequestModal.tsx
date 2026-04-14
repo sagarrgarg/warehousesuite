@@ -139,24 +139,24 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
     return dupes
   }, [lines])
 
-  const stockErrors = useMemo(() => {
+  const stockWarnings = useMemo(() => {
     if (!fromWarehouse) return []
-    const errors: string[] = []
+    const warnings: string[] = []
     for (const l of validLines) {
       const whStock = l.availability.find(a => a.warehouse === fromWarehouse)
       const needed = toStockQty(l)
       if (!whStock || whStock.qty <= 0) {
-        errors.push(`${l.item_code}: no stock at ${shortWh(fromWarehouse)}`)
+        warnings.push(`${l.item_code}: no stock at ${shortWh(fromWarehouse)}`)
       } else if (needed > whStock.qty) {
         const suffix = l.uom !== l.stock_uom ? ` (${needed} ${l.stock_uom})` : ''
-        errors.push(`${l.item_code}: only ${whStock.qty} ${l.stock_uom} available, requested ${l.qty} ${l.uom}${suffix}`)
+        warnings.push(`${l.item_code}: only ${whStock.qty} ${l.stock_uom} available, requested ${l.qty} ${l.uom}${suffix}`)
       }
     }
-    return errors
+    return warnings
   }, [fromWarehouse, validLines])
 
   const sameWarehouse = targetWarehouse && fromWarehouse && targetWarehouse === fromWarehouse
-  const canSubmit = !submitting && targetWarehouse && validLines.length > 0 && duplicateItems.size === 0 && stockErrors.length === 0 && !sameWarehouse
+  const canSubmit = !submitting && targetWarehouse && validLines.length > 0 && duplicateItems.size === 0 && !sameWarehouse
 
   const handleSubmit = async () => {
     if (!canSubmit) return
@@ -262,12 +262,13 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
                   </div>
                 )}
 
-                {stockErrors.length > 0 && (
-                  <div className="text-[10px] text-red-600 bg-red-50 border border-red-200 rounded p-2 space-y-0.5">
+                {stockWarnings.length > 0 && (
+                  <div className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 space-y-0.5">
                     <div className="flex items-center gap-1 font-bold">
-                      <AlertTriangle className="w-3 h-3 shrink-0" /> Insufficient stock
+                      <AlertTriangle className="w-3 h-3 shrink-0" /> Low stock warning
                     </div>
-                    {stockErrors.map((e, i) => <p key={i} className="ml-4">{e}</p>)}
+                    {stockWarnings.map((e, i) => <p key={i} className="ml-4">{e}</p>)}
+                    <p className="ml-4 text-amber-600 italic">Request will still be submitted</p>
                   </div>
                 )}
 
@@ -314,7 +315,7 @@ export default function RaiseMaterialRequestModal({ open, onClose, warehouses, d
 
                   return (
                     <div key={line.id}>
-                      <div className={`px-3 py-2.5 ${isDupe ? 'bg-amber-50' : ''} ${insufficientStock ? 'bg-red-50/50' : ''}`}>
+                      <div className={`px-3 py-2.5 ${isDupe ? 'bg-amber-50' : ''} ${insufficientStock ? 'bg-amber-50/50' : ''}`}>
                         {/* Search + delete */}
                         <div className="flex items-center gap-1.5">
                           <span className="text-[10px] text-slate-500 dark:text-slate-400 w-4 text-center shrink-0 tabular-nums">{idx + 1}</span>

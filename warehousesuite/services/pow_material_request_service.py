@@ -223,6 +223,7 @@ def create_transfer_from_mr(
     items,
     company,
     remarks=None,
+    allow_insufficient_stock=False,
 ):
     """Create a Material Transfer Stock Entry linked back to MR lines.
 
@@ -265,7 +266,55 @@ def create_transfer_from_mr(
 
     mr_items_map = {row.name: row for row in mr_doc.items}
 
-    stock_shortfalls = []
+    if not allow_insufficient_stock:
+        stock_shortfalls = []
+        for item_data in items:
+            mr_item_name = item_data.get("mr_item_name")
+            mr_row = mr_items_map.get(mr_item_name)
+            if not mr_row:
+                frappe.throw(
+                    _("MR item {0} not found in {1}").format(mr_item_name, mr_name)
+                )
+
+            send_qty = flt(item_data.get("qty", 0))
+            if send_qty <= 0:
+                continue
+
+            uom = item_data.get("uom") or mr_row.uom or mr_row.stock_uom
+            cf = flt(
+                frappe.get_value(
+                    "UOM Conversion Detail",
+                    {"parent": mr_row.item_code, "uom": uom},
+                    "conversion_factor",
+                )
+            ) or 1.0
+            send_stock_qty = flt(send_qty * cf)
+
+            actual_qty = flt(
+                frappe.db.get_value(
+                    "Bin",
+                    {"item_code": mr_row.item_code, "warehouse": source_warehouse},
+                    "actual_qty",
+                )
+            )
+            if actual_qty <= 0:
+                stock_shortfalls.append(
+                    _("{0}: no stock at {1}").format(mr_row.item_code, source_warehouse)
+                )
+            elif send_stock_qty > actual_qty:
+                stock_shortfalls.append(
+                    _("{0}: requested {1} {2} ({3} {4}) but only {5} {4} available at {6}").format(
+                        mr_row.item_code, send_qty, uom, send_stock_qty,
+                        mr_row.stock_uom, actual_qty, source_warehouse,
+                    )
+                )
+
+        if stock_shortfalls:
+            frappe.throw(
+                _("Insufficient stock:<br>") + "<br>".join(stock_shortfalls),
+                title=_("Stock Shortage"),
+            )
+
     for item_data in items:
         mr_item_name = item_data.get("mr_item_name")
         mr_row = mr_items_map.get(mr_item_name)
@@ -273,51 +322,6 @@ def create_transfer_from_mr(
             frappe.throw(
                 _("MR item {0} not found in {1}").format(mr_item_name, mr_name)
             )
-
-        send_qty = flt(item_data.get("qty", 0))
-        if send_qty <= 0:
-            continue
-
-        uom = item_data.get("uom") or mr_row.uom or mr_row.stock_uom
-        cf = flt(
-            frappe.get_value(
-                "UOM Conversion Detail",
-                {"parent": mr_row.item_code, "uom": uom},
-                "conversion_factor",
-            )
-        ) or 1.0
-        send_stock_qty = flt(send_qty * cf)
-
-        remaining = flt(mr_row.stock_qty) - flt(mr_row.ordered_qty)
-
-        actual_qty = flt(
-            frappe.db.get_value(
-                "Bin",
-                {"item_code": mr_row.item_code, "warehouse": source_warehouse},
-                "actual_qty",
-            )
-        )
-        if actual_qty <= 0:
-            stock_shortfalls.append(
-                _("{0}: no stock at {1}").format(mr_row.item_code, source_warehouse)
-            )
-        elif send_stock_qty > actual_qty:
-            stock_shortfalls.append(
-                _("{0}: requested {1} {2} ({3} {4}) but only {5} {4} available at {6}").format(
-                    mr_row.item_code, send_qty, uom, send_stock_qty,
-                    mr_row.stock_uom, actual_qty, source_warehouse,
-                )
-            )
-
-    if stock_shortfalls:
-        frappe.throw(
-            _("Insufficient stock:<br>") + "<br>".join(stock_shortfalls),
-            title=_("Stock Shortage"),
-        )
-
-    for item_data in items:
-        mr_item_name = item_data.get("mr_item_name")
-        mr_row = mr_items_map.get(mr_item_name)
         send_qty = flt(item_data.get("qty", 0))
         if send_qty <= 0:
             continue
@@ -443,20 +447,11 @@ def raise_material_transfer_request(
             frappe.throw(_("Duplicate item: {0}. Combine quantities into a single line.").format(item_code))
         seen_items.add(item_code)
 
-        if from_warehouse:
-            stock = flt(frappe.db.get_value(
-                "Bin", {"item_code": item_code, "warehouse": from_warehouse}, "actual_qty"
-            ))
-            if stock <= 0:
-                frappe.throw(
-                    _("Item {0} has no stock at {1}").format(item_code, from_warehouse)
-                )
-            if qty > stock:
-                frappe.throw(
-                    _("Item {0}: requested {1} but only {2} available at {3}").format(
-                        item_code, qty, stock, from_warehouse
-                    )
-                )
+        # NOTE: stock checks removed — a Material Request is a *request* for
+        # material, not an immediate transfer.  Insufficient stock at the
+        # preferred source warehouse should not block the request; the actual
+        # stock availability is validated later when the MR is *fulfilled*
+        # (i.e. when a Stock Entry is created via create_transfer_from_mr).
 
         uom = item_data.get("uom") or frappe.db.get_value("Item", item_code, "stock_uom")
         validated_items.append({

@@ -28,6 +28,7 @@ export interface ProfileOperations {
 	stock_count: boolean
 	/** When omitted (older API), treated as false. */
 	sales_order_pending_report?: boolean
+	stock_concern?: boolean
 }
 
 /** SO pending report — detail rows (Python service). */

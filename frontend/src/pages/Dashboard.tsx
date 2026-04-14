@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import { useFrappeGetCall } from 'frappe-react-sdk'
 import { useSelectedProfile, useProfileOperations, useProfileWarehouses } from '@/hooks/useProfile'
 import { useSentBadge } from '@/hooks/useBadges'
@@ -16,16 +16,18 @@ import RaiseMaterialRequestModal from '@/components/dashboard/RaiseMaterialReque
 import TransferSendModal from '@/components/transfer/TransferSendModal'
 import StockCountModal from '@/components/stock-count/StockCountModal'
 import ItemInquiryModal from '@/components/item-inquiry/ItemInquiryModal'
+import StockConcernsModal from '@/components/concerns/StockConcernsModal'
 import CreateWorkOrderModal from '@/components/manufacturing/CreateWorkOrderModal'
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, GripVertical, LayoutGrid } from 'lucide-react'
 import { API, formatPowFetchError } from '@/lib/api'
 import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
 import { useTheme } from '@/hooks/useTheme'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { usePowColumnLayout, POW_COLUMN_GUTTER_TOTAL_PX } from '@/hooks/usePowColumnLayout'
 import type { WODetail, DropdownItem } from '@/types'
 
 function useLiveClock() {
@@ -37,7 +39,7 @@ function useLiveClock() {
   return now
 }
 
-type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-report' | null
+type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-report' | 'stock-concerns' | null
 type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
@@ -108,22 +110,47 @@ export default function Dashboard() {
     ? formatPowFetchError(receivesFetchError, 'Could not load incoming transfers')
     : null
   const [itemFilterCode, setItemFilterCode] = useState<string | null>(null)
+  const [warehouseFilter, setWarehouseFilter] = useState<string | null>(null)
   const itemFilterInputRef = useRef<ItemSearchInputHandle>(null)
 
   const filteredMRs = useMemo(() => {
-    if (!itemFilterCode) return pendingMRs
-    return pendingMRs.filter(mr => mr.lines.some(l => l.item_code === itemFilterCode))
-  }, [pendingMRs, itemFilterCode])
+    let result = pendingMRs
+    if (warehouseFilter) {
+      result = result.filter(mr =>
+        mr.set_warehouse === warehouseFilter || mr.set_from_warehouse === warehouseFilter
+      )
+    }
+    if (itemFilterCode) {
+      result = result.filter(mr => mr.lines.some(l => l.item_code === itemFilterCode))
+    }
+    return result
+  }, [pendingMRs, itemFilterCode, warehouseFilter])
 
   const filteredReceives = useMemo(() => {
-    if (!itemFilterCode) return pendingReceives
-    return pendingReceives.filter(g =>
-      (g.items || []).some(it => it.item_code === itemFilterCode),
+    let result = pendingReceives
+    if (warehouseFilter) {
+      result = result.filter(g =>
+        g.dest_warehouse === warehouseFilter || g.source_warehouse === warehouseFilter
+      )
+    }
+    if (itemFilterCode) {
+      result = result.filter(g =>
+        (g.items || []).some(it => it.item_code === itemFilterCode),
+      )
+    }
+    return result
+  }, [pendingReceives, itemFilterCode, warehouseFilter])
+
+  const filteredWorkOrders = useMemo(() => {
+    if (!warehouseFilter) return workOrders
+    return workOrders.filter(wo =>
+      wo.source_warehouse === warehouseFilter || wo.fg_warehouse === warehouseFilter || wo.wip_warehouse === warehouseFilter
     )
-  }, [pendingReceives, itemFilterCode])
+  }, [workOrders, warehouseFilter])
 
   useEffect(() => {
     setItemFilterCode(null)
+    setWarehouseFilter(null)
   }, [selectedProfileName])
 
   // Modal state
@@ -170,6 +197,16 @@ export default function Dashboard() {
 
   const { theme, toggle: toggleTheme } = useTheme()
   const smUp = useMediaQuery('(min-width: 640px)')
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const desktopColumnsRef = useRef<HTMLElement | null>(null)
+  const { dragging, startDrag, setPreset, columnWidths } = usePowColumnLayout(desktopColumnsRef)
+
+  const desktopColStyle = (fraction: number): CSSProperties => ({
+    width: `calc((100% - ${POW_COLUMN_GUTTER_TOTAL_PX}px) * ${fraction})`,
+    flex: 'none',
+    transition:
+      dragging || reduceMotion ? undefined : 'width 320ms cubic-bezier(0.33, 1, 0.68, 1)',
+  })
 
   const now = useLiveClock()
 
@@ -244,7 +281,7 @@ export default function Dashboard() {
 
   const handleAction = (action: string) => {
     switch (action) {
-      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report':
+      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report': case 'stock-concerns':
         setActiveModal(action as ModalType)
         break
     }
@@ -252,13 +289,13 @@ export default function Dashboard() {
 
   const pendingReceiveCount = filteredReceives.filter(r => r.status !== 'Complete').length
   const pendingReceiveTotal = pendingReceives.filter(r => r.status !== 'Complete').length
-  const shortfallWOCount = workOrders.filter(wo => wo.shortfall_count > 0).length
+  const shortfallWOCount = filteredWorkOrders.filter(wo => wo.shortfall_count > 0).length
 
   const TABS: { id: MobileTab; label: string; count?: number; icon: React.ReactNode; accent: string; activeBg: string; activeDot: string }[] = [
     {
       id: 'work-orders',
       label: 'WO',
-      count: workOrders.length,
+      count: filteredWorkOrders.length,
       icon: <Hammer className="w-4 h-4" />,
       accent: 'text-purple-700 dark:text-purple-400',
       activeBg: 'bg-purple-500/15',
@@ -333,7 +370,7 @@ export default function Dashboard() {
         <span className="flex items-center gap-1 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
           <span className="text-slate-600 dark:text-slate-300 truncate">Work orders</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{workOrders.length}</span>
+          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{filteredWorkOrders.length}{warehouseFilter && filteredWorkOrders.length !== workOrders.length ? <span className="text-slate-400 dark:text-slate-500 font-semibold">/{workOrders.length}</span> : null}</span>
           {shortfallWOCount > 0 && (
             <span className="hidden sm:inline text-[10px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
               ({shortfallWOCount} short)
@@ -404,24 +441,88 @@ export default function Dashboard() {
               Clear
             </button>
           )}
+
+          {/* Warehouse filter */}
+          <span className="w-px h-4 bg-slate-200 dark:bg-slate-600 shrink-0 hidden sm:block" />
+          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0" title="Filter all panels by warehouse">
+            <Warehouse className="w-3 h-3" />
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hidden sm:inline">WH</span>
+          </span>
+          <select
+            className="min-w-0 max-w-[160px] sm:max-w-[220px] appearance-none bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none truncate cursor-pointer"
+            value={warehouseFilter ?? ''}
+            onChange={e => setWarehouseFilter(e.target.value || null)}
+          >
+            <option value="">All warehouses</option>
+            {allWarehouseNames.map(wh => (
+              <option key={wh} value={wh}>{wh.replace(/ - [A-Z0-9]+$/i, '')}</option>
+            ))}
+          </select>
+          {warehouseFilter && (
+            <button
+              type="button"
+              onClick={() => setWarehouseFilter(null)}
+              className="flex items-center gap-0.5 shrink-0 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 cursor-pointer"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Data Panels (desktop: WO → Transfer req → Incoming) ─ */}
-      <section className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-        {/* Work Orders */}
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 ${mobileTab === 'work-orders' ? 'flex' : 'hidden lg:flex'}`}>
+      {/* ── Desktop: resizable column widths (persisted) ─ */}
+      <div className="hidden lg:flex shrink-0 items-center gap-2 px-2.5 py-1 border-b border-slate-200 dark:border-slate-700 bg-slate-50/95 dark:bg-slate-900/85 text-[10px]">
+        <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden />
+        <span className="text-slate-600 dark:text-slate-300 font-semibold whitespace-nowrap">Columns</span>
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setPreset('equal')}
+            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
+            title="Equal width for all three columns"
+          >
+            <LayoutGrid className="w-3 h-3" /> Equal
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreset('wo')}
+            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
+            title="Wider work orders column"
+          >
+            <Hammer className="w-3 h-3" /> WO
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreset('mr')}
+            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
+            title="Wider transfer requests column"
+          >
+            <ArrowLeftRight className="w-3 h-3" /> Req
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreset('incoming')}
+            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
+            title="Wider incoming column"
+          >
+            <ArrowDownToLine className="w-3 h-3" /> In
+          </button>
+        </div>
+        <span className="text-slate-400 dark:text-slate-500 ml-auto hidden xl:inline">Drag column dividers to resize</span>
+      </div>
+
+      {/* Mobile: stacked panels + tab visibility */}
+      <section className="flex-1 flex flex-col min-h-0 overflow-hidden lg:hidden">
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b border-slate-200 dark:border-slate-700 ${mobileTab === 'work-orders' ? 'flex' : 'hidden'}`}>
           <PendingWorkOrdersPanel
-            workOrders={workOrders}
+            workOrders={filteredWorkOrders}
             isLoading={woLoading}
             fetchError={woErrorText}
             onOpen={(woName) => setActiveWOName(woName)}
             onCreateNew={() => setShowCreateWO(true)}
           />
         </div>
-
-        {/* Transfer Requests */}
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 ${mobileTab === 'requests' ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b border-slate-200 dark:border-slate-700 ${mobileTab === 'requests' ? 'flex' : 'hidden'}`}>
           <PendingMaterialRequestsPanel
             requests={filteredMRs}
             isLoading={mrsLoading}
@@ -431,9 +532,75 @@ export default function Dashboard() {
             filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
           />
         </div>
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden ${mobileTab === 'incoming' ? 'flex' : 'hidden'}`}>
+          <PendingReceivesPanel
+            receives={filteredReceives}
+            isLoading={receivesLoading}
+            fetchError={receivesErrorText}
+            company={company}
+            onReceived={refreshAll}
+            filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
+            powProfileName={selectedProfileName}
+          />
+        </div>
+      </section>
 
-        {/* Incoming Transfers */}
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden ${mobileTab === 'incoming' ? 'flex' : 'hidden lg:flex'}`}>
+      {/* Desktop: WO | MR | Incoming with drag gutters */}
+      <section
+        ref={desktopColumnsRef}
+        className="hidden lg:flex flex-1 flex-row min-h-0 overflow-hidden min-w-0"
+      >
+        <div
+          style={desktopColStyle(columnWidths.w0)}
+          className="flex flex-col min-h-0 overflow-hidden min-w-[11rem] border-r border-slate-200 dark:border-slate-700"
+        >
+          <PendingWorkOrdersPanel
+            workOrders={filteredWorkOrders}
+            isLoading={woLoading}
+            fetchError={woErrorText}
+            onOpen={(woName) => setActiveWOName(woName)}
+            onCreateNew={() => setShowCreateWO(true)}
+          />
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize work orders and transfer requests column widths"
+          className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
+            dragging
+              ? 'bg-blue-500/50 scale-[1.05]'
+              : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
+          }`}
+          onMouseDown={startDrag(0)}
+        />
+        <div
+          style={desktopColStyle(columnWidths.w1)}
+          className="flex flex-col min-h-0 overflow-hidden min-w-[11rem] border-r border-slate-200 dark:border-slate-700"
+        >
+          <PendingMaterialRequestsPanel
+            requests={filteredMRs}
+            isLoading={mrsLoading}
+            fetchError={mrErrorText}
+            onFulfill={(mrName) => setFulfillMR(mrName)}
+            onRaise={() => setShowRaiseMR(true)}
+            filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
+          />
+        </div>
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize transfer requests and incoming column widths"
+          className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
+            dragging
+              ? 'bg-blue-500/50 scale-[1.05]'
+              : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
+          }`}
+          onMouseDown={startDrag(1)}
+        />
+        <div
+          style={desktopColStyle(columnWidths.w2)}
+          className="flex flex-col min-h-0 overflow-hidden min-w-[11rem]"
+        >
           <PendingReceivesPanel
             receives={filteredReceives}
             isLoading={receivesLoading}
@@ -514,6 +681,13 @@ export default function Dashboard() {
       )}
       {activeModal === 'so-pending-report' && selectedProfileName && (
         <SalesOrderPendingReportModal
+          open
+          onClose={closeModal}
+          powProfileName={selectedProfileName}
+        />
+      )}
+      {activeModal === 'stock-concerns' && selectedProfileName && (
+        <StockConcernsModal
           open
           onClose={closeModal}
           powProfileName={selectedProfileName}

@@ -62,7 +62,10 @@ app_include_js = [
 # Note: pow-dashboard is a client-side page, so we include the script directly in pow_dashboard.js
 
 # include js in doctype views
-doctype_js = {"Item" : "public/js/item.js"}
+doctype_js = {
+	"Item": "public/js/item.js",
+	"Stock Entry": "public/js/stock_entry.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -161,7 +164,10 @@ doc_events = {
         ],
         "on_submit": [
             "warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
-        ]
+        ],
+        "before_cancel": [
+            "warehousesuite.warehousesuite.overrides.concern_link.clear_concern_link_before_cancel"
+        ],
     }
 }
 
@@ -208,6 +214,9 @@ doc_events = {
 # exempt linked doctypes from being automatically cancelled
 #
 # auto_cancel_exempted_doctypes = ["Auto Repeat"]
+
+# Ignore links on cancel — allow cancelling SEs linked to concerns and vice versa
+ignore_links_on_cancel = ["POW Stock Concern", "Stock Entry"]
 
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------
