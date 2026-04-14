@@ -79,6 +79,60 @@ def get_wmsuite_settings():
     """Get WMSuite settings for frontend use"""
     if not frappe.db.exists("WMSuite Settings"):
         return {}
-    
+
     settings = frappe.get_single("WMSuite Settings")
-    return settings.get_settings() 
+    return settings.get_settings()
+
+
+@frappe.whitelist()
+def get_active_pow_notifications(pow_profile=None):
+    """Get active notifications for the POW dashboard.
+
+    Filters by:
+    - pow_enabled = 1
+    - Current time within pow_from_time / pow_to_time (if set)
+    - pow_show_all_profiles = 1 OR pow_profile in pow_profiles list
+
+    Returns list of message strings.
+    """
+    from frappe.utils import nowtime, get_time
+
+    if not frappe.db.exists("WMSuite Settings"):
+        return []
+
+    settings = frappe.get_single("WMSuite Settings")
+    notifications = getattr(settings, "pow_notifications", None) or []
+
+    if not notifications:
+        return []
+
+    now = get_time(nowtime())
+    result = []
+
+    for row in notifications:
+        if not row.pow_enabled:
+            continue
+
+        if not row.pow_message:
+            continue
+
+        # Time filter
+        if row.pow_from_time and get_time(row.pow_from_time) > now:
+            continue
+        if row.pow_to_time and get_time(row.pow_to_time) < now:
+            continue
+
+        # Profile filter
+        if not row.pow_show_all_profiles and pow_profile:
+            profile_names = [p.pow_profile for p in (row.pow_profiles or [])]
+            if pow_profile not in profile_names:
+                continue
+
+        display_sec = min(max(int(row.pow_display_seconds or 5), 1), 10)
+        result.append({
+            "message": row.pow_message,
+            "criticality": row.pow_criticality or "Low",
+            "display_seconds": display_sec,
+        })
+
+    return result 

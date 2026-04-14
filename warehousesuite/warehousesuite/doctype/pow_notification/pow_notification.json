@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-14 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "pow_enabled",
+  "pow_criticality",
+  "pow_display_seconds",
+  "pow_message",
+  "pow_show_all_profiles",
+  "pow_profiles",
+  "column_break_time",
+  "pow_from_time",
+  "pow_to_time"
+ ],
+ "fields": [
+  {
+   "default": "1",
+   "fieldname": "pow_enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled",
+   "columns": 1
+  },
+  {
+   "default": "Low",
+   "fieldname": "pow_criticality",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Criticality",
+   "options": "Low\nMedium\nHigh\nCritical",
+   "reqd": 1,
+   "columns": 1
+  },
+  {
+   "default": "5",
+   "fieldname": "pow_display_seconds",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Display (sec)",
+   "description": "How long to show before switching to next (1-10)",
+   "columns": 1
+  },
+  {
+   "fieldname": "pow_message",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Message",
+   "reqd": 1,
+   "columns": 3
+  },
+  {
+   "default": "1",
+   "fieldname": "pow_show_all_profiles",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show to All Profiles",
+   "columns": 1
+  },
+  {
+   "fieldname": "pow_profiles",
+   "fieldtype": "Table MultiSelect",
+   "label": "POW Profiles",
+   "options": "POW Profile Multi",
+   "depends_on": "eval:!doc.pow_show_all_profiles",
+   "description": "Select specific profiles to show this notification to"
+  },
+  {
+   "fieldname": "column_break_time",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pow_from_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "From Time",
+   "description": "Leave blank to show all day",
+   "columns": 1
+  },
+  {
+   "fieldname": "pow_to_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "To Time",
+   "description": "Leave blank to show all day",
+   "columns": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-15 01:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Warehousesuite",
+ "name": "POW Notification",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

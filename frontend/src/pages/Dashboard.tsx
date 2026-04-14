@@ -17,6 +17,7 @@ import TransferSendModal from '@/components/transfer/TransferSendModal'
 import StockCountModal from '@/components/stock-count/StockCountModal'
 import ItemInquiryModal from '@/components/item-inquiry/ItemInquiryModal'
 import StockConcernsModal from '@/components/concerns/StockConcernsModal'
+import NotificationBanner from '@/components/layout/NotificationBanner'
 import CreateWorkOrderModal from '@/components/manufacturing/CreateWorkOrderModal'
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
@@ -364,6 +365,9 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* ── Notification banner ─ */}
+      <NotificationBanner powProfileName={selectedProfileName} />
 
       {/* ── Status summary (2×2 on narrow screens, row on sm+) ─ */}
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-2 sm:py-1 shrink-0 grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center gap-x-3 gap-y-2 sm:gap-y-1 sm:gap-x-5 text-[10px] sm:text-xs">

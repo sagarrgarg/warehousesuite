@@ -33,6 +33,7 @@ export const API = {
 	getCompanyInfoForLabels: `${BASE}.get_company_info_for_labels`,
 	generateLabelZpl: `${BASE}.generate_label_zpl`,
 	getWmsuiteSettings: 'warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_wmsuite_settings',
+	getActivePowNotifications: 'warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_active_pow_notifications',
 
 	getPendingTransferMRs: `${MR_BASE}.get_pending_transfer_material_requests`,
 	getMRFulfillmentOptions: `${MR_BASE}.get_material_request_fulfillment_options`,
