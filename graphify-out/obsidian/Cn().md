@@ -1,0 +1,23 @@
+---
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js"
+type: "code"
+community: "Manufacturing Modals"
+location: "L40"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Manufacturing_Modals
+---
+
+# Cn()
+
+## Connections
+- [[Bd()]] - `calls` [EXTRACTED]
+- [[Cy()]] - `calls` [EXTRACTED]
+- [[Ld()]] - `calls` [EXTRACTED]
+- [[Ty()]] - `calls` [EXTRACTED]
+- [[hs()]] - `calls` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[rh()]] - `calls` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Manufacturing_Modals
