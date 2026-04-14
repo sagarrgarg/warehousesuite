@@ -3,7 +3,7 @@ app_title = "WarehouseSuite"
 app_publisher = "Sagar Ratan Garg"
 app_description = "WarehouseSuite is a mobile-first warehouse management solution for ERPNext."
 app_email = "sagar1ratan1garg1@gmail.com"
-app_license = "Commercial"
+app_license = "MIT"
 
 # SPA routes for React POW — keep both so deep links and `/pow` resolve to the same page
 website_route_rules = [

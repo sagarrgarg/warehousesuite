@@ -1,16 +1,8 @@
 # Frappe Cloud Marketplace Publishing Checklist
 
-## CRITICAL: License Requirement
+## License
 
-Frappe Cloud Marketplace **requires open source license (MIT or GPL-compatible)**.
-Current license is **Commercial** (`license.txt`).
-
-**Options:**
-1. **Change to MIT/GPL** — required for Frappe Cloud Marketplace
-2. **Keep Commercial** — distribute independently (not via marketplace)
-3. **Dual license** — open-source core on marketplace, premium features via separate add-on
-
-**Decision needed before proceeding.**
+MIT License — Frappe Cloud Marketplace compliant.
 
 ## Version Compatibility
 

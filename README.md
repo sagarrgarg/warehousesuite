@@ -122,7 +122,7 @@ Revert:  Transit WH ──→ Source WH   (Reverse Stock Entry, partial qty supp
 
 ## License
 
-Commercial License. See [LICENSE](license.txt) for details.
+MIT License. See [LICENSE](license.txt) for details.
 
 ## Privacy Policy
 
