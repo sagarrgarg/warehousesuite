@@ -1,17 +1,100 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, PackageSearch, Check, X, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, PackageSearch, Check, X, Save, Trash2, Plus, ChevronDown, Search, Hash, Minus } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
-import type { ProfileWarehouses, StockCountWarehouseItem } from '@/types'
+import ItemSearchInput from '@/components/shared/ItemSearchInput'
+import type { ProfileWarehouses, StockCountWarehouseItem, DropdownItem, BatchInfo } from '@/types'
 
 const SESSION_NAME = ''
 
-/** Unique key for a stock count line — includes batch_no for batched items. */
 function lineKey(item: { item_code: string; batch_no?: string }): string {
 	return item.batch_no ? `${item.item_code}::${item.batch_no}` : item.item_code
+}
+
+function shortWh(name: string) { return name.replace(/ - [A-Z0-9]+$/i, '') }
+
+/** Typable filtered batch picker */
+function BatchTypeahead({ batches, value, onChange }: { batches: BatchInfo[]; value: string; onChange: (v: string) => void }) {
+	const [query, setQuery] = useState(value)
+	const [showDrop, setShowDrop] = useState(false)
+	useEffect(() => { setQuery(value) }, [value])
+	const filtered = batches.filter(b => !query || b.batch_no.toLowerCase().includes(query.toLowerCase()))
+
+	return (
+		<div>
+			<span className="text-xs font-bold uppercase text-slate-600 mb-1 block">Batch</span>
+			<div className="relative">
+				<input type="text" value={query}
+					onChange={e => { setQuery(e.target.value); onChange(''); setShowDrop(true) }}
+					onFocus={() => setShowDrop(true)}
+					placeholder="Type to search batch..."
+					className="w-full border-2 border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+				/>
+				{value && (
+					<button type="button" onClick={() => { onChange(''); setQuery(''); setShowDrop(true) }}
+						className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded">
+						<X className="w-4 h-4 text-slate-500" />
+					</button>
+				)}
+				{showDrop && filtered.length > 0 && !value && (
+					<div className="absolute z-[70] left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border-2 border-slate-300 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+						{filtered.map(b => (
+							<button key={b.batch_no} type="button"
+								onClick={() => { onChange(b.batch_no); setQuery(b.batch_no); setShowDrop(false) }}
+								className="w-full text-left px-3 py-3 text-sm hover:bg-blue-50 dark:hover:bg-blue-950/30 border-b border-slate-200 last:border-0 touch-manipulation active:bg-blue-100">
+								<span className="font-mono font-bold text-slate-900 dark:text-white">{b.batch_no}</span>
+								<span className="text-slate-600 ml-3">{b.qty} qty</span>
+								{b.expiry_date && <span className="text-slate-500 ml-2">exp {b.expiry_date}</span>}
+							</button>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	)
+}
+
+/** Big numpad for quantity entry — POS style */
+function Numpad({ value, onChange, onDone }: { value: string; onChange: (v: string) => void; onDone: () => void }) {
+	const append = (digit: string) => onChange(value === '0' ? digit : value + digit)
+	const backspace = () => onChange(value.length > 1 ? value.slice(0, -1) : '0')
+	const clear = () => onChange('0')
+
+	const btn = "flex items-center justify-center text-xl font-bold rounded-xl touch-manipulation active:scale-95 transition-transform select-none"
+
+	return (
+		<div className="grid grid-cols-3 gap-2 p-3">
+			{['1','2','3','4','5','6','7','8','9'].map(d => (
+				<button key={d} type="button" onClick={() => append(d)}
+					className={`${btn} h-14 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-slate-50 active:bg-slate-100`}>
+					{d}
+				</button>
+			))}
+			<button type="button" onClick={() => append('.')}
+				className={`${btn} h-14 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white`}>
+				.
+			</button>
+			<button type="button" onClick={() => append('0')}
+				className={`${btn} h-14 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white`}>
+				0
+			</button>
+			<button type="button" onClick={backspace}
+				className={`${btn} h-14 bg-slate-200 dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300`}>
+				<Minus className="w-5 h-5" />
+			</button>
+			<button type="button" onClick={clear}
+				className={`${btn} h-14 col-span-1 bg-red-100 dark:bg-red-900/30 border-2 border-red-300 text-red-700 dark:text-red-400`}>
+				C
+			</button>
+			<button type="button" onClick={onDone}
+				className={`${btn} h-14 col-span-2 bg-blue-600 border-2 border-blue-700 text-white text-lg`}>
+				<Check className="w-6 h-6 mr-2" /> Done
+			</button>
+		</div>
+	)
 }
 
 interface Props { open: boolean; onClose: () => void; warehouses: ProfileWarehouses; powProfileName: string | null }
@@ -30,32 +113,86 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const [showDeleteDraftConfirm, setShowDeleteDraftConfirm] = useState(false)
 	const [savingDraft, setSavingDraft] = useState(false)
 
+	// Active item — POS style: tap item → show numpad
+	const [activeKey, setActiveKey] = useState<string | null>(null)
+	const [numpadValue, setNumpadValue] = useState('0')
+
+	const [itemSearch, setItemSearch] = useState('')
+	const searchRef = useRef<HTMLInputElement>(null)
+
+	// Manual items
+	const [manualItems, setManualItems] = useState<StockCountWarehouseItem[]>([])
+	const [showAddItem, setShowAddItem] = useState(false)
+	const [addItemCode, setAddItemCode] = useState('')
+	const [addBatchNo, setAddBatchNo] = useState('')
+	const [addBatches, setAddBatches] = useState<BatchInfo[]>([])
+	const [loadingBatches, setLoadingBatches] = useState(false)
+
 	const { data: itemsData, isLoading, error: itemsFetchError } = useFrappeGetCall<{ message: StockCountWarehouseItem[] }>(
 		API.getWarehouseItemsForStockCount,
 		warehouse ? { warehouse, pow_profile: powProfileName ?? undefined } : undefined,
 		warehouse ? undefined : null,
 	)
-	const items = itemsData?.message ?? []
+	const stockItems = itemsData?.message ?? []
+	const items = [...stockItems, ...manualItems]
+
+	const { data: dropdownData } = useFrappeGetCall<{ message: DropdownItem[] }>(API.getItemsForDropdown, {})
+	const dropdownItems = dropdownData?.message ?? []
+	const { call: fetchBatches } = useFrappePostCall(API.getBatches)
 
 	const { data: draftCheck, mutate: mutateDraftCheck, error: draftCheckError } = useFrappeGetCall<{ message: { has_draft: boolean; draft_info: { name: string } | null } }>(
 		API.checkExistingDraft,
 		warehouse ? { warehouse, session_name: SESSION_NAME } : undefined,
 		warehouse ? undefined : null,
 	)
-	const itemsFetchErrorText = warehouse && itemsFetchError
-		? formatPowFetchError(itemsFetchError, 'Could not load warehouse items')
-		: null
-	const draftCheckErrorText = warehouse && draftCheckError
-		? formatPowFetchError(draftCheckError, 'Could not check draft status')
-		: null
+	const itemsFetchErrorText = warehouse && itemsFetchError ? formatPowFetchError(itemsFetchError, 'Could not load items') : null
+	const draftCheckErrorText = warehouse && draftCheckError ? formatPowFetchError(draftCheckError, 'Could not check draft') : null
 	const draftInfo = draftCheck?.message?.draft_info
 	const hasDraft = draftCheck?.message?.has_draft === true
 
+	// Filtered items for display
+	const filteredItems = useMemo(() => {
+		if (!itemSearch) return items
+		const q = itemSearch.toLowerCase()
+		return items.filter(i =>
+			i.item_code.toLowerCase().includes(q) ||
+			i.item_name.toLowerCase().includes(q) ||
+			(i.batch_no && i.batch_no.toLowerCase().includes(q))
+		)
+	}, [items, itemSearch])
+
+	// Count stats
+	const countedCount = Object.keys(physicalQtys).length
+	const totalCount = items.length
+	const diffCount = items.filter(i => {
+		const key = lineKey(i)
+		const phy = physicalQtys[key]
+		return phy !== undefined && Math.abs(phy - i.current_qty) > 0.001
+	}).length
+
+	// Auto-type into search
+	useEffect(() => {
+		if (!open || activeKey) return
+		const onKeyDown = (e: KeyboardEvent) => {
+			const t = e.target
+			if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+			if (e.ctrlKey || e.metaKey || e.altKey) return
+			if (e.key.length !== 1) return
+			if (!searchRef.current) return
+			searchRef.current.focus()
+			setItemSearch(prev => prev + e.key)
+			e.preventDefault()
+		}
+		window.addEventListener('keydown', onKeyDown, true)
+		return () => window.removeEventListener('keydown', onKeyDown, true)
+	}, [open, activeKey])
+
 	useEffect(() => {
 		if (!warehouse) return
-		setPhysicalQtys({})
+		setPhysicalQtys({}); setManualItems([]); setShowAddItem(false); setItemSearch(''); setActiveKey(null)
 	}, [warehouse])
 
+	// Load draft
 	useEffect(() => {
 		if (!hasDraft || !draftInfo?.name || items.length === 0) return
 		let cancelled = false
@@ -75,13 +212,53 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 					}
 					setPhysicalQtys(qtys)
 				}
-			} catch {
-				// draft load failed
-			}
+			} catch { /* draft load failed */ }
 		}
 		loadDraft()
 		return () => { cancelled = true }
 	}, [hasDraft, draftInfo?.name, items.length])
+
+	// Add item handlers
+	const handleAddItemSelect = useCallback(async (itemCode: string) => {
+		setAddItemCode(itemCode); setAddBatchNo(''); setAddBatches([])
+		if (!itemCode) return
+		const item = dropdownItems.find(i => i.item_code === itemCode)
+		if (!item) return
+		if (item.has_batch_no && warehouse) {
+			setLoadingBatches(true)
+			try { const res = await fetchBatches({ item_code: itemCode, warehouse }); setAddBatches(unwrap(res) ?? []) }
+			catch { setAddBatches([]) }
+			finally { setLoadingBatches(false) }
+		}
+	}, [dropdownItems, warehouse, fetchBatches])
+
+	const handleAddItemConfirm = useCallback(() => {
+		if (!addItemCode) return
+		const item = dropdownItems.find(i => i.item_code === addItemCode)
+		if (!item) return
+		const key = addBatchNo ? `${addItemCode}::${addBatchNo}` : addItemCode
+		if (items.some(i => lineKey(i) === key)) { toast.error('Already in list'); return }
+		setManualItems(prev => [...prev, {
+			item_code: addItemCode, item_name: item.item_name, current_qty: 0, stock_uom: item.stock_uom,
+			has_batch_no: item.has_batch_no, has_serial_no: item.has_serial_no,
+			...(addBatchNo ? { batch_no: addBatchNo } : {}),
+		}])
+		setAddItemCode(''); setAddBatchNo(''); setAddBatches([]); setShowAddItem(false)
+	}, [addItemCode, addBatchNo, dropdownItems, items])
+
+	// Tap item → open numpad
+	const handleItemTap = (key: string, currentQty: number) => {
+		const existing = physicalQtys[key]
+		setActiveKey(key)
+		setNumpadValue(existing !== undefined ? String(existing) : String(currentQty))
+	}
+
+	const handleNumpadDone = () => {
+		if (activeKey) {
+			setPhysicalQtys(p => ({ ...p, [activeKey]: parseFloat(numpadValue) || 0 }))
+		}
+		setActiveKey(null)
+	}
 
 	const { call: submitCount } = useFrappePostCall(API.createAndSubmitStockCount)
 	const { call: submitMatch } = useFrappePostCall(API.createStockMatchEntry)
@@ -91,15 +268,9 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const buildItems = () => items.map(item => {
 		const key = lineKey(item)
 		const physical = physicalQtys[key] ?? item.current_qty
-		return {
-			item_code: item.item_code,
-			item_name: item.item_name,
-			current_qty: item.current_qty,
-			physical_qty: physical,
-			difference: physical - item.current_qty,
-			stock_uom: item.stock_uom,
-			...(item.batch_no ? { batch_no: item.batch_no } : {}),
-		}
+		return { item_code: item.item_code, item_name: item.item_name, current_qty: item.current_qty,
+			physical_qty: physical, difference: physical - item.current_qty, stock_uom: item.stock_uom,
+			...(item.batch_no ? { batch_no: item.batch_no } : {}) }
 	})
 
 	const getDifferences = () => buildItems().filter(i => Math.abs(i.difference) > 0.001)
@@ -107,16 +278,12 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const handleSubmitClick = () => {
 		if (items.length === 0) return
 		const diffs = getDifferences()
-		if (diffs.length === 0) {
-			handleFinalSubmit(false)
-		} else {
-			setShowConfirm(true)
-		}
+		if (diffs.length === 0) handleFinalSubmit(false)
+		else setShowConfirm(true)
 	}
 
 	const handleFinalSubmit = async (hasDifferences: boolean) => {
-		setSubmitting(true)
-		setShowConfirm(false)
+		setSubmitting(true); setShowConfirm(false)
 		try {
 			const allItems = buildItems()
 			const varianceItems = getDifferences()
@@ -127,11 +294,9 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 				res = await submitMatch({ warehouse, company, session_name: SESSION_NAME, items_count: allItems.length, pow_profile: powProfileName ?? undefined })
 			}
 			const result = unwrap(res)
-			if (isError(result)) { toast.error(result.message) }
+			if (isError(result)) toast.error(result.message)
 			else {
-				const base = result.message || 'Stock count submitted!'
-				const ts = result.count_date_formatted as string | undefined
-				toast.success(base, ts ? { description: `Count saved at: ${ts}` } : undefined)
+				toast.success(result.message || 'Stock count submitted!', result.count_date_formatted ? { description: `Count saved at: ${result.count_date_formatted}` } : undefined)
 				onClose()
 			}
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Stock count failed')) }
@@ -142,10 +307,9 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 		if (items.length === 0) return
 		setSavingDraft(true)
 		try {
-			const varianceOnly = getDifferences()
-			const res = await saveDraft({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(varianceOnly), pow_profile: powProfileName ?? undefined })
+			const res = await saveDraft({ warehouse, company, session_name: SESSION_NAME, items_data: JSON.stringify(getDifferences()), pow_profile: powProfileName ?? undefined })
 			const result = unwrap(res)
-			if (isError(result)) toast.error(result.message || 'Failed to save draft')
+			if (isError(result)) toast.error(result.message || 'Failed')
 			else { toast.success('Draft saved'); mutateDraftCheck() }
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed to save draft')) }
 		finally { setSavingDraft(false) }
@@ -154,184 +318,267 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 	const handleDeleteDraft = async () => {
 		if (!draftInfo?.name) return
 		setShowDeleteDraftConfirm(false)
-		try {
-			await deleteDoc({ doctype: 'POW Stock Count', name: draftInfo.name })
-			setPhysicalQtys({})
-			mutateDraftCheck()
-			toast.success('Draft deleted')
-		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed to delete draft')) }
+		try { await deleteDoc({ doctype: 'POW Stock Count', name: draftInfo.name }); setPhysicalQtys({}); mutateDraftCheck(); toast.success('Draft deleted') }
+		catch (err: unknown) { toast.error(formatPowFetchError(err, 'Failed')) }
 	}
 
 	if (!open) return null
 
+	const activeItem = activeKey ? items.find(i => lineKey(i) === activeKey) : null
 	const differences = getDifferences()
 
 	return (
-		<div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col animate-fade-in">
+		<div className="fixed inset-0 z-50 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col animate-fade-in">
 			{/* Header */}
-			<header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shrink-0">
-				<div className="flex items-center gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
-					<button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-slate-200/80 dark:hover:bg-slate-800 rounded-lg touch-manipulation text-slate-800 dark:text-slate-100">
-						<ArrowLeft className="w-5 h-5" />
+			<header className="bg-white dark:bg-slate-900 border-b-2 border-slate-300 dark:border-slate-700 shrink-0">
+				<div className="flex items-center gap-3 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+					<button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl touch-manipulation">
+						<ArrowLeft className="w-6 h-6" />
 					</button>
 					<div className="flex-1 min-w-0">
-						<h2 className="text-sm font-bold text-slate-900 dark:text-white">Stock Count</h2>
-						<p className="text-[10px] text-slate-600 dark:text-slate-300 font-medium">Enter what you physically see</p>
+						<h2 className="text-base font-bold text-slate-900 dark:text-white">Stock Count</h2>
+						<div className="flex items-center gap-3 mt-0.5">
+							<span className="text-xs text-slate-600">{shortWh(warehouse)}</span>
+							<span className="text-xs font-bold text-blue-600">{countedCount}/{totalCount} counted</span>
+							{diffCount > 0 && <span className="text-xs font-bold text-amber-600">{diffCount} diff</span>}
+						</div>
+					</div>
+					<select className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white max-w-[140px] truncate"
+						value={warehouse} onChange={e => setWarehouse(e.target.value)}>
+						{allWarehouses.map(w => <option key={w.warehouse} value={w.warehouse}>{shortWh(w.warehouse)}</option>)}
+					</select>
+				</div>
+
+				{/* Search bar — always visible */}
+				<div className="px-4 pb-3">
+					<div className="relative">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+						<input ref={searchRef} type="text" placeholder="Search item code, name, or batch..."
+							value={itemSearch} onChange={e => setItemSearch(e.target.value)}
+							className="w-full pl-10 pr-10 py-3 bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+						{itemSearch && (
+							<button onClick={() => setItemSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded-lg">
+								<X className="w-5 h-5 text-slate-500" />
+							</button>
+						)}
 					</div>
 				</div>
 			</header>
 
-			{/* Body */}
-			<div className="flex-1 overflow-y-auto overscroll-contain bg-slate-100 dark:bg-slate-950">
-				<div className="max-w-7xl mx-auto px-3 py-3 space-y-3">
-					<div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg p-3 shadow-sm">
-						<label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-200 mb-1 block tracking-wide">Warehouse</label>
-						<select className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-500 rounded-lg px-2 py-2 text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value={warehouse} onChange={e => setWarehouse(e.target.value)}>
-							{allWarehouses.map(w => <option key={w.warehouse} value={w.warehouse}>{w.warehouse_name}</option>)}
-						</select>
+			{/* Errors / Draft info */}
+			{(itemsFetchErrorText || draftCheckErrorText) && (
+				<div className="mx-4 mt-2 p-3 bg-red-50 border-2 border-red-300 rounded-xl text-sm text-red-700">
+					{itemsFetchErrorText && <p>{itemsFetchErrorText}</p>}
+					{draftCheckErrorText && <p>{draftCheckErrorText}</p>}
+				</div>
+			)}
+			{hasDraft && draftInfo && (
+				<div className="mx-4 mt-2 flex items-center justify-between p-3 bg-amber-50 border-2 border-amber-300 rounded-xl">
+					<p className="text-sm font-bold text-amber-800">Draft: {draftInfo.name}</p>
+					<button onClick={() => setShowDeleteDraftConfirm(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg touch-manipulation">
+						<Trash2 className="w-4 h-4" /> Delete
+					</button>
+				</div>
+			)}
+
+			{/* Item list — POS style tappable rows */}
+			<div className="flex-1 overflow-y-auto overscroll-contain">
+				{isLoading ? (
+					<div className="flex items-center justify-center py-20">
+						<div className="animate-spin rounded-full h-8 w-8 border-3 border-slate-300 border-t-blue-600" />
 					</div>
-
-					{(itemsFetchErrorText || draftCheckErrorText) && (
-						<div className="p-2.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded text-[11px] text-red-700 dark:text-red-300 space-y-1">
-							{itemsFetchErrorText && <p className="whitespace-pre-wrap break-words">{itemsFetchErrorText}</p>}
-							{draftCheckErrorText && <p className="whitespace-pre-wrap break-words">{draftCheckErrorText}</p>}
-						</div>
-					)}
-
-					{hasDraft && draftInfo && (
-						<div className="flex items-center justify-between gap-3 p-2.5 bg-amber-50 border border-amber-200 rounded">
-							<p className="text-xs font-bold text-amber-800">Draft: {draftInfo.name}</p>
-							<button onClick={() => setShowDeleteDraftConfirm(true)} className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50 rounded touch-manipulation">
-								<Trash2 className="w-3 h-3" /> Delete
-							</button>
-						</div>
-					)}
-
-					{isLoading && (
-						<div className="flex items-center justify-center py-12">
-							<div className="animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-slate-600" />
-						</div>
-					)}
-
-					{!isLoading && !itemsFetchErrorText && items.length === 0 && (
-						<div className="flex flex-col items-center py-12 text-center px-4">
-							<PackageSearch className="w-12 h-12 text-slate-700 dark:text-slate-200 mb-3" />
-							<p className="text-sm font-bold text-slate-800 dark:text-slate-100">No items here</p>
-							<p className="text-xs text-slate-600 dark:text-slate-300 font-medium">This warehouse has no stock to count</p>
-						</div>
-					)}
-
-					{/* Items — multi-column grid */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
-						{items.map(item => {
+				) : items.length === 0 ? (
+					<div className="flex flex-col items-center py-20 text-center px-4">
+						<PackageSearch className="w-16 h-16 text-slate-400 mb-4" />
+						<p className="text-lg font-bold text-slate-700">No items</p>
+						<p className="text-sm text-slate-500">This warehouse has no stock to count</p>
+					</div>
+				) : (
+					<div className="divide-y-2 divide-slate-200 dark:divide-slate-700">
+						{filteredItems.map(item => {
 							const key = lineKey(item)
-							const physical = physicalQtys[key]
-							const hasDiff = physical !== undefined && physical !== item.current_qty
+							const counted = physicalQtys[key]
+							const isCounted = counted !== undefined
+							const hasDiff = isCounted && Math.abs(counted - item.current_qty) > 0.001
+							const isActive = activeKey === key
+
 							return (
-								<div
-									key={key}
-									className={`rounded-lg p-2.5 border-2 transition-shadow bg-white dark:bg-slate-900 ${
-										hasDiff
-											? 'border-amber-500 dark:border-amber-400 bg-amber-50/50 dark:bg-amber-950/25'
-											: 'border-slate-300 dark:border-slate-600'
-									} focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 dark:focus-within:ring-blue-400 dark:focus-within:border-blue-400 focus-within:shadow-md`}
-								>
-									<div className="flex items-start justify-between gap-2 mb-1.5">
-										<div className="min-w-0 flex-1">
-											<p className="text-[10px] font-extrabold text-slate-900 dark:text-white truncate">{item.item_code}</p>
-											<p className="text-[9px] text-slate-700 dark:text-slate-300 truncate font-medium">{item.item_name}</p>
-											{item.batch_no && (
-												<span className="inline-block mt-0.5 px-1.5 py-0.5 text-[9px] font-mono font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded">
-													{item.batch_no}
-												</span>
-											)}
+								<button key={key} type="button"
+									onClick={() => handleItemTap(key, item.current_qty)}
+									className={`w-full text-left px-4 py-4 touch-manipulation transition-colors active:bg-blue-50 dark:active:bg-blue-950/30 ${
+										isActive ? 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-600' :
+										hasDiff ? 'bg-amber-50/60 dark:bg-amber-950/20 border-l-4 border-l-amber-500' :
+										isCounted ? 'bg-emerald-50/40 dark:bg-emerald-950/10 border-l-4 border-l-emerald-500' :
+										'border-l-4 border-l-transparent'
+									}`}>
+									<div className="flex items-center gap-3">
+										{/* Item info */}
+										<div className="flex-1 min-w-0">
+											<p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.item_name}</p>
+											<div className="flex items-center gap-2 mt-0.5">
+												<span className="text-xs font-mono text-slate-600 dark:text-slate-400">{item.item_code}</span>
+												{item.batch_no && (
+													<span className="px-2 py-0.5 text-xs font-mono font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 rounded-md">
+														{item.batch_no}
+													</span>
+												)}
+											</div>
 										</div>
-									<div className="text-right shrink-0 bg-slate-200/90 dark:bg-slate-700 px-2 py-1 rounded-md border border-slate-300/80 dark:border-slate-500">
-										<p className="text-[8px] text-slate-700 dark:text-slate-200 uppercase leading-none font-bold">Sys</p>
-										<p className="text-xs font-bold text-slate-900 dark:text-white tabular-nums">{item.current_qty} <span className="text-[8px] font-semibold text-slate-600 dark:text-slate-300">{item.stock_uom}</span></p>
-									</div>
-									</div>
-								<div className="relative">
-									<input type="number" min="0" step="1" className={`w-full border-2 rounded-lg px-2 py-2 pr-12 text-sm font-bold text-center text-slate-900 dark:text-white transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${hasDiff ? 'border-amber-500 bg-white dark:bg-slate-950' : 'border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-800'}`} value={physical ?? ''} onChange={e => setPhysicalQtys(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))} placeholder={String(item.current_qty)} />
-									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-semibold text-slate-700 dark:text-slate-200 pointer-events-none">{item.stock_uom}</span>
-								</div>
-								{hasDiff && (
-										<div className={`mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block ${physical! > item.current_qty ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-											{physical! > item.current_qty ? '+' : ''}{(physical! - item.current_qty).toFixed(0)} {item.stock_uom}
+
+										{/* System qty */}
+										<div className="text-right shrink-0">
+											<p className="text-[10px] uppercase font-bold text-slate-500">System</p>
+											<p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums">{item.current_qty}</p>
+											<p className="text-[10px] text-slate-500">{item.stock_uom}</p>
 										</div>
-									)}
-								</div>
-							)
-						})}
-					</div>
-				</div>
-			</div>
 
-			{/* Footer */}
-			<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-slate-700 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] max-w-7xl mx-auto w-full">
-				<p className="text-[10px] text-center text-slate-600 dark:text-slate-300 leading-snug mb-2 px-1">
-					<strong className="text-slate-800 dark:text-slate-100">Submit time:</strong>{' '}
-					This count is saved with the <strong>server date and time at the moment you submit</strong>.
-					If you convert this count to a Stock Reconciliation in ERPNext, that voucher uses the same saved count date and time (with &quot;Edit posting date and time&quot; enabled).
-				</p>
-				<div className="flex gap-2">
-					<button onClick={handleSaveDraft} disabled={savingDraft || items.length === 0} className="flex items-center justify-center gap-1.5 px-3 py-2 border-2 border-slate-400 dark:border-slate-500 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold text-xs rounded-lg disabled:opacity-50 touch-manipulation hover:bg-slate-200 dark:hover:bg-slate-700">
-						<Save className="w-4 h-4" /> {savingDraft ? 'Saving...' : 'Draft'}
-					</button>
-					<button onClick={handleSubmitClick} disabled={submitting || items.length === 0} className="flex-1 bg-blue-600 hover:bg-blue-500 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-2.5 rounded-lg disabled:opacity-50 active:opacity-90 touch-manipulation text-sm shadow-md shadow-blue-900/20">
-						{submitting ? 'Submitting...' : 'Submit Count'}
-					</button>
-				</div>
-			</div>
-
-			<ConfirmDialog
-				open={showDeleteDraftConfirm}
-				title="Delete Draft"
-				message={<p className="text-sm">Are you sure you want to delete this draft stock count?</p>}
-				confirmLabel="Delete"
-				cancelLabel="Cancel"
-				variant="danger"
-				onConfirm={handleDeleteDraft}
-				onCancel={() => setShowDeleteDraftConfirm(false)}
-			/>
-
-			{/* Differences confirmation */}
-			{showConfirm && (
-				<div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowConfirm(false)}>
-					<div className="bg-white dark:bg-slate-900 rounded-lg w-full max-w-md max-h-[80dvh] flex flex-col animate-scale-in border border-slate-200 dark:border-slate-600" onClick={e => e.stopPropagation()}>
-						<div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200 dark:border-slate-700">
-							<h3 className="text-sm font-bold text-slate-900 dark:text-white">Confirm Differences</h3>
-							<button type="button" onClick={() => setShowConfirm(false)} className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded touch-manipulation text-slate-700 dark:text-slate-200"><X className="w-4 h-4" /></button>
-						</div>
-						<div className="flex-1 overflow-y-auto p-3">
-							<p className="text-xs text-slate-600 dark:text-slate-300 mb-2">
-								<span className="font-bold text-slate-800 dark:text-slate-100">{differences.length}</span> item{differences.length !== 1 ? 's' : ''} with differences:
-							</p>
-							<div className="space-y-1.5">
-								{differences.map(d => (
-									<div key={d.batch_no ? `${d.item_code}::${d.batch_no}` : d.item_code} className={`flex items-center justify-between p-2 rounded text-xs ${d.difference > 0 ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900'}`}>
-										<div>
-											<p className="font-bold text-slate-800 dark:text-slate-100">{d.item_code}</p>
-											<p className="text-slate-600 dark:text-slate-400 text-[10px]">{d.item_name}</p>
-											{d.batch_no && <span className="inline-block mt-0.5 px-1 py-0.5 text-[9px] font-mono font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded">{d.batch_no}</span>}
-										</div>
-										<div className="text-right">
-											<p className="text-slate-600 dark:text-slate-400">Sys: {d.current_qty} &rarr; Act: {d.physical_qty}</p>
-											<p className={`font-bold ${d.difference > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
-												{d.difference > 0 ? '+' : ''}{d.difference.toFixed(0)} {d.stock_uom}
+										{/* Counted qty */}
+										<div className={`text-right shrink-0 min-w-[70px] px-3 py-2 rounded-xl border-2 ${
+											!isCounted ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600' :
+											hasDiff ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-400' :
+											'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-400'
+										}`}>
+											<p className="text-[10px] uppercase font-bold text-slate-500">Actual</p>
+											<p className={`text-lg font-bold tabular-nums ${
+												!isCounted ? 'text-slate-400' :
+												hasDiff ? 'text-amber-700 dark:text-amber-400' :
+												'text-emerald-700 dark:text-emerald-400'
+											}`}>
+												{isCounted ? counted : '—'}
 											</p>
 										</div>
 									</div>
-								))}
+
+									{/* Difference badge */}
+									{hasDiff && (
+										<div className={`mt-2 inline-block text-xs font-bold px-2.5 py-1 rounded-lg ${
+											counted! > item.current_qty
+												? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+												: 'bg-red-200 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+										}`}>
+											{counted! > item.current_qty ? '+' : ''}{(counted! - item.current_qty).toFixed(0)} {item.stock_uom}
+										</div>
+									)}
+								</button>
+							)
+						})}
+					</div>
+				)}
+			</div>
+
+			{/* Numpad overlay — slides up when item tapped */}
+			{activeItem && (
+				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] animate-slide-up">
+					<div className="px-4 pt-3 pb-1 flex items-center justify-between">
+						<div className="min-w-0 flex-1">
+							<p className="text-sm font-bold text-slate-900 dark:text-white truncate">{activeItem.item_name}</p>
+							<div className="flex items-center gap-2">
+								<span className="text-xs font-mono text-slate-500">{activeItem.item_code}</span>
+								{activeItem.batch_no && <span className="text-xs font-mono font-bold text-blue-600">{activeItem.batch_no}</span>}
+								<span className="text-xs text-slate-500">Sys: {activeItem.current_qty} {activeItem.stock_uom}</span>
 							</div>
-							<p className="text-[10px] text-slate-600 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
-								This count will be stored with the <strong className="text-slate-800 dark:text-slate-200">server date and time when you confirm</strong>. You will see that timestamp in the success message. Later, converting to Stock Reconciliation uses that same saved time (posting date/time set from the count).
-							</p>
 						</div>
-						<div className="flex gap-2 p-3 border-t border-slate-200 dark:border-slate-700">
-							<button type="button" onClick={() => setShowConfirm(false)} className="flex-1 py-2 border border-slate-300 dark:border-slate-600 rounded font-bold text-xs touch-manipulation text-slate-800 dark:text-slate-100">Cancel</button>
-							<button type="button" onClick={() => handleFinalSubmit(true)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-xs touch-manipulation flex items-center justify-center gap-1.5">
-								<Check className="w-4 h-4" /> Confirm
+						<button onClick={() => setActiveKey(null)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl touch-manipulation">
+							<X className="w-6 h-6 text-slate-500" />
+						</button>
+					</div>
+					{/* Display */}
+					<div className="mx-4 mb-2 bg-slate-100 dark:bg-slate-800 rounded-xl p-3 text-center">
+						<p className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{numpadValue}</p>
+						<p className="text-xs text-slate-500 mt-0.5">{activeItem.stock_uom}</p>
+					</div>
+					<Numpad value={numpadValue} onChange={setNumpadValue} onDone={handleNumpadDone} />
+				</div>
+			)}
+
+			{/* Footer — hidden when numpad is showing */}
+			{!activeItem && (
+				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+					<div className="flex gap-3">
+						{!showAddItem ? (
+							<button onClick={() => setShowAddItem(true)}
+								className="flex items-center justify-center gap-1.5 px-4 py-3 border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-bold text-sm rounded-xl touch-manipulation">
+								<Plus className="w-5 h-5" />
+							</button>
+						) : (
+							<button onClick={() => { setShowAddItem(false); setAddItemCode(''); setAddBatchNo(''); setAddBatches([]) }}
+								className="flex items-center justify-center px-4 py-3 border-2 border-slate-300 text-slate-600 rounded-xl touch-manipulation">
+								<X className="w-5 h-5" />
+							</button>
+						)}
+						<button onClick={handleSaveDraft} disabled={savingDraft || items.length === 0}
+							className="flex items-center justify-center gap-1.5 px-4 py-3 border-2 border-slate-400 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm rounded-xl disabled:opacity-50 touch-manipulation">
+							<Save className="w-5 h-5" /> {savingDraft ? '...' : 'Draft'}
+						</button>
+						<button onClick={handleSubmitClick} disabled={submitting || items.length === 0}
+							className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl disabled:opacity-50 active:scale-[0.98] touch-manipulation shadow-lg shadow-blue-600/25">
+							{submitting ? 'Submitting...' : 'Submit Count'}
+						</button>
+					</div>
+				</div>
+			)}
+
+			{/* Add item overlay */}
+			{showAddItem && !activeItem && (
+				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 px-4 py-3 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-slide-up">
+					<p className="text-xs font-bold uppercase text-slate-500">Add Item Not in List</p>
+					<ItemSearchInput items={dropdownItems} value={addItemCode} onSelect={handleAddItemSelect} placeholder="Search item..." />
+					{addItemCode && loadingBatches && <p className="text-xs text-slate-400">Loading batches...</p>}
+					{addItemCode && !loadingBatches && addBatches.length > 0 && (
+						<BatchTypeahead batches={addBatches} value={addBatchNo} onChange={setAddBatchNo} />
+					)}
+					{addItemCode && !loadingBatches && (
+						<button onClick={handleAddItemConfirm} disabled={!addItemCode || (addBatches.length > 0 && !addBatchNo)}
+							className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-xl touch-manipulation">
+							Add to Count
+						</button>
+					)}
+				</div>
+			)}
+
+			<ConfirmDialog open={showDeleteDraftConfirm} title="Delete Draft"
+				message={<p className="text-sm">Delete this draft stock count?</p>}
+				confirmLabel="Delete" cancelLabel="Cancel" variant="danger"
+				onConfirm={handleDeleteDraft} onCancel={() => setShowDeleteDraftConfirm(false)} />
+
+			{/* Differences confirmation */}
+			{showConfirm && (
+				<div className="fixed inset-0 z-[60] bg-black/50 flex items-end sm:items-center justify-center animate-fade-in" onClick={() => setShowConfirm(false)}>
+					<div className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85dvh] flex flex-col animate-slide-up border-t-2 sm:border-2 border-slate-300 dark:border-slate-600" onClick={e => e.stopPropagation()}>
+						<div className="flex items-center justify-between px-4 py-3 border-b-2 border-slate-200 dark:border-slate-700">
+							<h3 className="text-base font-bold text-slate-900 dark:text-white">{differences.length} Difference{differences.length !== 1 ? 's' : ''} Found</h3>
+							<button type="button" onClick={() => setShowConfirm(false)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl touch-manipulation"><X className="w-5 h-5" /></button>
+						</div>
+						<div className="flex-1 overflow-y-auto p-4 space-y-2">
+							{differences.map(d => (
+								<div key={d.batch_no ? `${d.item_code}::${d.batch_no}` : d.item_code}
+									className={`flex items-center justify-between p-3 rounded-xl text-sm border-2 ${
+										d.difference > 0
+											? 'bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-700'
+											: 'bg-red-50 border-red-300 dark:bg-red-950/30 dark:border-red-700'
+									}`}>
+									<div className="min-w-0 flex-1">
+										<p className="font-bold text-slate-900 dark:text-white truncate">{d.item_name}</p>
+										<div className="flex items-center gap-2 mt-0.5">
+											<span className="text-xs font-mono text-slate-500">{d.item_code}</span>
+											{d.batch_no && <span className="text-xs font-mono font-bold text-blue-600">{d.batch_no}</span>}
+										</div>
+									</div>
+									<div className="text-right shrink-0 ml-3">
+										<p className="text-xs text-slate-500">{d.current_qty} → {d.physical_qty}</p>
+										<p className={`text-sm font-bold ${d.difference > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+											{d.difference > 0 ? '+' : ''}{d.difference.toFixed(0)} {d.stock_uom}
+										</p>
+									</div>
+								</div>
+							))}
+						</div>
+						<div className="flex gap-3 p-4 border-t-2 border-slate-200 dark:border-slate-700">
+							<button type="button" onClick={() => setShowConfirm(false)}
+								className="flex-1 py-3 border-2 border-slate-300 rounded-xl font-bold text-sm touch-manipulation">Cancel</button>
+							<button type="button" onClick={() => handleFinalSubmit(true)}
+								className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm touch-manipulation flex items-center justify-center gap-2">
+								<Check className="w-5 h-5" /> Confirm & Submit
 							</button>
 						</div>
 					</div>

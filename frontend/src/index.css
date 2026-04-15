@@ -31,54 +31,16 @@
 }
 
 html {
-  font-size: 118.75%; /* 19px base — bigger for warehouse floor readability */
+  font-size: 118.75%; /* 19px base */
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
-/* POW global size overrides — bump tiny pixel sizes used throughout the app */
-/* These override Tailwind arbitrary values that bypass rem scaling */
-#root {
-  --pow-text-micro: 10px;   /* was 8px */
-  --pow-text-tiny: 11px;    /* was 9px */
-  --pow-text-small: 13px;   /* was 10px */
-  --pow-text-label: 11px;   /* was 10px uppercase labels */
-  --pow-touch-min: 48px;    /* min touch target */
-}
-
-/* Override common tiny text sizes globally in #root */
-#root .text-\[8px\]  { font-size: var(--pow-text-micro) !important; }
-#root .text-\[9px\]  { font-size: var(--pow-text-tiny) !important; }
-#root .text-\[10px\] { font-size: var(--pow-text-small) !important; }
-#root .text-\[11px\] { font-size: var(--pow-text-small) !important; }
-
-/* Boost text-xs (12px) to 13px and text-sm (14px) to 15px */
-#root .text-xs { font-size: 13px !important; }
-#root .text-sm { font-size: 15px !important; }
-
-/* Bigger touch targets — all buttons and interactive elements */
-#root button, #root select, #root [role="button"] {
-  min-height: 40px;
-}
-#root input[type="number"], #root input[type="text"], #root textarea {
-  min-height: 40px;
-  font-size: 16px !important;
-}
-
-/* Wider content on tablet/desktop — less wasted space in the middle */
-@media (min-width: 768px) {
-  #root .max-w-sm { max-width: 32rem; }
-}
-
-/* Increase padding on cards and panels for easier reading */
-#root .px-2\.5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
-#root .px-3 { padding-left: 1rem !important; padding-right: 1rem !important; }
-#root .py-2 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
-#root .py-2\.5 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 1rem;
+  font-weight: 450; /* slightly heavier than normal 400 — easier to read on low contrast */
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
@@ -89,14 +51,113 @@ body {
 
 #root {
   min-height: 100dvh;
+  --pow-text-micro: 11px;
+  --pow-text-tiny: 12px;
+  --pow-text-small: 13px;
+  --pow-touch-min: 44px;
 }
 
+/* ── Font size overrides — warehouse floor readability ── */
+#root .text-\[8px\]  { font-size: var(--pow-text-micro) !important; }
+#root .text-\[9px\]  { font-size: var(--pow-text-tiny) !important; }
+#root .text-\[10px\] { font-size: var(--pow-text-small) !important; }
+#root .text-\[11px\] { font-size: 14px !important; }
+#root .text-xs { font-size: 14px !important; }
+#root .text-sm { font-size: 15px !important; }
+
+/* ── HIGH CONTRAST overrides — fix low contrast text on warehouse screens ── */
+
+/* ── Text contrast — all muted text darkened significantly ── */
+#root .text-slate-300 { color: #64748b !important; }
+#root .text-slate-400 { color: #475569 !important; } /* slate-600 */
+#root .text-slate-500 { color: #334155 !important; } /* slate-700 */
+#root .text-slate-600 { color: #1e293b !important; } /* slate-800 */
+
+/* Dark mode: invert — lighter for dark backgrounds */
+#root :is(.dark, .dark *) .text-slate-300 { color: #cbd5e1 !important; }
+#root :is(.dark, .dark *) .text-slate-400 { color: #e2e8f0 !important; }
+#root :is(.dark, .dark *) .text-slate-500 { color: #f1f5f9 !important; }
+#root :is(.dark, .dark *) .text-slate-600 { color: #f8fafc !important; }
+
+/* ── Borders & dividers — much stronger, visible on any screen ── */
+#root .border-slate-100 { border-color: #cbd5e1 !important; }
+#root .border-slate-200 { border-color: #94a3b8 !important; } /* was #e2e8f0 → now very visible */
+#root .border-slate-300 { border-color: #64748b !important; }
+#root .divide-slate-100 > :not(:first-child) { border-color: #cbd5e1 !important; }
+#root .divide-slate-200 > :not(:first-child) { border-color: #94a3b8 !important; }
+#root .border-dashed { border-color: #94a3b8 !important; }
+
+/* Dark mode borders */
+#root :is(.dark, .dark *) .border-slate-600 { border-color: #64748b !important; }
+#root :is(.dark, .dark *) .border-slate-700 { border-color: #475569 !important; }
+
+/* ── Backgrounds — keep light, let borders do the separation work ── */
+/* No bg overrides — use Tailwind defaults (white cards, slate-50 page bg) */
+
+/* ── Input fields — strong borders on white fill ── */
+#root input, #root select, #root textarea {
+  border-color: #94a3b8 !important;
+}
+#root input:focus, #root select:focus, #root textarea:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ── Placeholder — clearly visible ── */
+#root input::placeholder, #root textarea::placeholder {
+  color: #64748b !important;
+  font-weight: 450;
+}
+
+/* ── Progress bars — thicker & more visible ── */
+#root .h-\[2px\] { height: 4px !important; }
+#root .bg-violet-500 { background-color: #7c3aed !important; } /* brighter purple */
+#root .bg-emerald-500 { background-color: #059669 !important; }
+#root .bg-amber-500 { background-color: #d97706 !important; }
+#root .bg-red-500 { background-color: #dc2626 !important; }
+
+/* Progress track */
+#root .bg-slate-100.rounded-full { background-color: #94a3b8 !important; }
+
+/* ── Status dots — bigger and brighter ── */
+#root .w-1\.5.h-1\.5.rounded-full { width: 8px !important; height: 8px !important; }
+
+/* ── Scrollbar ── */
+
+/* ── Touch targets ── */
+#root button, #root select, #root [role="button"] {
+  min-height: 40px;
+}
+#root input[type="number"], #root input[type="text"], #root textarea {
+  min-height: 40px;
+  font-size: 16px !important;
+  font-weight: 500;
+}
+
+/* ── Font weight boost — all text slightly bolder ── */
+#root .font-medium { font-weight: 550 !important; }
+#root .font-semibold { font-weight: 650 !important; }
+#root .font-bold { font-weight: 750 !important; }
+#root .font-extrabold { font-weight: 850 !important; }
+
+/* ── Layout ── */
+@media (min-width: 768px) {
+  #root .max-w-sm { max-width: 32rem; }
+}
+
+#root .px-2\.5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+#root .px-3 { padding-left: 1rem !important; padding-right: 1rem !important; }
+#root .py-2 { padding-top: 0.625rem !important; padding-bottom: 0.625rem !important; }
+#root .py-2\.5 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+
+/* ── iOS zoom prevention ── */
 @media (max-width: 767px) {
   input, select, textarea {
-    font-size: 16px !important; /* prevents iOS zoom on focus */
+    font-size: 16px !important;
   }
 }
 
+/* ── Number input spinners — hide ── */
 input[type="number"] {
   -moz-appearance: textfield;
 }
@@ -106,17 +167,19 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
 }
 
+/* ── Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #94a3b8;
   border-radius: 9999px;
 }
 
+/* ── Animations ── */
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

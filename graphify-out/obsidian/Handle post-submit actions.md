@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_stock_concern/pow_stock_concern.py"
 type: "rationale"
-community: "Concern Management"
+community: "Community 7"
 location: "L20"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Concern_Management
+  - community/Community_7
 ---
 
 # Handle post-submit actions
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[.on_submit()_1]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Concern_Management
+#graphify/rationale #graphify/EXTRACTED #community/Community_7

@@ -1,11 +1,11 @@
 ---
 source_file: "technical_handbook.md"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # Manual Work Order (POW Manufacturing)
@@ -13,6 +13,6 @@ tags:
 ## Connections
 - [[ERPNext Integration]] - `references` [EXTRACTED]
 - [[Recursive WO Item Alternatives]] - `references` [EXTRACTED]
-- [[pow-dashboard.js]] - `references` [EXTRACTED]
+- [[pow_dashboard.py]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

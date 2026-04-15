@@ -1,11 +1,11 @@
 ---
 source_file: "CLAUDE.md"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # Frappe Framework
@@ -14,4 +14,4 @@ tags:
 - [[React Frontend Stack]] - `references` [EXTRACTED]
 - [[WarehouseSuite App]] - `implements` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

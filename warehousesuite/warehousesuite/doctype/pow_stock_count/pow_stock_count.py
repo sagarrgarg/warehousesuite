@@ -56,18 +56,32 @@ class POWStockCount(Document):
         frappe.db.commit()
     
     def calculate_differences(self):
-        """Calculate difference between current stock and counted quantity"""
+        """Calculate difference between current stock and counted quantity.
+
+        For batched items (batch_no set), use batch-level qty from
+        get_available_batches instead of Bin aggregate.
+        """
         for item in self.items:
             if item.item_code and item.counted_qty is not None:
-                # Get current stock from Bin
-                current_stock = frappe.db.get_value("Bin", 
-                    {"item_code": item.item_code, "warehouse": self.warehouse}, 
-                    "actual_qty") or 0
-                
+                if item.batch_no:
+                    # Batch-level qty — not Bin aggregate
+                    from erpnext.stock.doctype.batch.batch import get_batch_qty
+                    batch_qty = get_batch_qty(
+                        batch_no=item.batch_no,
+                        warehouse=self.warehouse,
+                        item_code=item.item_code,
+                    )
+                    current_stock = flt(batch_qty)
+                else:
+                    current_stock = flt(frappe.db.get_value(
+                        "Bin",
+                        {"item_code": item.item_code, "warehouse": self.warehouse},
+                        "actual_qty",
+                    ))
+
                 item.current_stock = current_stock
-                item.difference = item.counted_qty - current_stock
-                
-                # Get item details
+                item.difference = flt(item.counted_qty) - current_stock
+
                 if not item.item_name:
                     item.item_name = frappe.db.get_value("Item", item.item_code, "item_name")
                 if not item.uom:
@@ -113,6 +127,7 @@ class POWStockCount(Document):
                     }
                     if item.batch_no:
                         row_data["batch_no"] = item.batch_no
+                        row_data["use_serial_batch_fields"] = 1
                     stock_reconciliation.append("items", row_data)
             
             stock_reconciliation.insert()

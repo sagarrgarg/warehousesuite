@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Print Format Analysis"
+community: "Community 24"
 location: "L1858"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Print_Format_Analysis
+  - community/Community_24
 ---
 
 # Analyze print format raw_commands to detect which variables are used
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[analyze_print_format_variables()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Print_Format_Analysis
+#graphify/rationale #graphify/EXTRACTED #community/Community_24

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "rationale"
-community: "Work Order API Endpoints"
+community: "Community 8"
 location: "L348"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Work_Order_API_Endpoints
+  - community/Community_8
 ---
 
 # Return Item Alternative records for an item.      Args:         item_code: item
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_item_alternatives()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Work_Order_API_Endpoints
+#graphify/rationale #graphify/EXTRACTED #community/Community_8

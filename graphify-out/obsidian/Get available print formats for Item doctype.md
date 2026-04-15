@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Print Format Analysis"
+community: "Community 24"
 location: "L1910"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Print_Format_Analysis
+  - community/Community_24
 ---
 
 # Get available print formats for Item doctype
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_item_print_formats()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Print_Format_Analysis
+#graphify/rationale #graphify/EXTRACTED #community/Community_24

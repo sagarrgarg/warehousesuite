@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_stock_concern/pow_stock_concern.py"
 type: "code"
-community: "Concern Management"
-location: "L119"
+community: "Community 7"
+location: "L150"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Concern_Management
+  - community/Community_7
 ---
 
 # update_concern_status()
@@ -17,4 +17,4 @@ tags:
 - [[close_todo_assignment()]] - `calls` [EXTRACTED]
 - [[pow_stock_concern.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Concern_Management
+#graphify/code #graphify/EXTRACTED #community/Community_7

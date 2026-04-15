@@ -443,31 +443,36 @@ def raise_material_transfer_request(
     company,
     schedule_date=None,
     remarks=None,
+    request_type=None,
 ):
-    """Create and submit a Material Request of type Material Transfer.
+    """Create and submit a Material Request (Material Transfer or Purchase).
 
     Args:
-        target_warehouse: warehouse that needs the material
+        target_warehouse: warehouse that needs the material (required for Transfer, optional for Purchase)
         from_warehouse: preferred source warehouse (can be None/blank)
         items: list[dict] with keys item_code, qty, uom
         company: company name
         schedule_date: optional required-by date (defaults to today)
         remarks: optional text
+        request_type: "Material Transfer" or "Purchase" (default: Material Transfer)
 
     Returns:
         dict with status, material_request name, message
     """
+    mr_type = request_type or "Material Transfer"
+
     if isinstance(items, str):
         items = frappe.parse_json(items)
 
     if not items:
         frappe.throw(_("At least one item is required"))
 
-    if from_warehouse and from_warehouse == target_warehouse:
-        frappe.throw(_("Source and destination warehouses cannot be the same"))
+    if mr_type == "Material Transfer":
+        if from_warehouse and from_warehouse == target_warehouse:
+            frappe.throw(_("Source and destination warehouses cannot be the same"))
 
-    if not frappe.db.exists("Warehouse", target_warehouse):
-        frappe.throw(_("Target warehouse {0} does not exist").format(target_warehouse))
+        if target_warehouse and not frappe.db.exists("Warehouse", target_warehouse):
+            frappe.throw(_("Target warehouse {0} does not exist").format(target_warehouse))
 
     if from_warehouse and not frappe.db.exists("Warehouse", from_warehouse):
         frappe.throw(_("Source warehouse {0} does not exist").format(from_warehouse))
@@ -507,24 +512,28 @@ def raise_material_transfer_request(
         frappe.throw(_("No valid items to request"))
 
     mr = frappe.new_doc("Material Request")
-    mr.material_request_type = "Material Transfer"
+    mr.material_request_type = mr_type
     mr.company = company
     mr.transaction_date = today()
     mr.schedule_date = schedule_date or today()
-    mr.set_warehouse = target_warehouse
 
+    if target_warehouse:
+        mr.set_warehouse = target_warehouse
     if from_warehouse:
         mr.set_from_warehouse = from_warehouse
 
     for vi in validated_items:
-        mr.append("items", {
+        mr_item = {
             "item_code": vi["item_code"],
             "qty": vi["qty"],
             "uom": vi["uom"],
-            "warehouse": target_warehouse,
-            "from_warehouse": from_warehouse or None,
             "schedule_date": schedule_date or today(),
-        })
+        }
+        if target_warehouse:
+            mr_item["warehouse"] = target_warehouse
+        if from_warehouse:
+            mr_item["from_warehouse"] = from_warehouse
+        mr.append("items", mr_item)
 
     frappe.db.begin()
     try:

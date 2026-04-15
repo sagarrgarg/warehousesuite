@@ -1,18 +1,21 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
 type: "code"
-community: "React Error Boundary"
-location: "L330"
+community: "Community 1"
+location: "L370"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_Error_Boundary
+  - community/Community_1
 ---
 
 # qj()
 
 ## Connections
-- [[.render()_1]] - `calls` [EXTRACTED]
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
+- [[Ft()]] - `calls` [EXTRACTED]
+- [[St()]] - `calls` [EXTRACTED]
+- [[hx()]] - `calls` [EXTRACTED]
+- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
+- [[yt()_1]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_Error_Boundary
+#graphify/code #graphify/EXTRACTED #community/Community_1

@@ -1,16 +1,16 @@
 ---
 source_file: "wiki/features/item-inquiry.md"
 type: "document"
-community: "POW Dashboard Features Hub"
+community: "Community 0"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Community_0
 ---
 
 # Item Inquiry Feature
 
 ## Connections
-- [[pow-dashboard.js]] - `references` [EXTRACTED]
+- [[pow_dashboard.py]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/document #graphify/EXTRACTED #community/Community_0

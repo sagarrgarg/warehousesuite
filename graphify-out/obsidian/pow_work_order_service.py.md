@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "code"
-community: "Work Order Service"
+community: "Community 5"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Work_Order_Service
+  - community/Community_5
 ---
 
 # pow_work_order_service.py
@@ -40,4 +40,4 @@ tags:
 - [[set_work_order_item_substitute()]] - `contains` [EXTRACTED]
 - [[transfer_materials_for_manufacture()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Work_Order_Service
+#graphify/code #graphify/EXTRACTED #community/Community_5

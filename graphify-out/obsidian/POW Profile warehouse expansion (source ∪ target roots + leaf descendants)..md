@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/utils/pow_warehouse_scope.py"
 type: "rationale"
-community: "POW Profile & Permissions"
+community: "Community 6"
 location: "L1"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/POW_Profile_&_Permissions
+  - community/Community_6
 ---
 
 # POW Profile warehouse expansion (source ∪ target roots + leaf descendants).
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[pow_warehouse_scope.py]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/POW_Profile_&_Permissions
+#graphify/rationale #graphify/EXTRACTED #community/Community_6

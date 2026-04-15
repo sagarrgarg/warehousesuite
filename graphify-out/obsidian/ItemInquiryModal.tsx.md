@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/item-inquiry/ItemInquiryModal.tsx"
 type: "code"
-community: "React API & Action Grid"
+community: "Community 2"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_2
 ---
 
 # ItemInquiryModal.tsx
@@ -17,4 +17,4 @@ tags:
 - [[api.ts]] - `imports_from` [EXTRACTED]
 - [[clearSelection()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_2

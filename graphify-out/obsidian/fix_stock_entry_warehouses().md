@@ -1,18 +1,19 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "code"
-community: "Stock Entry Warehouse Fix"
-location: "L2518"
+community: "Community 0"
+location: "L2606"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Stock_Entry_Warehouse_Fix
+  - community/Community_0
 ---
 
 # fix_stock_entry_warehouses()
 
 ## Connections
 - [[Fix stock entry warehouse information if missing (System Manager only).]] - `rationale_for` [EXTRACTED]
-- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[Fix stock entry warehouse information if missing (System Manager only)._1]] - `rationale_for` [EXTRACTED]
+- [[pow_dashboard.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Stock_Entry_Warehouse_Fix
+#graphify/code #graphify/EXTRACTED #community/Community_0

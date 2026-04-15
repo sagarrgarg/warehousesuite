@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "code"
-community: "Work Order Service"
+community: "Community 5"
 location: "L393"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Work_Order_Service
+  - community/Community_5
 ---
 
 # set_work_order_item_substitute()
@@ -18,4 +18,4 @@ tags:
 - [[_validate_substitute_item()]] - `calls` [EXTRACTED]
 - [[pow_work_order_service.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Work_Order_Service
+#graphify/code #graphify/EXTRACTED #community/Community_5

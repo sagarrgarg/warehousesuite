@@ -1,11 +1,11 @@
 ---
 source_file: "technical_handbook.md"
 type: "document"
-community: "Technical Handbook"
+community: "Small 46"
 tags:
   - graphify/document
   - graphify/INFERRED
-  - community/Technical_Handbook
+  - community/Small_46
 ---
 
 # Technical Handbook (Root)
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[Technical Handbook (Inner)]] - `semantically_similar_to` [INFERRED]
 
-#graphify/document #graphify/INFERRED #community/Technical_Handbook
+#graphify/document #graphify/INFERRED #community/Small_46

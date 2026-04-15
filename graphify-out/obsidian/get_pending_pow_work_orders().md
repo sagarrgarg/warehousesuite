@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "code"
-community: "Work Order API Endpoints"
+community: "Community 8"
 location: "L28"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Work_Order_API_Endpoints
+  - community/Community_8
 ---
 
 # get_pending_pow_work_orders()
@@ -16,4 +16,4 @@ tags:
 - [[_parse_list()]] - `calls` [EXTRACTED]
 - [[pow_work_order.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Work_Order_API_Endpoints
+#graphify/code #graphify/EXTRACTED #community/Community_8

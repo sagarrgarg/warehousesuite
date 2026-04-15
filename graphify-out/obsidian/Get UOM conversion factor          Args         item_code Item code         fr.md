@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py"
 type: "rationale"
-community: "Validation Framework"
+community: "Community 9"
 location: "L401"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Validation_Framework
+  - community/Community_9
 ---
 
 # Get UOM conversion factor          Args:         item_code: Item code         fr
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_uom_conversion_factor()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Validation_Framework
+#graphify/rationale #graphify/EXTRACTED #community/Community_9

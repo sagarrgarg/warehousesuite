@@ -1,22 +1,44 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
 type: "code"
-community: "Socket.IO Transport Core"
-location: "L73"
+community: "Community 4"
+location: "L17"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Socket.IO_Transport_Core
+  - community/Community_4
 ---
 
 # Qf()
 
 ## Connections
-- [[.write()_4]] - `calls` [EXTRACTED]
-- [[eg()_1]] - `calls` [EXTRACTED]
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
-- [[o()_1]] - `calls` [EXTRACTED]
-- [[rx()]] - `calls` [EXTRACTED]
-- [[uw()]] - `calls` [EXTRACTED]
+- [[._close()_1]] - `method` [EXTRACTED]
+- [[._destroy()_1]] - `method` [EXTRACTED]
+- [[._packet()_1]] - `method` [EXTRACTED]
+- [[.cleanup()_3]] - `method` [EXTRACTED]
+- [[.connect()_3]] - `method` [EXTRACTED]
+- [[.constructor()_21]] - `method` [EXTRACTED]
+- [[.disconnect()_3]] - `method` [EXTRACTED]
+- [[.maybeReconnectOnOpen()_1]] - `method` [EXTRACTED]
+- [[.onclose()_3]] - `method` [EXTRACTED]
+- [[.ondata()_1]] - `method` [EXTRACTED]
+- [[.ondecoded()_1]] - `method` [EXTRACTED]
+- [[.onerror()_3]] - `method` [EXTRACTED]
+- [[.onopen()_3]] - `method` [EXTRACTED]
+- [[.onping()_1]] - `method` [EXTRACTED]
+- [[.onreconnect()_1]] - `method` [EXTRACTED]
+- [[.open()_5]] - `method` [EXTRACTED]
+- [[.randomizationFactor()_1]] - `method` [EXTRACTED]
+- [[.reconnect()_1]] - `method` [EXTRACTED]
+- [[.reconnection()_1]] - `method` [EXTRACTED]
+- [[.reconnectionAttempts()_1]] - `method` [EXTRACTED]
+- [[.reconnectionDelay()_1]] - `method` [EXTRACTED]
+- [[.reconnectionDelayMax()_1]] - `method` [EXTRACTED]
+- [[.socket()_1]] - `method` [EXTRACTED]
+- [[.timeout()_3]] - `method` [EXTRACTED]
+- [[Iy()]] - `calls` [EXTRACTED]
+- [[av()_1]] - `calls` [EXTRACTED]
+- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
+- [[tv()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Socket.IO_Transport_Core
+#graphify/code #graphify/EXTRACTED #community/Community_4

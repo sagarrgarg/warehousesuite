@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/pow-dashboard/vite.config.ts"
 type: "code"
-community: "Vite Build Config"
+community: "Small 31"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Vite_Build_Config
+  - community/Small_31
 ---
 
 # vite.config.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[proxyOptions.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Vite_Build_Config
+#graphify/code #graphify/EXTRACTED #community/Small_31

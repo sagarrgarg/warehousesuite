@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/select_warehouse/select_warehouse.js"
 type: "code"
-community: "POW Profile & Permissions"
+community: "Community 6"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/POW_Profile_&_Permissions
+  - community/Community_6
 ---
 
 # select_warehouse.js
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SelectWarehouse]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/POW_Profile_&_Permissions
+#graphify/code #graphify/EXTRACTED #community/Community_6

@@ -1,11 +1,11 @@
 ---
 source_file: "warehousesuite/psychological_handbook.md"
 type: "document"
-community: "Stock Count Doctype"
+community: "Community 11"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Stock_Count_Doctype
+  - community/Community_11
 ---
 
 # Operator Empathy Principle
@@ -15,4 +15,4 @@ tags:
 - [[Trading Terminal Aesthetic (Design System)]] - `conceptually_related_to` [INFERRED]
 - [[Variance-Only Stock Count Design]] - `rationale_for` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Stock_Count_Doctype
+#graphify/document #graphify/EXTRACTED #community/Community_11

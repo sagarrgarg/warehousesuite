@@ -1,29 +1,20 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
 type: "code"
-community: "Socket.IO Transport Core"
-location: "L58"
+community: "Community 1"
+location: "L368"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Socket.IO_Transport_Core
+  - community/Community_1
 ---
 
 # ag()
 
 ## Connections
-- [[.create()_1]] - `calls` [EXTRACTED]
-- [[.doOpen()_4]] - `calls` [EXTRACTED]
-- [[Dt()_1]] - `calls` [EXTRACTED]
-- [[Qx()]] - `calls` [EXTRACTED]
-- [[Sn()]] - `calls` [EXTRACTED]
-- [[Vv()_1]] - `calls` [EXTRACTED]
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
-- [[rv()]] - `calls` [EXTRACTED]
-- [[sg()]] - `calls` [EXTRACTED]
-- [[wr()_1]] - `calls` [EXTRACTED]
-- [[ws()]] - `calls` [EXTRACTED]
-- [[yr()]] - `calls` [EXTRACTED]
-- [[zv()_1]] - `calls` [EXTRACTED]
+- [[.add()_1]] - `calls` [EXTRACTED]
+- [[Ck()]] - `calls` [EXTRACTED]
+- [[Ek()]] - `calls` [EXTRACTED]
+- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Socket.IO_Transport_Core
+#graphify/code #graphify/EXTRACTED #community/Community_1

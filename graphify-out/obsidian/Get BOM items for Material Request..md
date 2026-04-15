@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "BOM Items Query"
+community: "Small 38"
 location: "L2284"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/BOM_Items_Query
+  - community/Small_38
 ---
 
 # Get BOM items for Material Request.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_bom_items()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/BOM_Items_Query
+#graphify/rationale #graphify/EXTRACTED #community/Small_38

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js"
 type: "code"
-community: "POW Dashboard Features Hub"
+community: "Community 0"
 location: "L53"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Community_0
 ---
 
 # Tt()
@@ -15,8 +15,8 @@ tags:
 - [[Rv()]] - `calls` [EXTRACTED]
 - [[lv()]] - `calls` [EXTRACTED]
 - [[mh()]] - `calls` [EXTRACTED]
-- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[pow_dashboard.py]] - `contains` [EXTRACTED]
 - [[wa()]] - `calls` [EXTRACTED]
 - [[yh()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/code #graphify/EXTRACTED #community/Community_0

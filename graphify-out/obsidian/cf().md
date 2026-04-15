@@ -1,19 +1,19 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js"
 type: "code"
-community: "Socket.IO Decoder"
+community: "Community 14"
 location: "L40"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Socket.IO_Decoder
+  - community/Community_14
 ---
 
 # cf()
 
 ## Connections
 - [[.add()]] - `calls` [EXTRACTED]
-- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[pow_dashboard.py]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Socket.IO_Decoder
+#graphify/code #graphify/EXTRACTED #community/Community_14

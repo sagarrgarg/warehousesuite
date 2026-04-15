@@ -1,18 +1,19 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "code"
-community: "POW Dashboard Features Hub"
-location: "L887"
+community: "Small 32"
+location: "L924"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Small_32
 ---
 
 # receive_transfer_stock_entry()
 
 ## Connections
 - [[Create stock entry for receiving transfer (in-transit - destination).      Args]] - `rationale_for` [EXTRACTED]
-- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[Create stock entry for receiving transfer (in-transit - destination).      Args_1]] - `rationale_for` [EXTRACTED]
+- [[pow_dashboard.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/code #graphify/EXTRACTED #community/Small_32

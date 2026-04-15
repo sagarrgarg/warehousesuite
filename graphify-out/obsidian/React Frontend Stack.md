@@ -1,17 +1,17 @@
 ---
 source_file: "CLAUDE.md"
 type: "document"
-community: "POW Dashboard Features Hub"
+community: "Community 0"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Community_0
 ---
 
 # React Frontend Stack
 
 ## Connections
 - [[Frappe Framework]] - `references` [EXTRACTED]
-- [[pow-dashboard.js]] - `implements` [EXTRACTED]
+- [[pow_dashboard.py]] - `implements` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/document #graphify/EXTRACTED #community/Community_0

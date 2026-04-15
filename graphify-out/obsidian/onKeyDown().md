@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/pages/Dashboard.tsx"
 type: "code"
-community: "React API & Action Grid"
-location: "L154"
+community: "Community 2"
+location: "L181"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_2
 ---
 
 # onKeyDown()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Dashboard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_2

@@ -1,11 +1,11 @@
 ---
 source_file: "README.md"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # ERPNext Integration
@@ -16,4 +16,4 @@ tags:
 - [[Truth in ERPNext Principle]] - `rationale_for` [EXTRACTED]
 - [[WarehouseSuite App]] - `conceptually_related_to` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

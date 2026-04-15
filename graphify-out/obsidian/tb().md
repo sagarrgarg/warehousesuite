@@ -1,19 +1,19 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
 type: "code"
-community: "Socket.IO Transport Core"
-location: "L330"
+community: "Community 1"
+location: "L58"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Socket.IO_Transport_Core
+  - community/Community_1
 ---
 
 # tb()
 
 ## Connections
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
-- [[nj()]] - `calls` [EXTRACTED]
-- [[sj()]] - `calls` [EXTRACTED]
+- [[Tn()]] - `calls` [EXTRACTED]
+- [[_s()]] - `calls` [EXTRACTED]
+- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Socket.IO_Transport_Core
+#graphify/code #graphify/EXTRACTED #community/Community_1

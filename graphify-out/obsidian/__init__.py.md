@@ -1,12 +1,12 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/__init__.py"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile_multi/__init__.py"
 type: "code"
-community: "Concern Management"
+community: "Community 7"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Concern_Management
+  - community/Community_7
 ---
 
 # __init__.py
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[pow_stock_concern.py]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Concern_Management
+#graphify/code #graphify/EXTRACTED #community/Community_7

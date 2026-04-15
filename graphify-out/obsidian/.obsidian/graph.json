@@ -1,392 +1,462 @@
 {
   "colorGroups": [
     {
-      "query": "tag:#community/Socket.IO_Transport_Core",
+      "query": "tag:#community/Community_0",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/React_API_&_Action_Grid",
+      "query": "tag:#community/Community_1",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/Legacy_POW_Dashboard_Page",
+      "query": "tag:#community/Community_2",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/POW_Dashboard_Features_Hub",
+      "query": "tag:#community/Community_3",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/Socket.IO_Engine_Client",
+      "query": "tag:#community/Community_4",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/WebSocket_Polling_Transport",
+      "query": "tag:#community/Community_5",
       "color": {
         "a": 1,
         "rgb": 15583560
       }
     },
     {
-      "query": "tag:#community/Work_Order_Service",
+      "query": "tag:#community/Community_6",
       "color": {
         "a": 1,
         "rgb": 11565729
       }
     },
     {
-      "query": "tag:#community/POW_Profile_&_Permissions",
+      "query": "tag:#community/Community_7",
       "color": {
         "a": 1,
         "rgb": 16752039
       }
     },
     {
-      "query": "tag:#community/Transfer_Send/Receive_Modals",
+      "query": "tag:#community/Community_8",
       "color": {
         "a": 1,
         "rgb": 10253663
       }
     },
     {
-      "query": "tag:#community/Stock_Count_&_Repack_Modals",
+      "query": "tag:#community/Community_9",
       "color": {
         "a": 1,
         "rgb": 12234924
       }
     },
     {
-      "query": "tag:#community/Manufacturing_Modals",
+      "query": "tag:#community/Community_10",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/Validation_Framework",
+      "query": "tag:#community/Community_11",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/Item_Inquiry_&_Search",
+      "query": "tag:#community/Community_12",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/Concern_Management",
+      "query": "tag:#community/Community_13",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/Dashboard_Layout_&_Panels",
+      "query": "tag:#community/Community_14",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/Work_Order_API_Endpoints",
+      "query": "tag:#community/Community_15",
       "color": {
         "a": 1,
         "rgb": 15583560
       }
     },
     {
-      "query": "tag:#community/Reports_&_Pending_Lists",
+      "query": "tag:#community/Community_16",
       "color": {
         "a": 1,
         "rgb": 11565729
       }
     },
     {
-      "query": "tag:#community/SO_Pending_Report_Service",
+      "query": "tag:#community/Community_17",
       "color": {
         "a": 1,
         "rgb": 16752039
       }
     },
     {
-      "query": "tag:#community/Profile_Switcher_&_Boot",
+      "query": "tag:#community/Community_18",
       "color": {
         "a": 1,
         "rgb": 10253663
       }
     },
     {
-      "query": "tag:#community/Stock_Count_Doctype",
+      "query": "tag:#community/Community_19",
       "color": {
         "a": 1,
         "rgb": 12234924
       }
     },
     {
-      "query": "tag:#community/Transfer_Detail_Modals",
+      "query": "tag:#community/Community_20",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/Socket.IO_Decoder",
+      "query": "tag:#community/Community_21",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/Material_Request_Service",
+      "query": "tag:#community/Community_22",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/Auto_Transit_Validation",
+      "query": "tag:#community/Community_23",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/Material_Request_API",
+      "query": "tag:#community/Community_24",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/Warehouse_Stock_Queries",
+      "query": "tag:#community/Community_25",
       "color": {
         "a": 1,
         "rgb": 15583560
       }
     },
     {
-      "query": "tag:#community/SO_Pending_Report_API",
+      "query": "tag:#community/Small_26",
       "color": {
         "a": 1,
         "rgb": 11565729
       }
     },
     {
-      "query": "tag:#community/ERPNext_&_Frappe_Integration",
+      "query": "tag:#community/Small_27",
       "color": {
         "a": 1,
         "rgb": 16752039
       }
     },
     {
-      "query": "tag:#community/Stock_Count_Submission",
+      "query": "tag:#community/Small_28",
       "color": {
         "a": 1,
         "rgb": 10253663
       }
     },
     {
-      "query": "tag:#community/Zebra_Print_Labels",
+      "query": "tag:#community/Small_29",
       "color": {
         "a": 1,
         "rgb": 12234924
       }
     },
     {
-      "query": "tag:#community/Test_Stubs",
+      "query": "tag:#community/Small_30",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/React_Error_Boundary",
+      "query": "tag:#community/Small_31",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/POW_Website_Route",
+      "query": "tag:#community/Small_32",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/Zebra_Browser_Print_SDK",
+      "query": "tag:#community/Small_33",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/App_Install_Setup",
+      "query": "tag:#community/Small_34",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/Print_Format_Analysis",
+      "query": "tag:#community/Small_35",
       "color": {
         "a": 1,
         "rgb": 15583560
       }
     },
     {
-      "query": "tag:#community/Label_ZPL_Generation",
+      "query": "tag:#community/Small_36",
       "color": {
         "a": 1,
         "rgb": 11565729
       }
     },
     {
-      "query": "tag:#community/Vite_Build_Config",
+      "query": "tag:#community/Small_37",
       "color": {
         "a": 1,
         "rgb": 16752039
       }
     },
     {
-      "query": "tag:#community/Warehouse_Stock_Count_Items",
+      "query": "tag:#community/Small_38",
       "color": {
         "a": 1,
         "rgb": 10253663
       }
     },
     {
-      "query": "tag:#community/Stock_Count_Creation",
+      "query": "tag:#community/Small_39",
       "color": {
         "a": 1,
         "rgb": 12234924
       }
     },
     {
-      "query": "tag:#community/Company_Lookup",
+      "query": "tag:#community/Small_40",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/ZPL_Label_Builder",
+      "query": "tag:#community/Small_41",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/BOM_Lookup",
+      "query": "tag:#community/Small_42",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/BOM_Items_Query",
+      "query": "tag:#community/Small_43",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/Stock_Entry_Warehouse_Fix",
+      "query": "tag:#community/Small_44",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/Item_Doctype_Extension",
+      "query": "tag:#community/Small_45",
       "color": {
         "a": 1,
         "rgb": 15583560
       }
     },
     {
-      "query": "tag:#community/Psychological_Handbook",
+      "query": "tag:#community/Small_46",
       "color": {
         "a": 1,
         "rgb": 11565729
       }
     },
     {
-      "query": "tag:#community/Technical_Handbook",
+      "query": "tag:#community/Small_47",
       "color": {
         "a": 1,
         "rgb": 16752039
       }
     },
     {
-      "query": "tag:#community/Vite_Env_Types",
+      "query": "tag:#community/Small_48",
       "color": {
         "a": 1,
         "rgb": 10253663
       }
     },
     {
-      "query": "tag:#community/Frontend_Index",
+      "query": "tag:#community/Small_49",
       "color": {
         "a": 1,
         "rgb": 12234924
       }
     },
     {
-      "query": "tag:#community/Hooks_Config",
+      "query": "tag:#community/Small_50",
       "color": {
         "a": 1,
         "rgb": 5142951
       }
     },
     {
-      "query": "tag:#community/WMSuite_Transit_Setting",
+      "query": "tag:#community/Small_51",
       "color": {
         "a": 1,
         "rgb": 15896107
       }
     },
     {
-      "query": "tag:#community/WMSuite_Value_Diff_Setting",
+      "query": "tag:#community/Small_52",
       "color": {
         "a": 1,
         "rgb": 14767961
       }
     },
     {
-      "query": "tag:#community/WMSuite_Auto_Setting",
+      "query": "tag:#community/Small_53",
       "color": {
         "a": 1,
         "rgb": 7780274
       }
     },
     {
-      "query": "tag:#community/Stock_Count_Variance_Design",
+      "query": "tag:#community/Small_54",
       "color": {
         "a": 1,
         "rgb": 5873999
       }
     },
     {
-      "query": "tag:#community/Stock_Count_Reconciliation",
+      "query": "tag:#community/Small_55",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/Small_56",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/Small_57",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Small_58",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Small_59",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Small_60",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Small_61",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Small_62",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Small_63",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Small_64",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Small_65",
       "color": {
         "a": 1,
         "rgb": 15583560

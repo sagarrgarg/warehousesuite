@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_session/test_pow_session.py"
 type: "code"
-community: "Test Stubs"
+community: "Community 23"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Test_Stubs
+  - community/Community_23
 ---
 
 # test_pow_session.py
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TestPOWSession]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Test_Stubs
+#graphify/code #graphify/EXTRACTED #community/Community_23

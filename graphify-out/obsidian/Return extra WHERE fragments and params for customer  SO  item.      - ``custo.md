@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py"
 type: "rationale"
-community: "SO Pending Report Service"
+community: "Community 10"
 location: "L117"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/SO_Pending_Report_Service
+  - community/Community_10
 ---
 
 # Return extra WHERE fragments and params for customer / SO / item.      - ``custo
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_filters_sql()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/SO_Pending_Report_Service
+#graphify/rationale #graphify/EXTRACTED #community/Community_10

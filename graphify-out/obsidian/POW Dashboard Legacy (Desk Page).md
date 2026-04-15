@@ -1,17 +1,17 @@
 ---
 source_file: "warehousesuite/technical_handbook.md"
 type: "document"
-community: "POW Dashboard Features Hub"
+community: "Community 0"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Community_0
 ---
 
 # POW Dashboard Legacy (Desk Page)
 
 ## Connections
 - [[API  Service Layer Architecture]] - `references` [EXTRACTED]
-- [[pow-dashboard.js]] - `conceptually_related_to` [EXTRACTED]
+- [[pow_dashboard.py]] - `conceptually_related_to` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/document #graphify/EXTRACTED #community/Community_0

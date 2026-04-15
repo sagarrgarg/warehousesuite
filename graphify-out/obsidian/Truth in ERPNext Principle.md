@@ -1,11 +1,11 @@
 ---
 source_file: "warehousesuite/psychological_handbook.md"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # Truth in ERPNext Principle
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[ERPNext Integration]] - `rationale_for` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

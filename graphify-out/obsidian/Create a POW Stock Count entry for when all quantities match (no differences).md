@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Stock Count Submission"
+community: "Community 18"
 location: "L1396"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Stock_Count_Submission
+  - community/Community_18
 ---
 
 # Create a POW Stock Count entry for when all quantities match (no differences)
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[create_stock_match_entry()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Stock_Count_Submission
+#graphify/rationale #graphify/EXTRACTED #community/Community_18

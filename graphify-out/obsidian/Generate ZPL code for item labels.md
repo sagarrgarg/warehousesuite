@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Label ZPL Generation"
+community: "Community 25"
 location: "L1995"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Label_ZPL_Generation
+  - community/Community_25
 ---
 
 # Generate ZPL code for item labels
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[generate_label_zpl()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Label_ZPL_Generation
+#graphify/rationale #graphify/EXTRACTED #community/Community_25

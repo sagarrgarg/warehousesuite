@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/pow-dashboard/src/App.tsx"
 type: "code"
-community: "React API & Action Grid"
+community: "Community 19"
 location: "L6"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_19
 ---
 
 # errText()
@@ -15,4 +15,4 @@ tags:
 - [[App.tsx]] - `contains` [EXTRACTED]
 - [[PowDashboardInner()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_19

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "code"
-community: "Material Request API"
+community: "Community 15"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Material_Request_API
+  - community/Community_15
 ---
 
 # pow_material_request.py
@@ -20,4 +20,4 @@ tags:
 - [[get_pending_pow_receives()]] - `contains` [EXTRACTED]
 - [[get_pending_transfer_material_requests()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Material_Request_API
+#graphify/code #graphify/EXTRACTED #community/Community_15

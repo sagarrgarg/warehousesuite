@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js"
 type: "code"
-community: "Stock Count & Repack Modals"
+community: "Community 0"
 location: "L37"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Stock_Count_&_Repack_Modals
+  - community/Community_0
 ---
 
 # fo()
@@ -14,8 +14,8 @@ tags:
 ## Connections
 - [[Dc()]] - `calls` [EXTRACTED]
 - [[fp()]] - `calls` [EXTRACTED]
-- [[pow-dashboard.js]] - `contains` [EXTRACTED]
+- [[pow_dashboard.py]] - `contains` [EXTRACTED]
 - [[pt()]] - `calls` [EXTRACTED]
 - [[xc()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Stock_Count_&_Repack_Modals
+#graphify/code #graphify/EXTRACTED #community/Community_0

@@ -1,11 +1,11 @@
 ---
 source_file: "wiki/features/transfer-management.md"
 type: "document"
-community: "Auto Transit Validation"
+community: "Community 16"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Auto_Transit_Validation
+  - community/Community_16
 ---
 
 # Transfer Management Feature
@@ -13,7 +13,7 @@ tags:
 ## Connections
 - [[Material Request Integration]] - `conceptually_related_to` [EXTRACTED]
 - [[auto_transit_validation.py]] - `references` [EXTRACTED]
-- [[pow-dashboard.js]] - `references` [EXTRACTED]
+- [[pow_dashboard.py]] - `references` [EXTRACTED]
 - [[value_difference_validation.py]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Auto_Transit_Validation
+#graphify/document #graphify/EXTRACTED #community/Community_16

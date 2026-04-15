@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "POW Dashboard Features Hub"
+community: "Small 33"
 location: "L1083"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/POW_Dashboard_Features_Hub
+  - community/Small_33
 ---
 
 # Create a new POW Stock Count
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[create_pow_stock_count()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/POW_Dashboard_Features_Hub
+#graphify/rationale #graphify/EXTRACTED #community/Small_33

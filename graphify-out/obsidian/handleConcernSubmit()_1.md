@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/dashboard/PendingReceiveCard.tsx"
 type: "code"
-community: "React API & Action Grid"
+community: "Community 2"
 location: "L79"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_2
 ---
 
 # handleConcernSubmit()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PendingReceiveCard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_2

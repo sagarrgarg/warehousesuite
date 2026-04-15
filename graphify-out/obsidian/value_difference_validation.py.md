@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py"
 type: "code"
-community: "Auto Transit Validation"
+community: "Community 16"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Auto_Transit_Validation
+  - community/Community_16
 ---
 
 # value_difference_validation.py
@@ -19,4 +19,4 @@ tags:
 - [[_has_override_permission()]] - `contains` [EXTRACTED]
 - [[validate_value_difference()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Auto_Transit_Validation
+#graphify/code #graphify/EXTRACTED #community/Community_16

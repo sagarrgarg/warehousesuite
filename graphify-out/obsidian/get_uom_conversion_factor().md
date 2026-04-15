@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py"
 type: "code"
-community: "Validation Framework"
+community: "Community 9"
 location: "L400"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Validation_Framework
+  - community/Community_9
 ---
 
 # get_uom_conversion_factor()
@@ -16,4 +16,4 @@ tags:
 - [[validate_stock_availability()]] - `calls` [EXTRACTED]
 - [[validation.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Validation_Framework
+#graphify/code #graphify/EXTRACTED #community/Community_9

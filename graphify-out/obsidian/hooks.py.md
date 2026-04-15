@@ -1,14 +1,14 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/hooks.py"
 type: "code"
-community: "Hooks Config"
+community: "Small 51"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Hooks_Config
+  - community/Small_51
 ---
 
 # hooks.py
 
-#graphify/code #graphify/EXTRACTED #community/Hooks_Config
+#graphify/code #graphify/EXTRACTED #community/Small_51

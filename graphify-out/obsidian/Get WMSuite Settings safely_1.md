@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py"
 type: "rationale"
-community: "Auto Transit Validation"
+community: "Community 16"
 location: "L42"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Auto_Transit_Validation
+  - community/Community_16
 ---
 
 # Get WMSuite Settings safely
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_get_wmsuite_settings()_1]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Auto_Transit_Validation
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/wmsuite_settings/wmsuite_settings.py"
 type: "rationale"
-community: "POW Profile & Permissions"
+community: "Community 6"
 location: "L79"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/POW_Profile_&_Permissions
+  - community/Community_6
 ---
 
 # Get WMSuite settings for frontend use
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_wmsuite_settings()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/POW_Profile_&_Permissions
+#graphify/rationale #graphify/EXTRACTED #community/Community_6

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/App.tsx"
 type: "code"
-community: "React API & Action Grid"
+community: "Community 19"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_19
 ---
 
 # App.tsx
@@ -18,4 +18,4 @@ tags:
 - [[errText()]] - `contains` [EXTRACTED]
 - [[main.tsx]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_19

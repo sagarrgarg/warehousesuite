@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_so_pending_report.py"
 type: "code"
-community: "SO Pending Report API"
+community: "Community 17"
 location: "L15"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SO_Pending_Report_API
+  - community/Community_17
 ---
 
 # _parse_filters()
@@ -17,4 +17,4 @@ tags:
 - [[get_pow_so_pending_summary()]] - `calls` [EXTRACTED]
 - [[pow_so_pending_report.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SO_Pending_Report_API
+#graphify/code #graphify/EXTRACTED #community/Community_17

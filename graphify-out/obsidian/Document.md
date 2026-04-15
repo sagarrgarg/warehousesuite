@@ -1,18 +1,20 @@
 ---
 source_file: ""
 type: "code"
-community: "POW Profile & Permissions"
+community: "Community 6"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/POW_Profile_&_Permissions
+  - community/Community_6
 ---
 
 # Document
 
 ## Connections
 - [[POWAllowedOperations]] - `inherits` [EXTRACTED]
+- [[POWNotification]] - `inherits` [EXTRACTED]
 - [[POWProfile]] - `inherits` [EXTRACTED]
+- [[POWProfileMulti]] - `inherits` [EXTRACTED]
 - [[POWProfileUser]] - `inherits` [EXTRACTED]
 - [[POWSession]] - `inherits` [EXTRACTED]
 - [[POWStockConcern]] - `inherits` [EXTRACTED]
@@ -22,4 +24,4 @@ tags:
 - [[StockEntryPurposes]] - `inherits` [EXTRACTED]
 - [[WMSuiteSettings]] - `inherits` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/POW_Profile_&_Permissions
+#graphify/code #graphify/EXTRACTED #community/Community_6

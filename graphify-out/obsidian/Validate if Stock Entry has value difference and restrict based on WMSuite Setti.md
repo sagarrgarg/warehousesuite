@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py"
 type: "rationale"
-community: "Auto Transit Validation"
+community: "Community 16"
 location: "L14"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Auto_Transit_Validation
+  - community/Community_16
 ---
 
 # Validate if Stock Entry has value difference and restrict based on WMSuite Setti
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[validate_value_difference()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Auto_Transit_Validation
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

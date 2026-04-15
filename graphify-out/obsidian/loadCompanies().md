@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js"
 type: "code"
-community: "Zebra Print Labels"
+community: "Community 22"
 location: "L673"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Zebra_Print_Labels
+  - community/Community_22
 ---
 
 # loadCompanies()
@@ -15,4 +15,4 @@ tags:
 - [[print_labels.js]] - `contains` [EXTRACTED]
 - [[setupPrintLabelsEvents()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Zebra_Print_Labels
+#graphify/code #graphify/EXTRACTED #community/Community_22

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "ZPL Label Builder"
+community: "Community 0"
 location: "L2139"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/ZPL_Label_Builder
+  - community/Community_0
 ---
 
 # Generate ZPL code for a single label matching the label design
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[generate_zpl_label()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/ZPL_Label_Builder
+#graphify/rationale #graphify/EXTRACTED #community/Community_0

@@ -1,11 +1,11 @@
 ---
 source_file: ""
 type: "code"
-community: "Validation Framework"
+community: "Community 9"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Validation_Framework
+  - community/Community_9
 ---
 
 # Exception
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[ValidationError]] - `inherits` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Validation_Framework
+#graphify/code #graphify/EXTRACTED #community/Community_9

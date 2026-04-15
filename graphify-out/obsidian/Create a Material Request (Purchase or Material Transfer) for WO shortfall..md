@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "rationale"
-community: "Work Order Service"
+community: "Community 5"
 location: "L879"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Work_Order_Service
+  - community/Community_5
 ---
 
 # Create a Material Request (Purchase or Material Transfer) for WO shortfall.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[raise_material_request_for_wo()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Work_Order_Service
+#graphify/rationale #graphify/EXTRACTED #community/Community_5

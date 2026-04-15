@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "rationale"
-community: "Work Order API Endpoints"
+community: "Community 8"
 location: "L207"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Work_Order_API_Endpoints
+  - community/Community_8
 ---
 
 # Persist substitute item selection for a Work Order required item row.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[set_wo_item_substitute()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Work_Order_API_Endpoints
+#graphify/rationale #graphify/EXTRACTED #community/Community_8

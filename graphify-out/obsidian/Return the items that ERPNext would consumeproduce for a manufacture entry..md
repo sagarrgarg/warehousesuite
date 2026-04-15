@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "rationale"
-community: "Work Order Service"
+community: "Community 5"
 location: "L700"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Work_Order_Service
+  - community/Community_5
 ---
 
 # Return the items that ERPNext would consume/produce for a manufacture entry.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_manufacture_preview()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Work_Order_Service
+#graphify/rationale #graphify/EXTRACTED #community/Community_5

@@ -1,11 +1,11 @@
 ---
 source_file: "README.md"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # WarehouseSuite App
@@ -17,4 +17,4 @@ tags:
 - [[Privacy Policy]] - `references` [EXTRACTED]
 - [[Zebra Browser Print Integration]] - `conceptually_related_to` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

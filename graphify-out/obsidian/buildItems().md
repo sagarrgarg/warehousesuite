@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/stock-count/StockCountModal.tsx"
 type: "code"
-community: "React API & Action Grid"
-location: "L83"
+community: "Community 2"
+location: "L268"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/React_API_&_Action_Grid
+  - community/Community_2
 ---
 
 # buildItems()
@@ -16,4 +16,4 @@ tags:
 - [[getDifferences()]] - `calls` [EXTRACTED]
 - [[handleFinalSubmit()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/React_API_&_Action_Grid
+#graphify/code #graphify/EXTRACTED #community/Community_2

@@ -129,32 +129,38 @@ def get_pending_pow_receives(default_warehouse):
 
 @frappe.whitelist()
 def create_material_transfer_request(
-    target_warehouse,
-    items,
-    company,
+    target_warehouse=None,
+    items=None,
+    company=None,
     from_warehouse=None,
     schedule_date=None,
     remarks=None,
     pow_profile=None,
+    request_type=None,
 ):
-    """Raise a new Material Request (Material Transfer) from POW.
+    """Raise a new Material Request (Material Transfer or Purchase) from POW.
 
     Args:
-        target_warehouse: warehouse that needs the material
+        target_warehouse: warehouse that needs the material (required for Transfer)
         items: JSON array of {item_code, qty, uom}
         company: company name
         from_warehouse: optional preferred source warehouse
         schedule_date: optional required-by date
         remarks: optional string
         pow_profile: POW Profile for warehouse scope validation
+        request_type: "Material Transfer" or "Purchase" (default: Material Transfer)
 
     Returns:
         dict with status, material_request, message.
     """
-    if not target_warehouse or not company:
-        frappe.throw(_("target_warehouse and company are required"))
+    if not company:
+        frappe.throw(_("company is required"))
 
-    if pow_profile:
+    mr_type = request_type or "Material Transfer"
+    if mr_type == "Material Transfer" and not target_warehouse:
+        frappe.throw(_("target_warehouse is required for Material Transfer"))
+
+    if pow_profile and target_warehouse:
         from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
         _p, allowed = validate_pow_profile_access(pow_profile)
         wh_to_check = [target_warehouse]
@@ -165,12 +171,13 @@ def create_material_transfer_request(
     parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
 
     return raise_material_transfer_request(
-        target_warehouse=target_warehouse,
+        target_warehouse=target_warehouse or None,
         from_warehouse=from_warehouse or None,
         items=parsed_items,
         company=company,
         schedule_date=schedule_date or None,
         remarks=remarks,
+        request_type=mr_type,
     )
 
 

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile/test_pow_profile.py"
 type: "code"
-community: "Test Stubs"
+community: "Community 23"
 location: "L8"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Test_Stubs
+  - community/Community_23
 ---
 
 # TestPOWProfile
@@ -15,4 +15,4 @@ tags:
 - [[FrappeTestCase]] - `inherits` [EXTRACTED]
 - [[test_pow_profile.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Test_Stubs
+#graphify/code #graphify/EXTRACTED #community/Community_23

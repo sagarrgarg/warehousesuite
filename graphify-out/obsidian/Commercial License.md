@@ -1,11 +1,11 @@
 ---
 source_file: "license.txt"
 type: "document"
-community: "ERPNext & Frappe Integration"
+community: "Community 20"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/ERPNext_&_Frappe_Integration
+  - community/Community_20
 ---
 
 # Commercial License
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[WarehouseSuite App]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/ERPNext_&_Frappe_Integration
+#graphify/document #graphify/EXTRACTED #community/Community_20

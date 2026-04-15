@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/item.js"
 type: "code"
-community: "Item Doctype Extension"
+community: "Small 45"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Item_Doctype_Extension
+  - community/Small_45
 ---
 
 # item.js
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[refresh()_3]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Item_Doctype_Extension
+#graphify/code #graphify/EXTRACTED #community/Small_45

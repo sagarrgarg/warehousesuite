@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "rationale"
-community: "Material Request API"
+community: "Community 15"
 location: "L176"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Material_Request_API
+  - community/Community_15
 ---
 
 # Parse a value that may be JSON string, Python list, or None.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_parse_list()_1]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Material_Request_API
+#graphify/rationale #graphify/EXTRACTED #community/Community_15
