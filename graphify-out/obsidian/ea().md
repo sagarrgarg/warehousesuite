@@ -18,7 +18,7 @@ tags:
 - [[Vv()]] - `calls` [EXTRACTED]
 - [[hv()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[th()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

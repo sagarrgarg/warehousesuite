@@ -17,7 +17,7 @@ tags:
 - [[gh()]] - `calls` [EXTRACTED]
 - [[mh()]] - `calls` [EXTRACTED]
 - [[po()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[ti()]] - `calls` [EXTRACTED]
 - [[wa()]] - `calls` [EXTRACTED]
 

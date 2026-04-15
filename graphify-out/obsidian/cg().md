@@ -13,7 +13,7 @@ tags:
 
 ## Connections
 - [[Bu()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[zr()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

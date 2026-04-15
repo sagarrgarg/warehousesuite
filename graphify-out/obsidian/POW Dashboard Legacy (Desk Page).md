@@ -12,6 +12,6 @@ tags:
 
 ## Connections
 - [[API  Service Layer Architecture]] - `references` [EXTRACTED]
-- [[pow_dashboard.py]] - `conceptually_related_to` [EXTRACTED]
+- [[pow-dashboard.js]] - `conceptually_related_to` [EXTRACTED]
 
 #graphify/document #graphify/EXTRACTED #community/Community_0

@@ -1,17 +1,17 @@
 ---
 source_file: "wiki/features/stock-counting.md"
 type: "document"
-community: "Community 11"
+community: "Community 13"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Community_11
+  - community/Community_13
 ---
 
 # Stock Counting Feature
 
 ## Connections
-- [[pow_dashboard.py]] - `references` [EXTRACTED]
-- [[pow_stock_count.py]] - `implements` [EXTRACTED]
+- [[pow-dashboard.js]] - `references` [EXTRACTED]
+- [[pow_stock_count.js]] - `implements` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Community_11
+#graphify/document #graphify/EXTRACTED #community/Community_13

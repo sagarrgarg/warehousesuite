@@ -18,6 +18,6 @@ tags:
 - [[.create()]] - `method` [EXTRACTED]
 - [[.onError()_1]] - `method` [EXTRACTED]
 - [[.onLoad()]] - `method` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_3

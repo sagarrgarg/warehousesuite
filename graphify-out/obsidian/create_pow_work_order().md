@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[Create and submit a new Work Order.      Args         production_item item to]] - `rationale_for` [EXTRACTED]
+- [[Create and submit a new Work Order.      Args         production_item item to_1]] - `rationale_for` [EXTRACTED]
 - [[pow_work_order.py]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_8

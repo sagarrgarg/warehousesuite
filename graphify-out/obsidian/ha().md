@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[Gy()]] - `calls` [EXTRACTED]
 - [[ft()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rh()]] - `calls` [EXTRACTED]
 - [[xu()]] - `calls` [EXTRACTED]
 

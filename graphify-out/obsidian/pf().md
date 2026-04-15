@@ -15,7 +15,7 @@ tags:
 - [[Ru()]] - `calls` [EXTRACTED]
 - [[fs()]] - `calls` [EXTRACTED]
 - [[ge()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

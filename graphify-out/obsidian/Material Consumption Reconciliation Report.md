@@ -1,13 +1,13 @@
 ---
 source_file: "TODO.md"
 type: "document"
-community: "Small 60"
+community: "Community 66"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_60
+  - community/Community_66
 ---
 
 # Material Consumption Reconciliation Report
 
-#graphify/document #graphify/EXTRACTED #community/Small_60
+#graphify/document #graphify/EXTRACTED #community/Community_66

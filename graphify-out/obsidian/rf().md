@@ -17,7 +17,7 @@ tags:
 - [[fp()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
 - [[pa()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[tn()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

@@ -1,20 +1,17 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
-community: "WebSocket Polling Transport"
+community: "Community 1"
 location: "L73"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/WebSocket_Polling_Transport
+  - community/Community_1
 ---
 
 # pw()
 
 ## Connections
-- [[.constructor()_22]] - `method` [EXTRACTED]
-- [[.onData()_3]] - `calls` [EXTRACTED]
-- [[Xf()]] - `calls` [EXTRACTED]
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/WebSocket_Polling_Transport
+#graphify/code #graphify/EXTRACTED #community/Community_1

@@ -15,6 +15,7 @@ tags:
 - [[CreateWorkOrderModal.tsx]] - `imports_from` [EXTRACTED]
 - [[Dashboard.tsx]] - `imports_from` [EXTRACTED]
 - [[RaiseMaterialRequestModal.tsx]] - `imports_from` [EXTRACTED]
+- [[StockCountModal.tsx]] - `imports_from` [EXTRACTED]
 - [[TransferSendModal.tsx]] - `imports_from` [EXTRACTED]
 - [[clear()_1]] - `contains` [EXTRACTED]
 - [[formatPickerStockQty()]] - `contains` [EXTRACTED]

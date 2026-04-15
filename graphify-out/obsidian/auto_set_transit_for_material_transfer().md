@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py"
 type: "code"
-community: "Community 16"
+community: "Community 17"
 location: "L12"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_16
+  - community/Community_17
 ---
 
 # auto_set_transit_for_material_transfer()
@@ -16,4 +16,4 @@ tags:
 - [[_get_wmsuite_settings()_1]] - `calls` [EXTRACTED]
 - [[auto_transit_validation.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_16
+#graphify/code #graphify/EXTRACTED #community/Community_17

@@ -11,6 +11,6 @@ tags:
 # Resizable Three-Column Layout
 
 ## Connections
-- [[pow_dashboard.py]] - `implements` [EXTRACTED]
+- [[pow-dashboard.js]] - `implements` [EXTRACTED]
 
 #graphify/document #graphify/EXTRACTED #community/Community_0

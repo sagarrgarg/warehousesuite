@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/proxyOptions.ts"
 type: "code"
-community: "Small 31"
+community: "Community 34"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Small_31
+  - community/Community_34
 ---
 
 # getCommonSiteConfig()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[proxyOptions.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Small_31
+#graphify/code #graphify/EXTRACTED #community/Community_34

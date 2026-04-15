@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[Xs()]] - `calls` [EXTRACTED]
 - [[Zg()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[wd()]] - `calls` [EXTRACTED]
 

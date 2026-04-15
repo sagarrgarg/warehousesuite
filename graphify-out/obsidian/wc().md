@@ -18,6 +18,6 @@ tags:
 - [[ll()]] - `calls` [EXTRACTED]
 - [[ls()]] - `calls` [EXTRACTED]
 - [[o()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

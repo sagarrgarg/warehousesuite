@@ -16,7 +16,7 @@ tags:
 - [[Uc()]] - `calls` [EXTRACTED]
 - [[Xs()]] - `calls` [EXTRACTED]
 - [[ny()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[t()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py"
 type: "rationale"
-community: "Community 9"
+community: "Community 10"
 location: "L336"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_9
+  - community/Community_10
 ---
 
 # Get the quantity already received for a specific item from a stock entry
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_already_received_quantity()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_9
+#graphify/rationale #graphify/EXTRACTED #community/Community_10

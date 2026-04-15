@@ -15,7 +15,7 @@ tags:
 - [[Bc()]] - `calls` [EXTRACTED]
 - [[Nn()]] - `calls` [EXTRACTED]
 - [[of()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[ve()]] - `calls` [EXTRACTED]
 - [[zp()]] - `calls` [EXTRACTED]
 

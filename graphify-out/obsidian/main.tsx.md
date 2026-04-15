@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/main.tsx"
 type: "code"
-community: "Community 19"
+community: "Community 20"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_19
+  - community/Community_20
 ---
 
 # main.tsx
@@ -15,4 +15,4 @@ tags:
 - [[App.tsx]] - `imports_from` [EXTRACTED]
 - [[renderApp()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_19
+#graphify/code #graphify/EXTRACTED #community/Community_20

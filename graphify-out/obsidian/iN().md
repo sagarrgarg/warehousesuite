@@ -1,8 +1,8 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
 community: "Community 1"
-location: "L370"
+location: "L365"
 tags:
   - graphify/code
   - graphify/EXTRACTED
@@ -12,7 +12,18 @@ tags:
 # iN()
 
 ## Connections
-- [[Cn()_1]] - `calls` [EXTRACTED]
-- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
+- [[It()]] - `calls` [EXTRACTED]
+- [[aN()]] - `calls` [EXTRACTED]
+- [[fj()]] - `calls` [EXTRACTED]
+- [[ij()]] - `calls` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
+- [[lN()]] - `calls` [EXTRACTED]
+- [[mj()]] - `calls` [EXTRACTED]
+- [[oj()]] - `calls` [EXTRACTED]
+- [[rN()]] - `calls` [EXTRACTED]
+- [[rj()]] - `calls` [EXTRACTED]
+- [[uj()]] - `calls` [EXTRACTED]
+- [[wx()]] - `calls` [EXTRACTED]
+- [[xj()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_1

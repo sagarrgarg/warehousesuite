@@ -16,7 +16,7 @@ tags:
 - [[lr()]] - `calls` [EXTRACTED]
 - [[ly()]] - `calls` [EXTRACTED]
 - [[pd()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[sy()]] - `calls` [EXTRACTED]
 - [[wd()]] - `calls` [EXTRACTED]
 

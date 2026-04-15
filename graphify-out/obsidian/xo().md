@@ -15,7 +15,7 @@ tags:
 - [[ge()]] - `calls` [EXTRACTED]
 - [[mf()]] - `calls` [EXTRACTED]
 - [[ot()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rh()]] - `calls` [EXTRACTED]
 - [[zp()]] - `calls` [EXTRACTED]
 

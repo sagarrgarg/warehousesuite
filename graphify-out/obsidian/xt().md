@@ -15,6 +15,6 @@ tags:
 - [[.onopen()_1]] - `calls` [EXTRACTED]
 - [[.open()_2]] - `calls` [EXTRACTED]
 - [[.subEvents()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_3

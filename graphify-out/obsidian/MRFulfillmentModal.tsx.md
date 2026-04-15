@@ -13,11 +13,13 @@ tags:
 
 ## Connections
 - [[BatchSerialInput.tsx]] - `imports_from` [EXTRACTED]
+- [[CreateWorkOrderModal.tsx]] - `imports_from` [EXTRACTED]
 - [[Dashboard.tsx]] - `imports_from` [EXTRACTED]
 - [[allWarehouses()]] - `contains` [EXTRACTED]
 - [[api.ts]] - `imports_from` [EXTRACTED]
 - [[candidatesForWarehouse()]] - `contains` [EXTRACTED]
 - [[handleSubmit()_1]] - `contains` [EXTRACTED]
+- [[shortWh()_5]] - `contains` [EXTRACTED]
 - [[updateQty()]] - `contains` [EXTRACTED]
 - [[useMaterialRequestFulfillment.ts]] - `imports_from` [EXTRACTED]
 

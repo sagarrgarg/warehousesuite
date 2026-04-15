@@ -1,22 +1,23 @@
 ---
 type: community
-cohesion: 0.29
-members: 7
+cohesion: 0.32
+members: 8
 ---
 
 # Community 23
 
-**Cohesion:** 0.29 - loosely connected
-**Members:** 7 nodes
+**Cohesion:** 0.32 - loosely connected
+**Members:** 8 nodes
 
 ## Members
-- [[FrappeTestCase]] - code
-- [[TestPOWProfile]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile/test_pow_profile.py
-- [[TestPOWSession]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_session/test_pow_session.py
-- [[TestSelectWarehouse]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/select_warehouse/test_select_warehouse.py
-- [[test_pow_profile.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile/test_pow_profile.py
-- [[test_pow_session.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_session/test_pow_session.py
-- [[test_select_warehouse.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/select_warehouse/test_select_warehouse.py
+- [[generateBarcode()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[initializePrinters()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[loadCompanies()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[loadZebraBrowserPrintScript()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[print_labels.js]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[setupPrintLabelsEvents()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[updateLabelPreview()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[validatePrintForm()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
 
 ## Live Query (requires Dataview plugin)
 

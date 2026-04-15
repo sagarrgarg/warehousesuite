@@ -1,13 +1,13 @@
 ---
 source_file: "TODO.md"
 type: "document"
-community: "Small 59"
+community: "Community 65"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_59
+  - community/Community_65
 ---
 
 # QZ Tray Integration
 
-#graphify/document #graphify/EXTRACTED #community/Small_59
+#graphify/document #graphify/EXTRACTED #community/Community_65

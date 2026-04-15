@@ -1,13 +1,13 @@
 ---
 source_file: "TODO.md"
 type: "document"
-community: "Small 64"
+community: "Community 70"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_64
+  - community/Community_70
 ---
 
 # Batch Stock Ageing Report
 
-#graphify/document #graphify/EXTRACTED #community/Small_64
+#graphify/document #graphify/EXTRACTED #community/Community_70

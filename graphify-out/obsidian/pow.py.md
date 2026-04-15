@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/www/pow.py"
 type: "code"
-community: "Small 26"
+community: "Community 28"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Small_26
+  - community/Community_28
 ---
 
 # pow.py
@@ -15,4 +15,4 @@ tags:
 - [[get_context()]] - `contains` [EXTRACTED]
 - [[get_context_for_dev()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Small_26
+#graphify/code #graphify/EXTRACTED #community/Community_28

@@ -13,6 +13,6 @@ tags:
 ## Connections
 - [[BatchSerial + Desk Restriction Plan]] - `implements` [EXTRACTED]
 - [[Serial and Batch Bundle (SBB)]] - `implements` [EXTRACTED]
-- [[pow_dashboard.py]] - `implements` [EXTRACTED]
+- [[pow-dashboard.js]] - `implements` [EXTRACTED]
 
 #graphify/document #graphify/EXTRACTED #community/Community_0

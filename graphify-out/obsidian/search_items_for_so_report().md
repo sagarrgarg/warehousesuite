@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py"
 type: "code"
-community: "Community 10"
+community: "Community 12"
 location: "L204"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_10
+  - community/Community_12
 ---
 
 # search_items_for_so_report()
@@ -17,4 +17,4 @@ tags:
 - [[_warehouse_scope_sql()]] - `calls` [EXTRACTED]
 - [[pow_so_pending_report_service.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_10
+#graphify/code #graphify/EXTRACTED #community/Community_12

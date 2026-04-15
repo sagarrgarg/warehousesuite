@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "rationale"
-community: "Community 15"
+community: "Community 16"
 location: "L1"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_16
 ---
 
 # Whitelisted API endpoints for Material Request (Material Transfer) operations in
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[pow_material_request.py]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_15
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

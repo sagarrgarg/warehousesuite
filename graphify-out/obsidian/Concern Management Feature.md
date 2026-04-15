@@ -1,16 +1,16 @@
 ---
 source_file: "README.md"
 type: "document"
-community: "Community 7"
+community: "Community 9"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Community_7
+  - community/Community_9
 ---
 
 # Concern Management Feature
 
 ## Connections
-- [[pow_stock_concern.py]] - `implements` [EXTRACTED]
+- [[pow_stock_concern.js]] - `implements` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Community_7
+#graphify/document #graphify/EXTRACTED #community/Community_9

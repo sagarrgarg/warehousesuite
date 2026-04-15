@@ -23,6 +23,6 @@ tags:
 - [[ah()]] - `calls` [EXTRACTED]
 - [[da()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_3

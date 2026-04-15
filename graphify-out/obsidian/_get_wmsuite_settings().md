@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py"
 type: "code"
-community: "Community 16"
+community: "Community 17"
 location: "L52"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_16
+  - community/Community_17
 ---
 
 # _get_wmsuite_settings()
@@ -16,4 +16,4 @@ tags:
 - [[validate_value_difference()]] - `calls` [EXTRACTED]
 - [[value_difference_validation.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_16
+#graphify/code #graphify/EXTRACTED #community/Community_17

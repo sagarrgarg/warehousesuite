@@ -15,7 +15,7 @@ tags:
 - [[Fy()]] - `calls` [EXTRACTED]
 - [[Ms()]] - `calls` [EXTRACTED]
 - [[Rn()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[rg()]] - `calls` [EXTRACTED]
 

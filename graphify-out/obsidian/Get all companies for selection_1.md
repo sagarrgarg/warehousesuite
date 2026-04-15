@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Community 0"
+community: "Community 43"
 location: "L2041"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_43
 ---
 
 # Get all companies for selection
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_companies()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_0
+#graphify/rationale #graphify/EXTRACTED #community/Community_43

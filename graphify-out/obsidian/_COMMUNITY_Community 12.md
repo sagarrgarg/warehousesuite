@@ -1,36 +1,40 @@
 ---
 type: community
-cohesion: 0.11
-members: 21
+cohesion: 0.13
+members: 25
 ---
 
 # Community 12
 
-**Cohesion:** 0.11 - loosely connected
-**Members:** 21 nodes
+**Cohesion:** 0.13 - loosely connected
+**Members:** 25 nodes
 
 ## Members
-- [[NOTE stock checks removed — a Material Request is a request for]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Create a Material Transfer Stock Entry linked back to MR lines.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Create a Material Transfer Stock Entry linked back to MR lines.      Args_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Create and submit a Material Request (Material Transfer or Purchase).      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Create and submit a Material Request of type Material Transfer.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Fetch MR item lines that still have remaining transfer qty.      If warehouses]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[For each MR line with remaining qty, return candidate source warehouses     with]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Return submitted Material Transfer MRs with remaining qty.      Args         wa]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Return warehouses with stock for the item, respecting eligibility rules.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Return warehouses with stock for the item, respecting eligibility rules._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Service layer for Material Request (Material Transfer) operations in POW.  Eligi]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Thin wrapper that re-uses existing receive data logic but normalises     output]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[Thin wrapper that re-uses existing receive data logic but normalises     output_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[_eligible_warehouses_for_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[_get_mr_lines_with_remaining()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[create_transfer_from_mr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[get_fulfillment_options()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[get_pending_receives()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[get_pending_transfer_requests()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[pow_material_request_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
-- [[raise_material_transfer_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py
+- [[Aggregate pending delivery qty by item code + stock UOM, paginated.      Lines o]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Build a safe LIKE %term% pattern (escapes % and _).]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Clamp offset and page size for SQL LIMITOFFSET.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Customers with pending SO lines in this company within warehouse scope.      Arg]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Ensure current user may run SO pending reports for this profile.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Items that appear on pending SO lines in company within warehouse scope.      Ar]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Return SQL fragment for order-level remark (custom field if present).]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Return extra WHERE fragments and params for customer  SO  item.      - ``custo]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Return one page of SO lines with remaining qty to deliver (stock UOM).      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[SQL expression effective warehouse for a sales order line.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[SQL fragment restricting SO lines to warehouses in allowed_warehouses.      Ar]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[Sales Order pending-delivery reports for POW dashboard.  Correctness notes (vs r]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_filters_sql()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_format_line_row()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_like_wrap()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_normalize_paging()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_remark_sql_expression()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_so_line_warehouse_expr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[_warehouse_scope_sql()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[assert_pow_so_pending_report_access()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[get_so_pending_delivery_lines()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[get_so_pending_delivery_summary()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[pow_so_pending_report_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[search_customers_for_so_report()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[search_items_for_so_report()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
 
 ## Live Query (requires Dataview plugin)
 

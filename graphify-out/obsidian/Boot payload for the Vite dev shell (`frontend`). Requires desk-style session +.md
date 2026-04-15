@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/www/pow.py"
 type: "rationale"
-community: "Small 26"
+community: "Community 28"
 location: "L24"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Small_26
+  - community/Community_28
 ---
 
 # Boot payload for the Vite dev shell (`frontend/`). Requires desk-style session +
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_context_for_dev()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Small_26
+#graphify/rationale #graphify/EXTRACTED #community/Community_28

@@ -1,11 +1,11 @@
 ---
 source_file: "README.md"
 type: "document"
-community: "Community 20"
+community: "Community 21"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Community_20
+  - community/Community_21
 ---
 
 # WarehouseSuite App
@@ -17,4 +17,4 @@ tags:
 - [[Privacy Policy]] - `references` [EXTRACTED]
 - [[Zebra Browser Print Integration]] - `conceptually_related_to` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Community_20
+#graphify/document #graphify/EXTRACTED #community/Community_21

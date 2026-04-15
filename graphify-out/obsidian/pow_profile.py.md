@@ -15,7 +15,7 @@ tags:
 - [[POW Profile Permission Enforcement]] - `references` [EXTRACTED]
 - [[POW Profile Warehouse Rulebook]] - `references` [EXTRACTED]
 - [[POWProfile]] - `contains` [EXTRACTED]
-- [[pow_dashboard.py]] - `references` [EXTRACTED]
+- [[pow-dashboard.js]] - `references` [EXTRACTED]
 - [[pow_profile_user.py]] - `shares_data_with` [EXTRACTED]
 - [[pow_session.js]] - `references` [EXTRACTED]
 - [[pow_warehouse_scope.py]] - `shares_data_with` [EXTRACTED]

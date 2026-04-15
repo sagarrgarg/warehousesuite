@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/zebrabrowserprint.js"
 type: "code"
-community: "Small 27"
+community: "Community 30"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Small_27
+  - community/Community_30
 ---
 
 # zebrabrowserprint.js
@@ -17,4 +17,4 @@ tags:
 - [[h()]] - `contains` [EXTRACTED]
 - [[k()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Small_27
+#graphify/code #graphify/EXTRACTED #community/Community_30

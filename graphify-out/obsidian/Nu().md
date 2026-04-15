@@ -19,7 +19,7 @@ tags:
 - [[hd()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
 - [[ng()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[wp()]] - `calls` [EXTRACTED]
 

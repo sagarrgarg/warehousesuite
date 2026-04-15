@@ -16,7 +16,7 @@ tags:
 - [[Sd()]] - `calls` [EXTRACTED]
 - [[Ui()]] - `calls` [EXTRACTED]
 - [[Xs()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[tp()]] - `calls` [EXTRACTED]
 - [[wd()]] - `calls` [EXTRACTED]
 

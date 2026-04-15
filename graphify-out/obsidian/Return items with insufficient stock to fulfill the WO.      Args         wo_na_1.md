@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "rationale"
-community: "Community 5"
+community: "Community 4"
 location: "L887"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_5
+  - community/Community_4
 ---
 
 # Return items with insufficient stock to fulfill the WO.      Args:         wo_na
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_material_shortfall()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_5
+#graphify/rationale #graphify/EXTRACTED #community/Community_4

@@ -16,7 +16,7 @@ tags:
 - [[Ci()]] - `calls` [EXTRACTED]
 - [[ay()]] - `calls` [EXTRACTED]
 - [[ft()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[sa()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

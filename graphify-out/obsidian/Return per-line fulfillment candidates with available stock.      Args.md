@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "rationale"
-community: "Community 15"
+community: "Community 16"
 location: "L44"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_16
 ---
 
 # Return per-line fulfillment candidates with available stock.      Args:
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_material_request_fulfillment_options()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_15
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

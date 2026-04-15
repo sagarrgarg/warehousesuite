@@ -18,7 +18,7 @@ tags:
 - [[dp()]] - `calls` [EXTRACTED]
 - [[mp()]] - `calls` [EXTRACTED]
 - [[nf()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[sf()]] - `calls` [EXTRACTED]
 - [[xl()]] - `calls` [EXTRACTED]
 

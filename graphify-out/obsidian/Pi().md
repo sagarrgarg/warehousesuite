@@ -15,6 +15,6 @@ tags:
 - [[.constructor()_11]] - `calls` [EXTRACTED]
 - [[.socket()]] - `calls` [EXTRACTED]
 - [[m0()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_3

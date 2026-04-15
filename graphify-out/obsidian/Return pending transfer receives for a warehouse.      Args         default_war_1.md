@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "rationale"
-community: "Community 15"
+community: "Community 16"
 location: "L116"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_16
 ---
 
 # Return pending transfer receives for a warehouse.      Args:         default_war
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_pending_pow_receives()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_15
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

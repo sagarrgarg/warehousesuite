@@ -11,6 +11,6 @@ tags:
 # Item Inquiry Feature
 
 ## Connections
-- [[pow_dashboard.py]] - `references` [EXTRACTED]
+- [[pow-dashboard.js]] - `references` [EXTRACTED]
 
 #graphify/document #graphify/EXTRACTED #community/Community_0

@@ -13,7 +13,7 @@ tags:
 
 ## Connections
 - [[Er()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qu()]] - `calls` [EXTRACTED]
 - [[ve()]] - `calls` [EXTRACTED]
 

@@ -15,7 +15,7 @@ tags:
 - [[Rv()]] - `calls` [EXTRACTED]
 - [[lv()]] - `calls` [EXTRACTED]
 - [[mh()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[wa()]] - `calls` [EXTRACTED]
 - [[yh()]] - `calls` [EXTRACTED]
 

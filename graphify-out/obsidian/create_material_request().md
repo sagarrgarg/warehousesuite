@@ -14,6 +14,6 @@ tags:
 ## Connections
 - [[Create Material Request from POW Dashboard]] - `rationale_for` [EXTRACTED]
 - [[Create Material Request from POW Dashboard_1]] - `rationale_for` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

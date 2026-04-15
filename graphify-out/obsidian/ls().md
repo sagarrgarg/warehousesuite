@@ -12,7 +12,7 @@ tags:
 # ls()
 
 ## Connections
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[so()]] - `calls` [EXTRACTED]
 - [[wc()]] - `calls` [EXTRACTED]
 

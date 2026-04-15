@@ -15,7 +15,7 @@ tags:
 - [[$y()]] - `calls` [EXTRACTED]
 - [[gp()]] - `calls` [EXTRACTED]
 - [[ht()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[ta()]] - `calls` [EXTRACTED]
 - [[vy()]] - `calls` [EXTRACTED]
 

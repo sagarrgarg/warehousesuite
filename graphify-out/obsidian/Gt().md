@@ -15,7 +15,7 @@ tags:
 - [[ap()]] - `calls` [EXTRACTED]
 - [[hs()]] - `calls` [EXTRACTED]
 - [[jp()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rh()]] - `calls` [EXTRACTED]
 - [[tf()]] - `calls` [EXTRACTED]
 

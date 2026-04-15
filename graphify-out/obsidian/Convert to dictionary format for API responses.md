@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py"
 type: "rationale"
-community: "Community 9"
+community: "Community 10"
 location: "L34"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_9
+  - community/Community_10
 ---
 
 # Convert to dictionary format for API responses
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[.to_dict()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_9
+#graphify/rationale #graphify/EXTRACTED #community/Community_10

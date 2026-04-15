@@ -15,6 +15,6 @@ tags:
 - [[Get company information from WMS Settings and Company doctype for label printing]] - `rationale_for` [EXTRACTED]
 - [[Get company information from WMS Settings and Company doctype for label printing_1]] - `rationale_for` [EXTRACTED]
 - [[generate_label_zpl()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_25

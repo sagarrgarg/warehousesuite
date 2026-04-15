@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_batch_serial.py"
 type: "code"
-community: "Small 28"
+community: "Community 31"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Small_28
+  - community/Community_31
 ---
 
 # pow_batch_serial.py
@@ -17,4 +17,4 @@ tags:
 - [[get_batches()]] - `contains` [EXTRACTED]
 - [[get_serial_nos()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Small_28
+#graphify/code #graphify/EXTRACTED #community/Community_31

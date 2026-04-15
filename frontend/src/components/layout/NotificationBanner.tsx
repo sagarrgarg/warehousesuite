@@ -120,7 +120,7 @@ export default function NotificationBanner({ powProfileName }: Props) {
       }`}
     >
       <div
-        className={`flex items-center justify-center gap-2 px-3 py-2 min-h-[32px] origin-top transition-all duration-300 ease-in-out ${animClass}`}
+        className={`flex items-center justify-center gap-2 px-3 py-1 min-h-[24px] origin-top transition-all duration-300 ease-in-out ${animClass}`}
       >
         {isHighOrCritical && (
           <AlertTriangle className={`w-4 h-4 shrink-0 ${style.icon} ${blink ? 'opacity-100' : 'opacity-70'}`} />
@@ -133,7 +133,7 @@ export default function NotificationBanner({ powProfileName }: Props) {
         )}
       </div>
       {notifications.length > 1 && (
-        <div className="flex justify-center gap-1 pb-1 -mt-0.5">
+        <div className="flex justify-center gap-1 pb-0.5 -mt-1">
           {notifications.map((_, i) => (
             <span
               key={i}

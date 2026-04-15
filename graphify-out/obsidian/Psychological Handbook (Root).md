@@ -1,11 +1,11 @@
 ---
 source_file: "psychological_handbook.md"
 type: "document"
-community: "Small 47"
+community: "Community 53"
 tags:
   - graphify/document
   - graphify/INFERRED
-  - community/Small_47
+  - community/Community_53
 ---
 
 # Psychological Handbook (Root)
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[Psychological Handbook (Inner)]] - `semantically_similar_to` [INFERRED]
 
-#graphify/document #graphify/INFERRED #community/Small_47
+#graphify/document #graphify/INFERRED #community/Community_53

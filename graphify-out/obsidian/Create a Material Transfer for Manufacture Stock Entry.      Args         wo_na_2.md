@@ -1,0 +1,17 @@
+---
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
+type: "rationale"
+community: "Community 4"
+location: "L579"
+tags:
+  - graphify/rationale
+  - graphify/EXTRACTED
+  - community/Community_4
+---
+
+# Create a Material Transfer for Manufacture Stock Entry.      Args:         wo_na
+
+## Connections
+- [[transfer_materials_for_manufacture()]] - `rationale_for` [EXTRACTED]
+
+#graphify/rationale #graphify/EXTRACTED #community/Community_4

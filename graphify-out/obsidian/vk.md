@@ -1,12 +1,12 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
-community: "Community 1"
-location: "L368"
+community: "Community 27"
+location: "L363"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_27
 ---
 
 # vk
@@ -16,6 +16,6 @@ tags:
 - [[.constructor()_24]] - `method` [EXTRACTED]
 - [[.getDerivedStateFromError()_1]] - `method` [EXTRACTED]
 - [[.render()_1]] - `method` [EXTRACTED]
-- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_27

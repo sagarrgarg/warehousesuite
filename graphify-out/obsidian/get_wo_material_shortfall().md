@@ -2,7 +2,7 @@
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "code"
 community: "Community 8"
-location: "L307"
+location: "L309"
 tags:
   - graphify/code
   - graphify/EXTRACTED
@@ -14,6 +14,7 @@ tags:
 ## Connections
 - [[Return items that have insufficient stock for the Work Order.      Args]] - `rationale_for` [EXTRACTED]
 - [[Return items that have insufficient stock for the Work Order.      Args_1]] - `rationale_for` [EXTRACTED]
+- [[Return items that have insufficient stock for the Work Order.      Args_2]] - `rationale_for` [EXTRACTED]
 - [[pow_work_order.py]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_8

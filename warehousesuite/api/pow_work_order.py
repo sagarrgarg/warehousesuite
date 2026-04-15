@@ -46,7 +46,7 @@ def get_pending_pow_work_orders(warehouses=None, pow_profile=None):
 
 
 @frappe.whitelist()
-def get_bom_details(item_code, pow_profile=None):
+def get_bom_details(item_code, pow_profile=None, bom_no=None):
     """Return default BOM for an item with exploded items and stock availability.
 
     When *pow_profile* is set, stock availability (and alternative availability)
@@ -72,7 +72,7 @@ def get_bom_details(item_code, pow_profile=None):
         assert_user_on_pow_profile(pow_profile)
         allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
 
-    return get_bom_for_item(item_code, allowed_warehouses=allowed)
+    return get_bom_for_item(item_code, allowed_warehouses=allowed, bom_no=bom_no or None)
 
 
 @frappe.whitelist()
@@ -102,6 +102,7 @@ def create_pow_work_order(
     planned_start_date=None,
     item_substitutions=None,
     pow_profile=None,
+    remarks=None,
 ):
     """Create and submit a new Work Order.
 
@@ -148,6 +149,7 @@ def create_pow_work_order(
         wip_warehouse=wip_warehouse or None,
         planned_start_date=planned_start_date or None,
         item_substitutions=item_substitutions,
+        remarks=remarks or None,
     )
 
 
@@ -379,6 +381,28 @@ def get_item_alternatives(item_code):
         frappe.throw(_("item_code is required"))
     return get_alternative_items(item_code)
 
+
+@frappe.whitelist()
+def get_boms_for_item(item_code):
+    """Return all active BOMs for an item (respects permissions).
+
+    Args:
+        item_code: item to look up (required)
+
+    Returns:
+        list of {name, is_default, total_cost}.
+    """
+    if not item_code:
+        frappe.throw(_("item_code is required"))
+
+    boms = frappe.get_list(
+        "BOM",
+        filters={"item": item_code, "is_active": 1, "docstatus": 1},
+        fields=["name", "is_default", "total_cost"],
+        order_by="is_default desc, name asc",
+    )
+    # Explicit permission filter — respects confidential_app
+    return [b for b in boms if frappe.has_permission("BOM", "read", b.name)]
 
 # ---------------------------------------------------------------------------
 # Helpers

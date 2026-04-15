@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[ch()]] - `calls` [EXTRACTED]
 - [[iv()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[sv()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

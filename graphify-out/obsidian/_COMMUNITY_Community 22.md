@@ -1,23 +1,25 @@
 ---
 type: community
-cohesion: 0.32
-members: 8
+cohesion: 0.20
+members: 10
 ---
 
 # Community 22
 
-**Cohesion:** 0.32 - loosely connected
-**Members:** 8 nodes
+**Cohesion:** 0.20 - loosely connected
+**Members:** 10 nodes
 
 ## Members
-- [[generateBarcode()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[initializePrinters()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[loadCompanies()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[loadZebraBrowserPrintScript()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[print_labels.js]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[setupPrintLabelsEvents()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[updateLabelPreview()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
-- [[validatePrintForm()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/js/print_labels.js
+- [[Batch and serial number lookup service for POW operations.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[Check if item has batchserial tracking enabled.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[Create a Serial and Batch Bundle document.  	Args 		item_code Item code 		ware]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[Get active serial numbers for an item in a warehouse.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[Get batches with available qty for an item in a warehouse.  	Returns list of {ba]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[create_serial_and_batch_bundle()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[get_available_batches()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[get_available_serial_nos()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[get_item_batch_serial_info()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[pow_batch_serial_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
 
 ## Live Query (requires Dataview plugin)
 

@@ -1,13 +1,13 @@
 ---
 type: community
 cohesion: 0.02
-members: 151
+members: 152
 ---
 
 # Community 2
 
 **Cohesion:** 0.02 - loosely connected
-**Members:** 151 nodes
+**Members:** 152 nodes
 
 ## Members
 - [[ActionGrid.tsx]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/layout/ActionGrid.tsx
@@ -119,6 +119,7 @@ members: 151
 - [[setTabResetPage()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/reports/SalesOrderPendingReportModal.tsx
 - [[shortWarehouse()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/dashboard/PendingReceivesPanel.tsx
 - [[shortWh()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/manufacturing/CreateWorkOrderModal.tsx
+- [[shortWh()_5]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/dashboard/MRFulfillmentModal.tsx
 - [[shortWh()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/dashboard/RaiseMaterialRequestModal.tsx
 - [[shortWh()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/concerns/StockConcernsModal.tsx
 - [[shortWh()_4]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/stock-count/StockCountModal.tsx
@@ -170,7 +171,7 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 1 edge to [[_COMMUNITY_Community 19]]
+- 1 edge to [[_COMMUNITY_Community 20]]
 
 ## Top bridge nodes
 - [[Dashboard.tsx]] - degree 33, connects to 1 community

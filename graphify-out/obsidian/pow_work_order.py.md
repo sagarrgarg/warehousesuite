@@ -16,6 +16,7 @@ tags:
 - [[_parse_list()]] - `contains` [EXTRACTED]
 - [[create_pow_work_order()]] - `contains` [EXTRACTED]
 - [[get_bom_details()]] - `contains` [EXTRACTED]
+- [[get_boms_for_item()]] - `contains` [EXTRACTED]
 - [[get_item_alternatives()]] - `contains` [EXTRACTED]
 - [[get_manufacture_items()]] - `contains` [EXTRACTED]
 - [[get_mfg_default_warehouses()]] - `contains` [EXTRACTED]

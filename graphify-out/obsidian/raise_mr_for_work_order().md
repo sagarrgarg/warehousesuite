@@ -2,7 +2,7 @@
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "code"
 community: "Community 8"
-location: "L322"
+location: "L324"
 tags:
   - graphify/code
   - graphify/EXTRACTED
@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[Create a Material Request (Purchase or Transfer) for WO raw material shortfall.]] - `rationale_for` [EXTRACTED]
+- [[Create a Material Request (Purchase or Transfer) for WO raw material shortfall._1]] - `rationale_for` [EXTRACTED]
 - [[Return items that have insufficient stock for the Work Order.      Args_1]] - `rationale_for` [EXTRACTED]
 - [[pow_work_order.py]] - `contains` [EXTRACTED]
 

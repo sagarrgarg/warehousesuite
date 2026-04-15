@@ -19,7 +19,7 @@ tags:
 - [[hs()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
 - [[po()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rh()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

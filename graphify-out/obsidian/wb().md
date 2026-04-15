@@ -1,5 +1,5 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
 community: "Community 1"
 location: "L65"
@@ -12,12 +12,11 @@ tags:
 # wb()
 
 ## Connections
-- [[_1()]] - `calls` [EXTRACTED]
+- [[L()]] - `calls` [EXTRACTED]
 - [[_b()]] - `calls` [EXTRACTED]
-- [[gb()]] - `calls` [EXTRACTED]
 - [[i()]] - `calls` [EXTRACTED]
-- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
-- [[v1()]] - `calls` [EXTRACTED]
-- [[yb()]] - `calls` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
+- [[kb()]] - `calls` [EXTRACTED]
+- [[y1()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_1

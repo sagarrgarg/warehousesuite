@@ -15,6 +15,6 @@ tags:
 - [[Generate ZPL code for item labels]] - `rationale_for` [EXTRACTED]
 - [[Generate ZPL code for item labels_1]] - `rationale_for` [EXTRACTED]
 - [[get_company_info_for_labels()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_25

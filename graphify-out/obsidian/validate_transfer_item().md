@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py"
 type: "code"
-community: "Community 9"
+community: "Community 10"
 location: "L88"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_9
+  - community/Community_10
 ---
 
 # validate_transfer_item()
@@ -18,4 +18,4 @@ tags:
 - [[validate_warehouse_transfer_data()]] - `calls` [EXTRACTED]
 - [[validation.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_9
+#graphify/code #graphify/EXTRACTED #community/Community_10

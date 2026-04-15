@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Small 40"
+community: "Community 46"
 location: "L284"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Small_40
+  - community/Community_46
 ---
 
 # Get available UOMs for an item with conversion factors.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_item_uoms()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Small_40
+#graphify/rationale #graphify/EXTRACTED #community/Community_46

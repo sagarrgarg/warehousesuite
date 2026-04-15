@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "rationale"
-community: "Community 5"
+community: "Community 4"
 location: "L327"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_5
+  - community/Community_4
 ---
 
 # Create and submit a Work Order.      Args:         production_item: item to manu
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[create_work_order()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_5
+#graphify/rationale #graphify/EXTRACTED #community/Community_4

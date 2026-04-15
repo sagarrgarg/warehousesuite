@@ -2,7 +2,7 @@
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/manufacturing/CreateWorkOrderModal.tsx"
 type: "code"
 community: "Community 2"
-location: "L26"
+location: "L32"
 tags:
   - graphify/code
   - graphify/EXTRACTED

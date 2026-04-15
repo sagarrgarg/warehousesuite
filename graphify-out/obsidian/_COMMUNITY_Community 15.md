@@ -1,33 +1,34 @@
 ---
 type: community
-cohesion: 0.12
-members: 18
+cohesion: 0.11
+members: 19
 ---
 
 # Community 15
 
-**Cohesion:** 0.12 - loosely connected
-**Members:** 18 nodes
+**Cohesion:** 0.11 - loosely connected
+**Members:** 19 nodes
 
 ## Members
-- [[Create a Material Transfer Stock Entry linked to MR lines.      Args         mr]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Create a Material Transfer Stock Entry linked to MR lines.      Args         mr_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[List submitted Material Transfer MRs with remaining qty.      Args         ware]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Parse a value that may be JSON string, Python list, or None._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Parse a value that may be JSON string, Python list, or None._3]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Raise a new Material Request (Material Transfer or Purchase) from POW.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Raise a new Material Request (Material Transfer) from POW.      Args         ta]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Return pending transfer receives for a warehouse.      Args         default_war]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Return pending transfer receives for a warehouse.      Args         default_war_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Return per-line fulfillment candidates with available stock.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[Whitelisted API endpoints for Material Request (Material Transfer) operations in]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[_parse_list()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[create_material_transfer_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[create_transfer_from_material_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[get_material_request_fulfillment_options()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[get_pending_pow_receives()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[get_pending_transfer_material_requests()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
-- [[pow_material_request.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Get UOM conversion factor between two UOMs for an item]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get UOM conversion factor between two UOMs for an item_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get list of warehouses to match the warehouse itself, its children, and its par]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get list of warehouses to match the warehouse itself, its children, and its par_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get source, target, and in-transit warehouses from POW profile]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get stock information for an item in a specific UOM.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get stock information for an item in a specific UOM._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get stock information for an item in a warehouse.      When ``pow_profile`` is p]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get stock information for an item in a warehouse.      When ``pow_profile`` is p_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get transfer receive data filtered by warehouse(s).      Args         default_w]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get transfer receive data filtered by warehouse(s).      Args         default_w_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Recursively get all child warehouses under a parent warehouse, excluding group a]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[_get_warehouses_for_receive_filter()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_all_child_warehouses()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_item_stock_info()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_pow_profile_warehouses()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_stock_info_in_uom()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_transfer_receive_data()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_uom_conversion_factor()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 
 ## Live Query (requires Dataview plugin)
 
@@ -35,3 +36,13 @@ members: 18
 TABLE source_file, type FROM #community/Community_15
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 7 edges to [[_COMMUNITY_Community 0]]
+
+## Top bridge nodes
+- [[get_stock_info_in_uom()]] - degree 5, connects to 1 community
+- [[get_transfer_receive_data()]] - degree 5, connects to 1 community
+- [[get_uom_conversion_factor()_1]] - degree 5, connects to 1 community
+- [[_get_warehouses_for_receive_filter()]] - degree 5, connects to 1 community
+- [[get_all_child_warehouses()]] - degree 4, connects to 1 community

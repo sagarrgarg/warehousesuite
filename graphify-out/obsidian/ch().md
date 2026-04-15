@@ -18,7 +18,7 @@ tags:
 - [[ka()]] - `calls` [EXTRACTED]
 - [[mv()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[sv()]] - `calls` [EXTRACTED]
 - [[t()]] - `calls` [EXTRACTED]
 

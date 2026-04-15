@@ -1,11 +1,11 @@
 ---
 source_file: "MARKETPLACE.md"
 type: "document"
-community: "Small 44"
+community: "Community 50"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_44
+  - community/Community_50
 ---
 
 # Frappe Cloud Marketplace
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[WarehouseSuite]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Small_44
+#graphify/document #graphify/EXTRACTED #community/Community_50

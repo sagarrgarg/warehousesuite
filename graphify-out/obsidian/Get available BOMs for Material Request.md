@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Small 43"
+community: "Community 48"
 location: "L2264"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Small_43
+  - community/Community_48
 ---
 
 # Get available BOMs for Material Request
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_available_boms()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Small_43
+#graphify/rationale #graphify/EXTRACTED #community/Community_48

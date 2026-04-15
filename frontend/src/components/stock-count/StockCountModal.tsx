@@ -394,147 +394,133 @@ export default function StockCountModal({ open, onClose, warehouses, powProfileN
 						<p className="text-sm text-slate-500">This warehouse has no stock to count</p>
 					</div>
 				) : (
-					<div className="divide-y-2 divide-slate-200 dark:divide-slate-700">
-						{filteredItems.map(item => {
+					<div className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-xl">
+						{/* Header row */}
+						<div className="grid grid-cols-12 bg-slate-200 dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-700 sticky top-0 z-10">
+							<div className="col-span-1 px-2 py-2 text-center text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400">#</div>
+							<div className="col-span-4 px-2 py-2 text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400">Item</div>
+							<div className="col-span-2 px-2 py-2 text-center text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400">System</div>
+							<div className="col-span-3 px-2 py-2 text-center text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400">Actual</div>
+							<div className="col-span-2 px-2 py-2 text-center text-[10px] font-bold uppercase text-slate-600 dark:text-slate-400">Diff</div>
+						</div>
+
+						{/* Add-item row — pinned at top of grid */}
+						<div className="border-b-2 border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 px-3 py-3 relative z-20">
+							{!showAddItem ? (
+								<button onClick={() => setShowAddItem(true)}
+									className="w-full text-left text-sm text-blue-600 dark:text-blue-400 font-bold py-1 touch-manipulation flex items-center gap-2">
+									<Plus className="w-5 h-5" /> Add item not in list
+								</button>
+							) : (
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold uppercase text-blue-700 dark:text-blue-400">Add Item</span>
+										<button onClick={() => { setShowAddItem(false); setAddItemCode(''); setAddBatchNo(''); setAddBatches([]) }}
+											className="text-xs text-slate-500 hover:text-slate-700 touch-manipulation px-2 py-1">Cancel</button>
+									</div>
+									<ItemSearchInput items={dropdownItems} value={addItemCode} onSelect={handleAddItemSelect} placeholder="Search item to add..." />
+									{addItemCode && loadingBatches && <p className="text-xs text-slate-400">Loading batches...</p>}
+									{addItemCode && !loadingBatches && addBatches.length > 0 && (
+										<BatchTypeahead batches={addBatches} value={addBatchNo} onChange={setAddBatchNo} />
+									)}
+									{addItemCode && !loadingBatches && (
+										<button onClick={handleAddItemConfirm} disabled={!addItemCode || (addBatches.length > 0 && !addBatchNo)}
+											className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-lg touch-manipulation">
+											Add to Count
+										</button>
+									)}
+								</div>
+							)}
+						</div>
+
+						{/* Data rows */}
+						{filteredItems.map((item, idx) => {
 							const key = lineKey(item)
 							const counted = physicalQtys[key]
 							const isCounted = counted !== undefined
 							const hasDiff = isCounted && Math.abs(counted - item.current_qty) > 0.001
-							const isActive = activeKey === key
+							const diff = isCounted ? counted - item.current_qty : 0
 
 							return (
-								<button key={key} type="button"
-									onClick={() => handleItemTap(key, item.current_qty)}
-									className={`w-full text-left px-4 py-4 touch-manipulation transition-colors active:bg-blue-50 dark:active:bg-blue-950/30 ${
-										isActive ? 'bg-blue-50 dark:bg-blue-950/30 border-l-4 border-l-blue-600' :
-										hasDiff ? 'bg-amber-50/60 dark:bg-amber-950/20 border-l-4 border-l-amber-500' :
-										isCounted ? 'bg-emerald-50/40 dark:bg-emerald-950/10 border-l-4 border-l-emerald-500' :
-										'border-l-4 border-l-transparent'
-									}`}>
-									<div className="flex items-center gap-3">
-										{/* Item info */}
-										<div className="flex-1 min-w-0">
-											<p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.item_name}</p>
-											<div className="flex items-center gap-2 mt-0.5">
-												<span className="text-xs font-mono text-slate-600 dark:text-slate-400">{item.item_code}</span>
-												{item.batch_no && (
-													<span className="px-2 py-0.5 text-xs font-mono font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 rounded-md">
-														{item.batch_no}
-													</span>
-												)}
-											</div>
-										</div>
+								<div key={key} className={`grid grid-cols-12 items-center border-b border-slate-200 dark:border-slate-700 last:border-0 ${
+									hasDiff ? 'bg-amber-50/70 dark:bg-amber-950/20' :
+									isCounted ? 'bg-emerald-50/40 dark:bg-emerald-950/10' :
+									idx % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800/50'
+								}`}>
+									{/* Row number */}
+									<div className="col-span-1 px-2 py-3 text-center text-xs text-slate-400 tabular-nums">{idx + 1}</div>
 
-										{/* System qty */}
-										<div className="text-right shrink-0">
-											<p className="text-[10px] uppercase font-bold text-slate-500">System</p>
-											<p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums">{item.current_qty}</p>
-											<p className="text-[10px] text-slate-500">{item.stock_uom}</p>
-										</div>
-
-										{/* Counted qty */}
-										<div className={`text-right shrink-0 min-w-[70px] px-3 py-2 rounded-xl border-2 ${
-											!isCounted ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600' :
-											hasDiff ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-400' :
-											'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-400'
-										}`}>
-											<p className="text-[10px] uppercase font-bold text-slate-500">Actual</p>
-											<p className={`text-lg font-bold tabular-nums ${
-												!isCounted ? 'text-slate-400' :
-												hasDiff ? 'text-amber-700 dark:text-amber-400' :
-												'text-emerald-700 dark:text-emerald-400'
-											}`}>
-												{isCounted ? counted : '—'}
-											</p>
+									{/* Item name + code + batch */}
+									<div className="col-span-4 px-2 py-3 min-w-0">
+										<p className="text-sm font-bold text-slate-900 dark:text-white truncate">{item.item_name}</p>
+										<div className="flex items-center gap-1 mt-0.5">
+											<span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">{item.item_code}</span>
+											{item.batch_no && (
+												<span className="text-[9px] font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-1 py-px rounded shrink-0">
+													{item.batch_no}
+												</span>
+											)}
 										</div>
 									</div>
 
-									{/* Difference badge */}
-									{hasDiff && (
-										<div className={`mt-2 inline-block text-xs font-bold px-2.5 py-1 rounded-lg ${
-											counted! > item.current_qty
-												? 'bg-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-												: 'bg-red-200 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-										}`}>
-											{counted! > item.current_qty ? '+' : ''}{(counted! - item.current_qty).toFixed(0)} {item.stock_uom}
-										</div>
-									)}
-								</button>
+									{/* System qty */}
+									<div className="col-span-2 px-2 py-3 text-center">
+										<p className="text-base font-bold text-slate-700 dark:text-slate-200 tabular-nums">{item.current_qty}</p>
+										<p className="text-[9px] text-slate-400">{item.stock_uom}</p>
+									</div>
+
+									{/* Actual qty — editable cell */}
+									<div className="col-span-3 px-1 py-2">
+										<input
+											type="number"
+											min={0}
+											step="any"
+											value={counted ?? ''}
+											onChange={e => setPhysicalQtys(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))}
+											placeholder={String(item.current_qty)}
+											className={`w-full text-center text-base font-bold tabular-nums rounded-lg px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+												hasDiff
+													? 'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400 text-amber-800 dark:text-amber-300'
+													: isCounted
+														? 'bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-400 text-emerald-800 dark:text-emerald-300'
+														: 'bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white'
+											}`}
+										/>
+									</div>
+
+									{/* Difference */}
+									<div className="col-span-2 px-2 py-3 text-center">
+										{hasDiff ? (
+											<span className={`text-sm font-bold tabular-nums ${diff > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>
+												{diff > 0 ? '+' : ''}{diff.toFixed(0)}
+											</span>
+										) : isCounted ? (
+											<span className="text-sm text-emerald-500">✓</span>
+										) : (
+											<span className="text-sm text-slate-300 dark:text-slate-600">—</span>
+										)}
+									</div>
+								</div>
 							)
 						})}
 					</div>
 				)}
 			</div>
 
-			{/* Numpad overlay — slides up when item tapped */}
-			{activeItem && (
-				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] animate-slide-up">
-					<div className="px-4 pt-3 pb-1 flex items-center justify-between">
-						<div className="min-w-0 flex-1">
-							<p className="text-sm font-bold text-slate-900 dark:text-white truncate">{activeItem.item_name}</p>
-							<div className="flex items-center gap-2">
-								<span className="text-xs font-mono text-slate-500">{activeItem.item_code}</span>
-								{activeItem.batch_no && <span className="text-xs font-mono font-bold text-blue-600">{activeItem.batch_no}</span>}
-								<span className="text-xs text-slate-500">Sys: {activeItem.current_qty} {activeItem.stock_uom}</span>
-							</div>
-						</div>
-						<button onClick={() => setActiveKey(null)} className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl touch-manipulation">
-							<X className="w-6 h-6 text-slate-500" />
-						</button>
-					</div>
-					{/* Display */}
-					<div className="mx-4 mb-2 bg-slate-100 dark:bg-slate-800 rounded-xl p-3 text-center">
-						<p className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{numpadValue}</p>
-						<p className="text-xs text-slate-500 mt-0.5">{activeItem.stock_uom}</p>
-					</div>
-					<Numpad value={numpadValue} onChange={setNumpadValue} onDone={handleNumpadDone} />
+			{/* Footer */}
+			<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+				<div className="flex gap-3">
+					<button onClick={handleSaveDraft} disabled={savingDraft || items.length === 0}
+						className="flex items-center justify-center gap-1.5 px-4 py-3 border-2 border-slate-400 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm rounded-xl disabled:opacity-50 touch-manipulation">
+						<Save className="w-5 h-5" /> {savingDraft ? '...' : 'Draft'}
+					</button>
+					<button onClick={handleSubmitClick} disabled={submitting || items.length === 0}
+						className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl disabled:opacity-50 active:scale-[0.98] touch-manipulation shadow-lg shadow-blue-600/25">
+						{submitting ? 'Submitting...' : 'Submit Count'}
+					</button>
 				</div>
-			)}
+			</div>
 
-			{/* Footer — hidden when numpad is showing */}
-			{!activeItem && (
-				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 dark:border-slate-700 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-					<div className="flex gap-3">
-						{!showAddItem ? (
-							<button onClick={() => setShowAddItem(true)}
-								className="flex items-center justify-center gap-1.5 px-4 py-3 border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-bold text-sm rounded-xl touch-manipulation">
-								<Plus className="w-5 h-5" />
-							</button>
-						) : (
-							<button onClick={() => { setShowAddItem(false); setAddItemCode(''); setAddBatchNo(''); setAddBatches([]) }}
-								className="flex items-center justify-center px-4 py-3 border-2 border-slate-300 text-slate-600 rounded-xl touch-manipulation">
-								<X className="w-5 h-5" />
-							</button>
-						)}
-						<button onClick={handleSaveDraft} disabled={savingDraft || items.length === 0}
-							className="flex items-center justify-center gap-1.5 px-4 py-3 border-2 border-slate-400 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm rounded-xl disabled:opacity-50 touch-manipulation">
-							<Save className="w-5 h-5" /> {savingDraft ? '...' : 'Draft'}
-						</button>
-						<button onClick={handleSubmitClick} disabled={submitting || items.length === 0}
-							className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base rounded-xl disabled:opacity-50 active:scale-[0.98] touch-manipulation shadow-lg shadow-blue-600/25">
-							{submitting ? 'Submitting...' : 'Submit Count'}
-						</button>
-					</div>
-				</div>
-			)}
-
-			{/* Add item overlay */}
-			{showAddItem && !activeItem && (
-				<div className="shrink-0 bg-white dark:bg-slate-900 border-t-2 border-slate-300 px-4 py-3 space-y-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-slide-up">
-					<p className="text-xs font-bold uppercase text-slate-500">Add Item Not in List</p>
-					<ItemSearchInput items={dropdownItems} value={addItemCode} onSelect={handleAddItemSelect} placeholder="Search item..." />
-					{addItemCode && loadingBatches && <p className="text-xs text-slate-400">Loading batches...</p>}
-					{addItemCode && !loadingBatches && addBatches.length > 0 && (
-						<BatchTypeahead batches={addBatches} value={addBatchNo} onChange={setAddBatchNo} />
-					)}
-					{addItemCode && !loadingBatches && (
-						<button onClick={handleAddItemConfirm} disabled={!addItemCode || (addBatches.length > 0 && !addBatchNo)}
-							className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-bold rounded-xl touch-manipulation">
-							Add to Count
-						</button>
-					)}
-				</div>
-			)}
 
 			<ConfirmDialog open={showDeleteDraftConfirm} title="Delete Draft"
 				message={<p className="text-sm">Delete this draft stock count?</p>}

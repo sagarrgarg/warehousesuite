@@ -13,6 +13,12 @@ interface Props {
   warehouses: ProfileWarehouses
   /** Required for BOM stock rows scoped to profile warehouses. */
   powProfileName: string
+  /** Pre-fill item code (e.g. from MR fulfillment) */
+  initialItemCode?: string
+  /** Pre-fill qty */
+  initialQty?: number
+  /** Auto-set remarks on created WO */
+  remarks?: string
 }
 
 /** ERPNext work order qty must be > 0; keep field clearable while typing, clamp on blur/submit. */
@@ -47,13 +53,13 @@ function StockBadge({ qty, needed, uom }: { qty: number; needed: number; uom: st
   )
 }
 
-export default function CreateWorkOrderModal({ open, onClose, warehouses, powProfileName }: Props) {
+export default function CreateWorkOrderModal({ open, onClose, warehouses, powProfileName, initialItemCode, initialQty, remarks: propsRemarks }: Props) {
   const company = useCompany()
 
   // Form state
-  const [productionItem, setProductionItem] = useState('')
+  const [productionItem, setProductionItem] = useState(initialItemCode ?? '')
   const [productionItemName, setProductionItemName] = useState('')
-  const [qtyInput, setQtyInput] = useState('1')
+  const [qtyInput, setQtyInput] = useState(initialQty ? String(initialQty) : '1')
   const [wipWarehouse, setWipWarehouse] = useState('')
   const [fgWarehouse, setFgWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
   const today = new Date().toISOString().split('T')[0]
@@ -67,12 +73,17 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
   const [bomLoading, setBomLoading] = useState(false)
   const [bomError, setBomError] = useState<string | null>(null)
 
+  // BOM list for selection
+  const [bomList, setBomList] = useState<{ name: string; is_default: 0 | 1; total_cost: number }[]>([])
+  const [selectedBomName, setSelectedBomName] = useState('')
+
   const { data: itemsData } = useFrappeGetCall<{ message: DropdownItem[] }>(
     API.getItemsForDropdown, {},
   )
   const items = itemsData?.message ?? []
 
   const { call: fetchBom } = useFrappePostCall(API.getBomDetails)
+  const { call: fetchBomList } = useFrappePostCall(API.getBomsForItem)
   const { call: fetchDefaultWh } = useFrappePostCall(API.getMfgDefaultWarehouses)
   const { call: submitWO } = useFrappePostCall(API.createWorkOrder)
 
@@ -133,26 +144,60 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
     return () => { cancelled = true }
   }, [company, open, fetchDefaultWh, targetWhs, allowedWipWhs])
 
+  const loadBomDetails = useCallback(async (itemCode: string, bomName?: string) => {
+    setBomLoading(true)
+    setBomError(null)
+    setBom(null)
+    try {
+      const res = await fetchBom({
+        item_code: itemCode,
+        pow_profile: powProfileName,
+        ...(bomName ? { bom_no: bomName } : {}),
+      })
+      const data = unwrap(res) as BOMDetails
+      setBom(data)
+      if (!initialQty && !bomName) {
+        const oneBatch = Math.max(MIN_WO_QTY, data.qty || 1)
+        setQtyInput(formatQtyForInput(oneBatch))
+      }
+    } catch (err: unknown) {
+      setBomError(formatPowFetchError(err, 'No active BOM found for this item'))
+    } finally {
+      setBomLoading(false)
+    }
+  }, [fetchBom, powProfileName, initialQty])
+
   const handleItemSelect = useCallback(async (itemCode: string) => {
     const found = items.find(i => i.item_code === itemCode)
     setProductionItem(itemCode)
     setProductionItemName(found?.item_name ?? itemCode)
     setBom(null)
     setBomError(null)
+    setBomList([])
+    setSelectedBomName('')
     setItemSubstitutions({})
-    setBomLoading(true)
+
+    if (!itemCode) return
+
+    // Fetch BOM list for selector
     try {
-      const res = await fetchBom({ item_code: itemCode, pow_profile: powProfileName })
-      const data = unwrap(res) as BOMDetails
-      setBom(data)
-      const oneBatch = Math.max(MIN_WO_QTY, data.qty || 1)
-      setQtyInput(formatQtyForInput(oneBatch))
-    } catch (err: unknown) {
-      setBomError(formatPowFetchError(err, 'No active BOM found for this item'))
-    } finally {
-      setBomLoading(false)
+      const listRes = await fetchBomList({ item_code: itemCode })
+      const boms = unwrap(listRes) as { name: string; is_default: 0 | 1; total_cost: number }[]
+      setBomList(boms)
+      const def = boms.find(b => b.is_default) || boms[0]
+      if (def) setSelectedBomName(def.name)
+    } catch { setBomList([]) }
+
+    // Fetch default BOM details
+    await loadBomDetails(itemCode)
+  }, [fetchBomList, items, loadBomDetails])
+
+  // Auto-trigger item select when pre-filled from MR
+  useEffect(() => {
+    if (open && initialItemCode && items.length > 0 && !bom && !bomLoading) {
+      handleItemSelect(initialItemCode)
     }
-  }, [fetchBom, items, powProfileName])
+  }, [open, initialItemCode, items.length])
 
   const handleClearItem = useCallback(() => {
     setProductionItem('')
@@ -239,7 +284,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
       }))
       const res = await submitWO({
         production_item: productionItem,
-        bom_no: bom!.bom_no,
+        bom_no: selectedBomName || bom!.bom_no,
         qty: qtyParsed,
         company,
         fg_warehouse: fgWarehouse,
@@ -247,6 +292,7 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
         planned_start_date: plannedStartDate,
         item_substitutions: substitutionPayload.length ? JSON.stringify(substitutionPayload) : undefined,
         pow_profile: powProfileName ?? undefined,
+        remarks: propsRemarks || undefined,
       })
       const result = unwrap(res)
       if (result?.work_order) {
@@ -317,8 +363,25 @@ export default function CreateWorkOrderModal({ open, onClose, warehouses, powPro
                   <button onClick={handleClearItem} className="text-[10px] text-red-600 dark:text-red-400 hover:text-red-700 dark:text-red-300 ml-2 cursor-pointer shrink-0">Clear</button>
                 </div>
               )}
-              {bom && (
-                <div className="mt-0.5 text-[10px] text-slate-500 font-mono">
+              {/* BOM selector */}
+              {bomList.length > 1 && (
+                <div className="mt-1.5">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">BOM Recipe</label>
+                  <select
+                    value={selectedBomName}
+                    onChange={e => { setSelectedBomName(e.target.value); if (e.target.value && productionItem) loadBomDetails(productionItem, e.target.value) }}
+                    className="w-full border-2 border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {bomList.map(b => (
+                      <option key={b.name} value={b.name}>
+                        {b.name}{b.is_default ? ' (default)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {bom && bomList.length <= 1 && (
+                <div className="mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                   {bom.bom_no} — produces {bom.qty} {bom.stock_uom} per run
                 </div>
               )}

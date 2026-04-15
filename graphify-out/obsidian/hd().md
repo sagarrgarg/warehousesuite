@@ -13,7 +13,7 @@ tags:
 
 ## Connections
 - [[Nu()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[xl()]] - `calls` [EXTRACTED]
 

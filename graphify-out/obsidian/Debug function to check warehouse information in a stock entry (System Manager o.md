@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Community 0"
+community: "Community 49"
 location: "L2373"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_49
 ---
 
 # Debug function to check warehouse information in a stock entry (System Manager o
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[debug_stock_entry_warehouses()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_0
+#graphify/rationale #graphify/EXTRACTED #community/Community_49

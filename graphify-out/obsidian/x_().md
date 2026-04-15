@@ -1,18 +1,21 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
-community: "Community 1"
+community: "Community 5"
 location: "L73"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_5
 ---
 
 # x_()
 
 ## Connections
-- [[Ab()]] - `calls` [EXTRACTED]
-- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
+- [[.doClose()_5]] - `method` [EXTRACTED]
+- [[.doOpen()_5]] - `method` [EXTRACTED]
+- [[.name()_5]] - `method` [EXTRACTED]
+- [[.write()_5]] - `method` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_5

@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/install.py"
 type: "code"
-community: "Small 29"
+community: "Community 32"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Small_29
+  - community/Community_32
 ---
 
 # after_install()
@@ -16,4 +16,4 @@ tags:
 - [[_create_stock_entry_types()]] - `calls` [EXTRACTED]
 - [[install.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Small_29
+#graphify/code #graphify/EXTRACTED #community/Community_32

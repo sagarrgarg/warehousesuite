@@ -20,7 +20,7 @@ tags:
 - [[Mi()]] - `calls` [EXTRACTED]
 - [[fa()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[xr()]] - `calls` [EXTRACTED]
 - [[zu()]] - `calls` [EXTRACTED]
 

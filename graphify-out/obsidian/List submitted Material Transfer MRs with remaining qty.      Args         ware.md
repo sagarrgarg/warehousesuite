@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "rationale"
-community: "Community 15"
+community: "Community 16"
 location: "L23"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_16
 ---
 
 # List submitted Material Transfer MRs with remaining qty.      Args:         ware
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_pending_transfer_material_requests()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_15
+#graphify/rationale #graphify/EXTRACTED #community/Community_16

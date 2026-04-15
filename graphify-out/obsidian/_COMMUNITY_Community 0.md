@@ -1,20 +1,26 @@
 ---
 type: community
 cohesion: 0.02
-members: 374
+members: 377
 ---
 
 # Community 0
 
 **Cohesion:** 0.02 - loosely connected
-**Members:** 374 nodes
+**Members:** 377 nodes
 
 ## Members
 - [[$f()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[$m()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[$s()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[$y()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.add()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[.constructor()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.constructor()_7]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.decodeString()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.isPayloadValid()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.tryParse()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[.write()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[API  Service Layer Architecture]] - document - CLAUDE.md
 - [[Ac()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Ad()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -36,12 +42,8 @@ members: 374
 - [[Cr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Create Material Request from POW Dashboard]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Create Material Request from POW Dashboard_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Create stock entry for transfer (source - in-transit) with proper stock ledger]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Create stock entry for transfer (source - in-transit) with proper stock ledger_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Cy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Dc()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[Debug function to check warehouse information in a stock entry (System Manager o]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Debug function to check warehouse information in a stock entry (System Manager o_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Dt()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Dv()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Dy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -61,16 +63,12 @@ members: 374
 - [[Fr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Fu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Fy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[Generate ZPL code for a single label matching the label design]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Generate ZPL code for a single label matching the label design_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get POW Stock Counts for the current user or session]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get POW Stock Counts for the current user or session_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get BOM items for Material Request.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get BOM items for Material Request._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Get active POW session for current user]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get all companies for selection]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get all companies for selection_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Get allowed operations from POW profile]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get items for dropdown with item_codeitem_name format and optional stock filter]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get items for dropdown with item_codeitem_name format and optional stock filter_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get pending sent transfers for one or more warehouses.      Args         source]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Get pending sent transfers for one or more warehouses.      Args         source_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Gl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Go()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Gs()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -91,6 +89,7 @@ members: 374
 - [[Ju()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Kc()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Kl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[Kn()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Ku()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Ld()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Ln()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -109,11 +108,14 @@ members: 374
 - [[POW Website Route (pow)]] - document - CLAUDE.md
 - [[Pl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Pm()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[Pn()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Pu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Qn()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Qo()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[React Frontend Stack]] - document - CLAUDE.md
 - [[Resizable Three-Column Layout]] - document - technical_handbook.md
+- [[Return available UOMs with conversion factors and warehouse-wise stock for an it]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[Return available UOMs with conversion factors and warehouse-wise stock for an it_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Rl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Rn()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Rr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -125,6 +127,7 @@ members: 374
 - [[Serial and Batch Bundle (SBB)]] - document - docs/superpowers/plans/2026-04-14-batch-serial-desk.md
 - [[Sg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Sh()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[Sr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Td()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Test function to verify POW Stock Concern doctype is working (System Manager onl]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Test function to verify POW Stock Concern doctype is working (System Manager onl_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
@@ -143,11 +146,11 @@ members: 374
 - [[Update the default warehouse for an active session]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[Ur()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Uv()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[Vm()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Vn()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Vt()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Vv()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[We()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[Wf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Wl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Wo()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Wu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -160,6 +163,7 @@ members: 374
 - [[Ys()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Yu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Yy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[Zc()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Zf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Zg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[Zi()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -180,17 +184,16 @@ members: 374
 - [[bm()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ca()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ce()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[cf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[cg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ch()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[close_pow_session()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[cp()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[create_material_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[create_pow_session()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[create_transfer_stock_entry()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[cu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[cv()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[da()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[dd()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[debug_stock_entry_warehouses()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[df()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[dg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[dl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -217,13 +220,12 @@ members: 374
 - [[gc()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[gd()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ge()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[generate_zpl_label()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[get_active_pow_session()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[get_applicable_pow_profiles()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[get_companies()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[get_items_for_dropdown()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_bom_items()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_item_availability()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[get_pending_sent_transfers()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[get_pow_profile_operations()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[get_pow_stock_counts()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[gf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[gh()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[gi()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -252,6 +254,7 @@ members: 374
 - [[jp()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[jv()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[jy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[k0()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ka()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[kd()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[kg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -301,7 +304,7 @@ members: 374
 - [[pd()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[pf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[po()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[pow_dashboard.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[pow-dashboard.js]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[pp()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[ps()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[pt()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -335,6 +338,7 @@ members: 374
 - [[sy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[t()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[t0]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
+- [[ta()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[test_pow_stock_concern_creation()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
 - [[tf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[tg()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
@@ -381,7 +385,6 @@ members: 374
 - [[zl()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[zp()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[zr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
-- [[zs()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[zt()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 - [[zu()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow_dashboard_react/assets/pow-dashboard.js
 
@@ -393,32 +396,36 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 47 edges to [[_COMMUNITY_Community 3]]
-- 22 edges to [[_COMMUNITY_Community 14]]
-- 7 edges to [[_COMMUNITY_Community 13]]
-- 4 edges to [[_COMMUNITY_Community 18]]
+- 31 edges to [[_COMMUNITY_Community 3]]
+- 23 edges to [[_COMMUNITY_Community 7]]
+- 7 edges to [[_COMMUNITY_Community 15]]
+- 4 edges to [[_COMMUNITY_Community 19]]
+- 4 edges to [[_COMMUNITY_Community 29]]
 - 2 edges to [[_COMMUNITY_Community 25]]
-- 2 edges to [[_COMMUNITY_Community 24]]
-- 2 edges to [[_COMMUNITY_Community 16]]
-- 2 edges to [[_COMMUNITY_Community 11]]
-- 2 edges to [[_COMMUNITY_Community 20]]
+- 2 edges to [[_COMMUNITY_Community 26]]
+- 2 edges to [[_COMMUNITY_Community 17]]
+- 2 edges to [[_COMMUNITY_Community 13]]
+- 2 edges to [[_COMMUNITY_Community 21]]
 - 1 edge to [[_COMMUNITY_Community 6]]
-- 1 edge to [[_COMMUNITY_Small 40]]
-- 1 edge to [[_COMMUNITY_Small 41]]
-- 1 edge to [[_COMMUNITY_Small 32]]
-- 1 edge to [[_COMMUNITY_Small 33]]
-- 1 edge to [[_COMMUNITY_Small 34]]
-- 1 edge to [[_COMMUNITY_Small 35]]
-- 1 edge to [[_COMMUNITY_Small 36]]
-- 1 edge to [[_COMMUNITY_Small 42]]
-- 1 edge to [[_COMMUNITY_Small 37]]
-- 1 edge to [[_COMMUNITY_Small 43]]
-- 1 edge to [[_COMMUNITY_Small 38]]
-- 1 edge to [[_COMMUNITY_Small 39]]
+- 1 edge to [[_COMMUNITY_Community 45]]
+- 1 edge to [[_COMMUNITY_Community 46]]
+- 1 edge to [[_COMMUNITY_Community 35]]
+- 1 edge to [[_COMMUNITY_Community 36]]
+- 1 edge to [[_COMMUNITY_Community 37]]
+- 1 edge to [[_COMMUNITY_Community 47]]
+- 1 edge to [[_COMMUNITY_Community 38]]
+- 1 edge to [[_COMMUNITY_Community 39]]
+- 1 edge to [[_COMMUNITY_Community 40]]
+- 1 edge to [[_COMMUNITY_Community 41]]
+- 1 edge to [[_COMMUNITY_Community 42]]
+- 1 edge to [[_COMMUNITY_Community 43]]
+- 1 edge to [[_COMMUNITY_Community 44]]
+- 1 edge to [[_COMMUNITY_Community 48]]
+- 1 edge to [[_COMMUNITY_Community 49]]
 
 ## Top bridge nodes
-- [[pow_dashboard.py]] - degree 417, connects to 22 communities
+- [[pow-dashboard.js]] - degree 417, connects to 26 communities
+- [[n()]] - degree 28, connects to 2 communities
+- [[t()]] - degree 20, connects to 2 communities
 - [[jp()]] - degree 19, connects to 2 communities
-- [[n()]] - degree 28, connects to 1 community
-- [[qp()]] - degree 24, connects to 1 community
-- [[E()]] - degree 23, connects to 1 community
+- [[.add()]] - degree 10, connects to 2 communities

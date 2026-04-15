@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_so_pending_report.py"
 type: "code"
-community: "Community 17"
+community: "Community 18"
 location: "L85"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_17
+  - community/Community_18
 ---
 
 # search_so_report_items()
@@ -15,4 +15,4 @@ tags:
 - [[Typeahead items on pending SO lines in profile warehouse scope.]] - `rationale_for` [EXTRACTED]
 - [[pow_so_pending_report.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_17
+#graphify/code #graphify/EXTRACTED #community/Community_18

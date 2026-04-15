@@ -216,27 +216,32 @@ def _query_bin_availability_for_item(item_code, allowed_warehouses=None, limit=1
     )
 
 
-def get_bom_for_item(item_code, allowed_warehouses=None):
-    """Return the default active BOM for an item with exploded items + stock.
+def get_bom_for_item(item_code, allowed_warehouses=None, bom_no=None):
+    """Return a BOM for an item with exploded items + stock.
 
     Args:
         item_code: item to look up
         allowed_warehouses: if set, restrict Bin availability to these warehouses
             (POW profile scope). ``None`` = any warehouse (non-POW callers).
+        bom_no: specific BOM name to load. If None, loads the default active BOM.
 
     Returns:
         dict with bom_no, item_name, items (list), scrap_items (list)
     """
-    boms = frappe.get_list(
-        "BOM",
-        filters={"item": item_code, "is_default": 1, "is_active": 1, "docstatus": 1},
-        fields=["name"],
-        limit_page_length=1,
-    )
-    if not boms:
-        frappe.throw(_("No active default BOM found for {0}").format(item_code))
-
-    bom_name = boms[0].name
+    if bom_no:
+        if not frappe.db.exists("BOM", bom_no):
+            frappe.throw(_("BOM {0} not found").format(bom_no))
+        bom_name = bom_no
+    else:
+        boms = frappe.get_list(
+            "BOM",
+            filters={"item": item_code, "is_default": 1, "is_active": 1, "docstatus": 1},
+            fields=["name"],
+            limit_page_length=1,
+        )
+        if not boms:
+            frappe.throw(_("No active default BOM found for {0}").format(item_code))
+        bom_name = boms[0].name
     if not frappe.has_permission("BOM", "read", bom_name):
         frappe.throw(_("Not permitted to access BOM {0}").format(bom_name), frappe.PermissionError)
     bom = frappe.get_doc("BOM", bom_name)
@@ -323,6 +328,7 @@ def create_work_order(
     wip_warehouse=None,
     planned_start_date=None,
     item_substitutions=None,
+    remarks=None,
 ):
     """Create and submit a Work Order.
 
@@ -369,6 +375,8 @@ def create_work_order(
         wo.source_warehouse = source_warehouse
     if wip_warehouse:
         wo.wip_warehouse = wip_warehouse
+    if remarks:
+        wo.remarks = remarks
 
     # Populate required items from BOM
     wo.get_items_and_operations_from_bom()

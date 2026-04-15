@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py"
 type: "rationale"
-community: "Community 16"
+community: "Community 17"
 location: "L70"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_16
+  - community/Community_17
 ---
 
 # Check if current user has override permission
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_has_override_permission()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_16
+#graphify/rationale #graphify/EXTRACTED #community/Community_17

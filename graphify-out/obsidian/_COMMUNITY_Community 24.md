@@ -1,21 +1,22 @@
 ---
 type: community
-cohesion: 0.33
-members: 6
+cohesion: 0.29
+members: 7
 ---
 
 # Community 24
 
-**Cohesion:** 0.33 - loosely connected
-**Members:** 6 nodes
+**Cohesion:** 0.29 - loosely connected
+**Members:** 7 nodes
 
 ## Members
-- [[Analyze print format raw_commands to detect which variables are used]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Analyze print format raw_commands to detect which variables are used_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get available print formats for Item doctype]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[Get available print formats for Item doctype_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[analyze_print_format_variables()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
-- [[get_item_print_formats()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py
+- [[FrappeTestCase]] - code
+- [[TestPOWProfile]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile/test_pow_profile.py
+- [[TestPOWSession]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_session/test_pow_session.py
+- [[TestSelectWarehouse]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/select_warehouse/test_select_warehouse.py
+- [[test_pow_profile.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_profile/test_pow_profile.py
+- [[test_pow_session.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/pow_session/test_pow_session.py
+- [[test_select_warehouse.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/doctype/select_warehouse/test_select_warehouse.py
 
 ## Live Query (requires Dataview plugin)
 
@@ -23,10 +24,3 @@ members: 6
 TABLE source_file, type FROM #community/Community_24
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 2 edges to [[_COMMUNITY_Community 0]]
-
-## Top bridge nodes
-- [[analyze_print_format_variables()]] - degree 4, connects to 1 community
-- [[get_item_print_formats()]] - degree 4, connects to 1 community

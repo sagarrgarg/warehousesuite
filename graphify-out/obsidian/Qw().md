@@ -1,19 +1,17 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-EY8PspUP.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
-community: "WebSocket Polling Transport"
-location: "L73"
+community: "Community 1"
+location: "L78"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/WebSocket_Polling_Transport
+  - community/Community_1
 ---
 
 # Qw()
 
 ## Connections
-- [[.encodeAsBinary()_1]] - `calls` [EXTRACTED]
-- [[index-EY8PspUP.js]] - `contains` [EXTRACTED]
-- [[jf()]] - `calls` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/WebSocket_Polling_Transport
+#graphify/code #graphify/EXTRACTED #community/Community_1

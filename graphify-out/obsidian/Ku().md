@@ -16,7 +16,7 @@ tags:
 - [[gi()]] - `calls` [EXTRACTED]
 - [[jp()]] - `calls` [EXTRACTED]
 - [[kp()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[s0]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

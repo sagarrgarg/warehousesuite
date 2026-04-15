@@ -15,7 +15,7 @@ tags:
 - [[.encode()]] - `calls` [EXTRACTED]
 - [[ay()]] - `calls` [EXTRACTED]
 - [[ca()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qu()]] - `calls` [EXTRACTED]
 - [[sa()]] - `calls` [EXTRACTED]
 

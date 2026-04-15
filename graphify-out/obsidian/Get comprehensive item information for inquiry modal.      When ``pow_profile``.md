@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/page/pow_dashboard/pow_dashboard.py"
 type: "rationale"
-community: "Small 37"
+community: "Community 42"
 location: "L1669"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Small_37
+  - community/Community_42
 ---
 
 # Get comprehensive item information for inquiry modal.      When ``pow_profile``
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[get_item_inquiry_data()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Small_37
+#graphify/rationale #graphify/EXTRACTED #community/Community_42

@@ -10,16 +10,16 @@ members: 10
 **Members:** 10 nodes
 
 ## Members
-- [[Batch and serial number lookup service for POW operations.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[Check if item has batchserial tracking enabled.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[Create a Serial and Batch Bundle document.  	Args 		item_code Item code 		ware]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[Get active serial numbers for an item in a warehouse.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[Get batches with available qty for an item in a warehouse.  	Returns list of {ba]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[create_serial_and_batch_bundle()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[get_available_batches()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[get_available_serial_nos()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[get_item_batch_serial_info()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
-- [[pow_batch_serial_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_batch_serial_service.py
+- [[BOM Permission Fix (get_all vs get_list)]] - document - warehousesuite/technical_handbook.md
+- [[Commercial License]] - document - license.txt
+- [[ERPNext Integration]] - document - README.md
+- [[Frappe Framework]] - document - CLAUDE.md
+- [[Manual Work Order (POW Manufacturing)]] - document - technical_handbook.md
+- [[Privacy Policy]] - document - PRIVACY.md
+- [[Recursive WO Item Alternatives]] - document - technical_handbook.md
+- [[Truth in ERPNext Principle]] - document - warehousesuite/psychological_handbook.md
+- [[WarehouseSuite App]] - document - README.md
+- [[Zebra Browser Print Integration]] - document - warehousesuite/technical_handbook.md
 
 ## Live Query (requires Dataview plugin)
 
@@ -27,3 +27,10 @@ members: 10
 TABLE source_file, type FROM #community/Community_21
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 2 edges to [[_COMMUNITY_Community 0]]
+
+## Top bridge nodes
+- [[Manual Work Order (POW Manufacturing)]] - degree 3, connects to 1 community
+- [[Frappe Framework]] - degree 2, connects to 1 community

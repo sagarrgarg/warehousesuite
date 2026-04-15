@@ -1,13 +1,13 @@
 ---
 source_file: "TODO.md"
 type: "document"
-community: "Small 62"
+community: "Community 68"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_62
+  - community/Community_68
 ---
 
 # Desk Stock Entry Restriction
 
-#graphify/document #graphify/EXTRACTED #community/Small_62
+#graphify/document #graphify/EXTRACTED #community/Community_68

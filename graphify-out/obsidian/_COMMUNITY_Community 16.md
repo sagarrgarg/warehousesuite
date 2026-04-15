@@ -1,32 +1,33 @@
 ---
 type: community
-cohesion: 0.14
-members: 17
+cohesion: 0.12
+members: 18
 ---
 
 # Community 16
 
-**Cohesion:** 0.14 - loosely connected
-**Members:** 17 nodes
+**Cohesion:** 0.12 - loosely connected
+**Members:** 18 nodes
 
 ## Members
-- [[Auto Transit Validation for Stock Entries  This module automatically sets 'Add t]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[Automatically set 'Add to Transit' to 1 for Material Transfer type Stock Entries]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[Check if current user has override permission]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[Get WMSuite Settings safely_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[Get WMSuite Settings safely_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[Get WMSuite Settings safely]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[Material Request Integration]] - document - technical_handbook.md
-- [[Transfer Management Feature]] - document - wiki/features/transfer-management.md
-- [[Validate if Stock Entry has value difference and restrict based on WMSuite Setti]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[Value Difference Validation for Stock Entries  This module provides validation t]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[_get_wmsuite_settings()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[_get_wmsuite_settings()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[_has_override_permission()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[auto_set_transit_for_material_transfer()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[auto_transit_validation.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/auto_transit_validation.py
-- [[validate_value_difference()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
-- [[value_difference_validation.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/overrides/value_difference_validation.py
+- [[Create a Material Transfer Stock Entry linked to MR lines.      Args         mr]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Create a Material Transfer Stock Entry linked to MR lines.      Args         mr_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[List submitted Material Transfer MRs with remaining qty.      Args         ware]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Parse a value that may be JSON string, Python list, or None._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Parse a value that may be JSON string, Python list, or None._3]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Raise a new Material Request (Material Transfer or Purchase) from POW.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Raise a new Material Request (Material Transfer) from POW.      Args         ta]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Return pending transfer receives for a warehouse.      Args         default_war]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Return pending transfer receives for a warehouse.      Args         default_war_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Return per-line fulfillment candidates with available stock.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[Whitelisted API endpoints for Material Request (Material Transfer) operations in]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[_parse_list()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[create_material_transfer_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[create_transfer_from_material_request()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[get_material_request_fulfillment_options()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[get_pending_pow_receives()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[get_pending_transfer_material_requests()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
+- [[pow_material_request.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py
 
 ## Live Query (requires Dataview plugin)
 
@@ -34,12 +35,3 @@ members: 17
 TABLE source_file, type FROM #community/Community_16
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 2 edges to [[_COMMUNITY_Community 0]]
-- 1 edge to [[_COMMUNITY_Community 6]]
-
-## Top bridge nodes
-- [[value_difference_validation.py]] - degree 6, connects to 1 community
-- [[Transfer Management Feature]] - degree 4, connects to 1 community
-- [[Material Request Integration]] - degree 2, connects to 1 community

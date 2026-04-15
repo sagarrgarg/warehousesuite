@@ -15,7 +15,7 @@ tags:
 - [[Jl()]] - `calls` [EXTRACTED]
 - [[hs()]] - `calls` [EXTRACTED]
 - [[of()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[zu()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

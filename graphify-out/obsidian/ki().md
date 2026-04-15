@@ -12,7 +12,7 @@ tags:
 # ki()
 
 ## Connections
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[so()]] - `calls` [EXTRACTED]
 - [[yc()]] - `calls` [EXTRACTED]
 - [[zt()]] - `calls` [EXTRACTED]

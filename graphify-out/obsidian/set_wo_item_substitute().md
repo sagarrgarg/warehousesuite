@@ -2,7 +2,7 @@
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_work_order.py"
 type: "code"
 community: "Community 8"
-location: "L214"
+location: "L216"
 tags:
   - graphify/code
   - graphify/EXTRACTED
@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[Persist substitute item selection for a Work Order required item row.]] - `rationale_for` [EXTRACTED]
+- [[Persist substitute item selection for a Work Order required item row._2]] - `rationale_for` [EXTRACTED]
 - [[Persist substitute item selection for a Work Order required item row._1]] - `rationale_for` [EXTRACTED]
 - [[pow_work_order.py]] - `contains` [EXTRACTED]
 

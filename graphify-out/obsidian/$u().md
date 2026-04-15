@@ -36,6 +36,6 @@ tags:
 - [[.reconnectionDelayMax()]] - `method` [EXTRACTED]
 - [[.socket()]] - `method` [EXTRACTED]
 - [[.timeout()_1]] - `method` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_3

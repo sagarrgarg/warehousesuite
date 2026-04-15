@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/api/pow_material_request.py"
 type: "code"
-community: "Community 15"
+community: "Community 16"
 location: "L62"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_16
 ---
 
 # create_transfer_from_material_request()
@@ -16,4 +16,4 @@ tags:
 - [[Create a Material Transfer Stock Entry linked to MR lines.      Args         mr_1]] - `rationale_for` [EXTRACTED]
 - [[pow_material_request.py]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_15
+#graphify/code #graphify/EXTRACTED #community/Community_16

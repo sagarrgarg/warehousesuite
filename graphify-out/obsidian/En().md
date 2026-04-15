@@ -15,7 +15,7 @@ tags:
 - [[Hc()]] - `calls` [EXTRACTED]
 - [[Ni()]] - `calls` [EXTRACTED]
 - [[ay()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[ql()]] - `calls` [EXTRACTED]
 - [[sp()]] - `calls` [EXTRACTED]
 

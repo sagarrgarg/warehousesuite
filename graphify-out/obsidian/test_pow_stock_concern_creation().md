@@ -14,6 +14,6 @@ tags:
 ## Connections
 - [[Test function to verify POW Stock Concern doctype is working (System Manager onl]] - `rationale_for` [EXTRACTED]
 - [[Test function to verify POW Stock Concern doctype is working (System Manager onl_1]] - `rationale_for` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

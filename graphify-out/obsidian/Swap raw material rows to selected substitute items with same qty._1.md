@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py"
 type: "rationale"
-community: "Community 5"
+community: "Community 4"
 location: "L1255"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_5
+  - community/Community_4
 ---
 
 # Swap raw material rows to selected substitute items with same qty.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_apply_substitutions_to_stock_entry()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_5
+#graphify/rationale #graphify/EXTRACTED #community/Community_4

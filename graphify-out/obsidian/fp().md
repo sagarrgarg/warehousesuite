@@ -18,7 +18,7 @@ tags:
 - [[fo()]] - `calls` [EXTRACTED]
 - [[jy()]] - `calls` [EXTRACTED]
 - [[le()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rf()]] - `calls` [EXTRACTED]
 - [[xl()]] - `calls` [EXTRACTED]
 

@@ -1,140 +1,107 @@
 ---
 type: community
 cohesion: 0.03
-members: 125
+members: 92
 ---
 
 # Community 4
 
 **Cohesion:** 0.03 - loosely connected
-**Members:** 125 nodes
+**Members:** 92 nodes
 
 ## Members
-- [[._addToQueue()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._close()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._destroy()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._drainQueue()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._hostname()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._packet()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._port()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._query()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._registerAckCallback()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[._sendConnectPacket()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.abort()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.ack()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.active()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.addEventListeners()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.check()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.cleanup()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.cleanup()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.close()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.close()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.compress()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.connect()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.connect()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_13]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_20]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_15]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_16]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_21]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_17]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.constructor()_14]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.create()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.createUri()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.destroy()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.disconnect()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.disconnect()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.disconnected()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doClose()_5]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doClose()_4]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doClose()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doOpen()_5]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doOpen()_4]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doOpen()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doPoll()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.doWrite()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.emit()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.emitBuffered()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.emitEvent()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.emitWithAck()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.encode()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.encodeAsBinary()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.encodeAsString()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.listenersAny()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.listenersAnyOutgoing()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.maybeReconnectOnOpen()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.name()_4]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.name()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.notifyOutgoingListeners()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.offAny()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.offAnyOutgoing()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onAny()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onAnyOutgoing()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onClose()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onData()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onError()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onError()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onLoad()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onOpen()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onPacket()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onack()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onclose()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onclose()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onconnect()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.ondata()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.ondecoded()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.ondisconnect()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onerror()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onerror()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onevent()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onopen()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onopen()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onpacket()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onping()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.onreconnect()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.open()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.open()_4]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.open()_5]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.packet()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.pause()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.pause()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.poll()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.prependAny()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.prependAnyOutgoing()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.randomizationFactor()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.reconnect()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.reconnection()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.reconnectionAttempts()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.reconnectionDelay()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.reconnectionDelayMax()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.request()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.send()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.send()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.socket()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.subEvents()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.timeout()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.timeout()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.uri()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.uri()_2]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.volatile()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.write()_5]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[.write()_3]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[En()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[Gn]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[Iy()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[Lc()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[N_()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[Qf()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[_v()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[a0_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[componentDidCatch()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[fb()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[h1()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[oN()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[q_()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[rw]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[yx()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
-- [[z_()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js
+- [[Apply substitutions on Work Order.required_items using original item code keys.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Apply substitutions on Work Order.required_items using original item code keys._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Apply substitutions on Work Order.required_items using original item code keys._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Attach original-item marker in description for later reconstruction.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Attach original-item marker in description for later reconstruction._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Attach original-item marker in description for later reconstruction._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Bins with positive stock for item_code, optionally restricted to warehouses.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Manufacture Stock Entry to produce finished goods.      Uses ERPNext's]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Manufacture Stock Entry to produce finished goods.      Uses ERPNext's_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Manufacture Stock Entry to produce finished goods.      Uses ERPNext's_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Material Request (Purchase or Material Transfer) for WO shortfall.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Material Request (Purchase or Material Transfer) for WO shortfall._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Material Request (Purchase or Material Transfer) for WO shortfall._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Material Transfer for Manufacture Stock Entry.      Args         wo_na]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create a Material Transfer for Manufacture Stock Entry.      Args         wo_na_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create and submit a Work Order.      Args         production_item item to manu]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Create and submit a Work Order.      Args         production_item item to manu_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Fetch WO required items with stock status at the WIP warehouse.      Uses consum]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Internal helper to get alternatives list.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Internal helper to get alternatives list._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Internal helper to get alternatives list._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Normalize substitution payload into {original_item_code substitute_item_code} m]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Normalize substitution payload into {original_item_code substitute_item_code} m_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Normalize substitution payload into {original_item_code substitute_item_code} m_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Persist an alternative item selection for a submitted Work Order row.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Persist an alternative item selection for a submitted Work Order row.      Args_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Read original item code marker from WO row description.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Read original item code marker from WO row description._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Read original item code marker from WO row description._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Remove internal marker from description text if present.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Remove internal marker from description text if present._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Remove internal marker from description text if present._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return Item Alternative records for an item.      Args         item_code origi_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return Item Alternative records for an item.      Args         item_code origi_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return Item Alternative records for an item.      Args         item_code origi]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return a BOM for an item with exploded items + stock.      Args         item_co]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return all alternative item codes connected to item_code (transitive).]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return all alternative item codes connected to item_code (transitive)._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return default WIP and FG warehouses from Manufacturing Settings.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return default WIP and FG warehouses from Manufacturing Settings.      Args_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return items with insufficient stock to fulfill the WO.      Args         wo_na]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return items with insufficient stock to fulfill the WO.      Args         wo_na_1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return items with insufficient stock to fulfill the WO.      Args         wo_na_2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return open Work Orders scoped to the user's profile warehouses.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return required items with stock availability and alternative item options.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return required items with stock availability and alternative item options._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return the items that ERPNext would consumeproduce for a manufacture entry.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return the items that ERPNext would consumeproduce for a manufacture entry._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return the items that ERPNext would consumeproduce for a manufacture entry._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return up to 10 positive-stock warehouses for an item.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return up to 10 positive-stock warehouses for an item._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return up to 10 positive-stock warehouses for an item._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return {original_item_code substitute_item_code} from payload and WO rows.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return {original_item_code substitute_item_code} from payload and WO rows._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Return {original_item_code substitute_item_code} from payload and WO rows._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Service layer for Work Order (Manufacturing) operations in POW.  Design rules -]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Swap raw material rows to selected substitute items with same qty.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Swap raw material rows to selected substitute items with same qty._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Swap raw material rows to selected substitute items with same qty._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Update WO row item fields and description marker for substitute tracking.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Update WO row item fields and description marker for substitute tracking._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Update WO row item fields and description marker for substitute tracking._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Validate substitute belongs to recursive alternative graph for original item.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Validate substitute belongs to recursive alternative graph for original item._1]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[Validate substitute belongs to recursive alternative graph for original item._2]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_apply_substitutions_to_stock_entry()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_apply_work_order_item_substitutions()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_compose_description_with_original()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_alternative_items_for()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_item_availability()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_original_item_code_from_row()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_recursive_alternative_codes()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_wo_required_items_summary()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_get_wo_substitution_map()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_parse_item_substitutions()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_query_bin_availability_for_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_set_work_order_row_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_strip_original_marker()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[_validate_substitute_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[create_work_order()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_alternative_items()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_bom_for_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_manufacture_preview()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_manufacturing_warehouses()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_material_shortfall()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_pending_work_orders()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[get_work_order_materials()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[manufacture_work_order()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[pow_work_order_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[raise_material_request_for_wo()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[set_work_order_item_substitute()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
+- [[transfer_materials_for_manufacture()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_work_order_service.py
 
 ## Live Query (requires Dataview plugin)
 
@@ -142,13 +109,3 @@ members: 125
 TABLE source_file, type FROM #community/Community_4
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 46 edges to [[_COMMUNITY_Community 1]]
-
-## Top bridge nodes
-- [[fb()]] - degree 43, connects to 1 community
-- [[Qf()]] - degree 28, connects to 1 community
-- [[_v()]] - degree 16, connects to 1 community
-- [[a0_1]] - degree 15, connects to 1 community
-- [[q_()]] - degree 9, connects to 1 community

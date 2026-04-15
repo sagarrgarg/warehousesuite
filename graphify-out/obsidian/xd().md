@@ -17,7 +17,7 @@ tags:
 - [[Xs()]] - `calls` [EXTRACTED]
 - [[_d()]] - `calls` [EXTRACTED]
 - [[kd()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[wd()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

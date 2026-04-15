@@ -1,11 +1,11 @@
 ---
 source_file: "license.txt"
 type: "document"
-community: "Community 20"
+community: "Community 21"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Community_20
+  - community/Community_21
 ---
 
 # Commercial License
@@ -13,4 +13,4 @@ tags:
 ## Connections
 - [[WarehouseSuite App]] - `references` [EXTRACTED]
 
-#graphify/document #graphify/EXTRACTED #community/Community_20
+#graphify/document #graphify/EXTRACTED #community/Community_21

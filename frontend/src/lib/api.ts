@@ -54,6 +54,7 @@ export const API = {
 	getWOShortfall: `${WO_BASE}.get_wo_material_shortfall`,
 	raiseMRForWO: `${WO_BASE}.raise_mr_for_work_order`,
 	getItemAlternatives: `${WO_BASE}.get_item_alternatives`,
+	getBomsForItem: `${WO_BASE}.get_boms_for_item`,
 
 	// Sales Order pending delivery (POW profile gated)
 	getSOPendingLines: `${SO_REP_BASE}.get_pow_so_pending_lines`,

@@ -1,40 +1,49 @@
 ---
 type: community
-cohesion: 0.13
-members: 25
+cohesion: 0.09
+members: 34
 ---
 
 # Community 10
 
-**Cohesion:** 0.13 - loosely connected
-**Members:** 25 nodes
+**Cohesion:** 0.09 - loosely connected
+**Members:** 34 nodes
 
 ## Members
-- [[Aggregate pending delivery qty by item code + stock UOM, paginated.      Lines o]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Build a safe LIKE %term% pattern (escapes % and _).]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Clamp offset and page size for SQL LIMITOFFSET.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Customers with pending SO lines in this company within warehouse scope.      Arg]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Ensure current user may run SO pending reports for this profile.      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Items that appear on pending SO lines in company within warehouse scope.      Ar]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Return SQL fragment for order-level remark (custom field if present).]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Return extra WHERE fragments and params for customer  SO  item.      - ``custo]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Return one page of SO lines with remaining qty to deliver (stock UOM).      Args]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[SQL expression effective warehouse for a sales order line.]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[SQL fragment restricting SO lines to warehouses in allowed_warehouses.      Ar]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[Sales Order pending-delivery reports for POW dashboard.  Correctness notes (vs r]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_filters_sql()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_format_line_row()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_like_wrap()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_normalize_paging()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_remark_sql_expression()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_so_line_warehouse_expr()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[_warehouse_scope_sql()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[assert_pow_so_pending_report_access()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[get_so_pending_delivery_lines()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[get_so_pending_delivery_summary()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[pow_so_pending_report_service.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[search_customers_for_so_report()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
-- [[search_items_for_so_report()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_so_pending_report_service.py
+- [[.__init__()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[.__init__()_1]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[.add_error()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[.to_dict()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Add an error to the validation result]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Convert to dictionary format for API responses]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Create standardized API response from validation result          Args         v]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Custom exception for validation errors]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Exception]] - code
+- [[Format validation errors for display          Args         errors List of erro]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Get UOM conversion factor          Args         item_code Item code         fr]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Get actual stock quantity for an item in a warehouse          Args         item]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Get the quantity already received for a specific item from a stock entry]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Result object for validation operations]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate a single receive item with improved logic     - Allow partial receives]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate a single transfer item          Args         item Item dictionary]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate concern creation data          Args         concern_data Concern data]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate stock availability for an item          Args         item_code Item c]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate transfer receive data with improved logic     - Check if total balance]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[Validate warehouse transfer data          Args         source_warehouse Source]] - rationale - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[ValidationError]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[ValidationResult]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[create_api_response()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[format_validation_errors()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[get_already_received_quantity()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[get_stock_quantity()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[get_uom_conversion_factor()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_concern_data()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_receive_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_stock_availability()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_transfer_item()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_transfer_receive_data()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validate_warehouse_transfer_data()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
+- [[validation.py]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/warehousesuite/utils/validation.py
 
 ## Live Query (requires Dataview plugin)
 

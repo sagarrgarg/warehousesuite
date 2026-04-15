@@ -12,6 +12,6 @@ tags:
 
 ## Connections
 - [[Frappe Framework]] - `references` [EXTRACTED]
-- [[pow_dashboard.py]] - `implements` [EXTRACTED]
+- [[pow-dashboard.js]] - `implements` [EXTRACTED]
 
 #graphify/document #graphify/EXTRACTED #community/Community_0

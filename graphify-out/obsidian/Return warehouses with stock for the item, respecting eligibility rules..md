@@ -1,12 +1,12 @@
 ---
 source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/services/pow_material_request_service.py"
 type: "rationale"
-community: "Community 12"
+community: "Community 14"
 location: "L181"
 tags:
   - graphify/rationale
   - graphify/EXTRACTED
-  - community/Community_12
+  - community/Community_14
 ---
 
 # Return warehouses with stock for the item, respecting eligibility rules.
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[_eligible_warehouses_for_item()]] - `rationale_for` [EXTRACTED]
 
-#graphify/rationale #graphify/EXTRACTED #community/Community_12
+#graphify/rationale #graphify/EXTRACTED #community/Community_14

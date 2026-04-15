@@ -16,7 +16,7 @@ tags:
 - [[Ud()]] - `calls` [EXTRACTED]
 - [[Ur()]] - `calls` [EXTRACTED]
 - [[ff()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[wp()]] - `calls` [EXTRACTED]
 

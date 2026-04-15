@@ -21,7 +21,7 @@ tags:
 - [[hs()]] - `calls` [EXTRACTED]
 - [[kp()]] - `calls` [EXTRACTED]
 - [[mf()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[rh()]] - `calls` [EXTRACTED]
 - [[zp()]] - `calls` [EXTRACTED]
 

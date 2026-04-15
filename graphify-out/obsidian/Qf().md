@@ -1,44 +1,20 @@
 ---
-source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-DNVaRv9p.js"
+source_file: "/home/ubuntu/frappe-bench-new/apps/warehousesuite/warehousesuite/public/pow/assets/index-B5p5cVfS.js"
 type: "code"
-community: "Community 4"
+community: "Community 1"
 location: "L17"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_4
+  - community/Community_1
 ---
 
 # Qf()
 
 ## Connections
-- [[._close()_1]] - `method` [EXTRACTED]
-- [[._destroy()_1]] - `method` [EXTRACTED]
-- [[._packet()_1]] - `method` [EXTRACTED]
-- [[.cleanup()_3]] - `method` [EXTRACTED]
-- [[.connect()_3]] - `method` [EXTRACTED]
-- [[.constructor()_21]] - `method` [EXTRACTED]
-- [[.disconnect()_3]] - `method` [EXTRACTED]
-- [[.maybeReconnectOnOpen()_1]] - `method` [EXTRACTED]
-- [[.onclose()_3]] - `method` [EXTRACTED]
-- [[.ondata()_1]] - `method` [EXTRACTED]
-- [[.ondecoded()_1]] - `method` [EXTRACTED]
-- [[.onerror()_3]] - `method` [EXTRACTED]
-- [[.onopen()_3]] - `method` [EXTRACTED]
-- [[.onping()_1]] - `method` [EXTRACTED]
-- [[.onreconnect()_1]] - `method` [EXTRACTED]
-- [[.open()_5]] - `method` [EXTRACTED]
-- [[.randomizationFactor()_1]] - `method` [EXTRACTED]
-- [[.reconnect()_1]] - `method` [EXTRACTED]
-- [[.reconnection()_1]] - `method` [EXTRACTED]
-- [[.reconnectionAttempts()_1]] - `method` [EXTRACTED]
-- [[.reconnectionDelay()_1]] - `method` [EXTRACTED]
-- [[.reconnectionDelayMax()_1]] - `method` [EXTRACTED]
-- [[.socket()_1]] - `method` [EXTRACTED]
-- [[.timeout()_3]] - `method` [EXTRACTED]
-- [[Iy()]] - `calls` [EXTRACTED]
-- [[av()_1]] - `calls` [EXTRACTED]
-- [[index-DNVaRv9p.js]] - `contains` [EXTRACTED]
-- [[tv()]] - `calls` [EXTRACTED]
+- [[ev()]] - `calls` [EXTRACTED]
+- [[index-B5p5cVfS.js]] - `contains` [EXTRACTED]
+- [[nv()]] - `calls` [EXTRACTED]
+- [[sv()_1]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_4
+#graphify/code #graphify/EXTRACTED #community/Community_1

@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[Rn()]] - `calls` [EXTRACTED]
 - [[Tt()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[ti()]] - `calls` [EXTRACTED]
 - [[vh()]] - `calls` [EXTRACTED]
 

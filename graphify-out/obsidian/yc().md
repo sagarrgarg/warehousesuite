@@ -16,7 +16,7 @@ tags:
 - [[Rn()]] - `calls` [EXTRACTED]
 - [[ki()]] - `calls` [EXTRACTED]
 - [[o()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[wr()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

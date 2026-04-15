@@ -18,7 +18,7 @@ tags:
 - [[ca()]] - `calls` [EXTRACTED]
 - [[od()]] - `calls` [EXTRACTED]
 - [[ot()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[r()]] - `calls` [EXTRACTED]
 - [[wr()]] - `calls` [EXTRACTED]
 

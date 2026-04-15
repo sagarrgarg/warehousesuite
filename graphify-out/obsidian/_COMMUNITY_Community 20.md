@@ -1,25 +1,26 @@
 ---
 type: community
 cohesion: 0.20
-members: 10
+members: 11
 ---
 
 # Community 20
 
 **Cohesion:** 0.20 - loosely connected
-**Members:** 10 nodes
+**Members:** 11 nodes
 
 ## Members
-- [[BOM Permission Fix (get_all vs get_list)]] - document - warehousesuite/technical_handbook.md
-- [[Commercial License]] - document - license.txt
-- [[ERPNext Integration]] - document - README.md
-- [[Frappe Framework]] - document - CLAUDE.md
-- [[Manual Work Order (POW Manufacturing)]] - document - technical_handbook.md
-- [[Privacy Policy]] - document - PRIVACY.md
-- [[Recursive WO Item Alternatives]] - document - technical_handbook.md
-- [[Truth in ERPNext Principle]] - document - warehousesuite/psychological_handbook.md
-- [[WarehouseSuite App]] - document - README.md
-- [[Zebra Browser Print Integration]] - document - warehousesuite/technical_handbook.md
+- [[.componentDidCatch()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[.constructor()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[.getDerivedStateFromError()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[.render()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[App.tsx]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/App.tsx
+- [[ErrorBoundary]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[ErrorBoundary.tsx]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/components/ErrorBoundary.tsx
+- [[PowDashboardInner()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/pow-dashboard/src/App.tsx
+- [[errText()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/pow-dashboard/src/App.tsx
+- [[main.tsx]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/main.tsx
+- [[renderApp()]] - code - /home/ubuntu/frappe-bench-new/apps/warehousesuite/frontend/src/main.tsx
 
 ## Live Query (requires Dataview plugin)
 
@@ -29,8 +30,7 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 2 edges to [[_COMMUNITY_Community 0]]
+- 1 edge to [[_COMMUNITY_Community 2]]
 
 ## Top bridge nodes
-- [[Manual Work Order (POW Manufacturing)]] - degree 3, connects to 1 community
-- [[Frappe Framework]] - degree 2, connects to 1 community
+- [[App.tsx]] - degree 5, connects to 1 community

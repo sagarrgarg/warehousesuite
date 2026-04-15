@@ -1,13 +1,13 @@
 ---
 source_file: "TODO.md"
 type: "document"
-community: "Small 65"
+community: "Community 71"
 tags:
   - graphify/document
   - graphify/EXTRACTED
-  - community/Small_65
+  - community/Community_71
 ---
 
 # Barcode Scan Input
 
-#graphify/document #graphify/EXTRACTED #community/Small_65
+#graphify/document #graphify/EXTRACTED #community/Community_71

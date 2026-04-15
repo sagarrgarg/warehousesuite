@@ -14,6 +14,7 @@ tags:
 ## Connections
 - [[ConfirmDialog.tsx]] - `imports_from` [EXTRACTED]
 - [[Dashboard.tsx]] - `imports_from` [EXTRACTED]
+- [[ItemSearchInput.tsx]] - `imports_from` [EXTRACTED]
 - [[api.ts]] - `imports_from` [EXTRACTED]
 - [[append()]] - `contains` [EXTRACTED]
 - [[backspace()]] - `contains` [EXTRACTED]

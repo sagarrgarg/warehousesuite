@@ -17,7 +17,7 @@ tags:
 - [[Xs()]] - `calls` [EXTRACTED]
 - [[as()]] - `calls` [EXTRACTED]
 - [[n()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[r()]] - `calls` [EXTRACTED]
 - [[ve()]] - `calls` [EXTRACTED]
 

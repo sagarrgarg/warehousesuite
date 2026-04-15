@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[ff()]] - `calls` [EXTRACTED]
 - [[pf()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[qp()]] - `calls` [EXTRACTED]
 - [[r()]] - `calls` [EXTRACTED]
 - [[wr()]] - `calls` [EXTRACTED]

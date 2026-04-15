@@ -17,7 +17,7 @@ tags:
 - [[Xe()]] - `calls` [EXTRACTED]
 - [[ap()]] - `calls` [EXTRACTED]
 - [[ge()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[xo()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

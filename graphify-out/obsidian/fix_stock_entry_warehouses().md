@@ -14,6 +14,6 @@ tags:
 ## Connections
 - [[Fix stock entry warehouse information if missing (System Manager only).]] - `rationale_for` [EXTRACTED]
 - [[Fix stock entry warehouse information if missing (System Manager only)._1]] - `rationale_for` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0

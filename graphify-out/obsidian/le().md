@@ -21,7 +21,7 @@ tags:
 - [[fp()]] - `calls` [EXTRACTED]
 - [[jy()]] - `calls` [EXTRACTED]
 - [[mp()]] - `calls` [EXTRACTED]
-- [[pow_dashboard.py]] - `contains` [EXTRACTED]
+- [[pow-dashboard.js]] - `contains` [EXTRACTED]
 - [[vc()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Community_0
