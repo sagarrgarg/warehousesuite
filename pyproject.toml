@@ -8,8 +8,8 @@ requires-python = ">=3.10,<3.13"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "frappe>=15.0.0 <17.0.0",
-    "erpnext>=15.0.0 <17.0.0",
+    # frappe and erpnext are installed and managed by bench, not pip.
+    # Version compatibility (v15+v16) is declared via Frappe Cloud Marketplace UI.
 ]
 
 [build-system]
