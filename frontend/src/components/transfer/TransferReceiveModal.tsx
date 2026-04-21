@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Calendar, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Clock, User } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -9,6 +9,21 @@ import BatchSerialInput from '@/components/shared/BatchSerialInput'
 import type { TransferReceiveGroup, ConcernData, BatchSerialSelection } from '@/types'
 
 const DEFAULT_CONCERN: ConcernData = { concern_type: 'Quantity Mismatch', concern_description: '', priority: 'Medium', receiver_notes: '' }
+
+function formatSentTime(dt: string | null): string | null {
+	if (!dt) return null
+	const d = new Date(dt.replace(' ', 'T'))
+	if (isNaN(d.getTime())) return null
+	const diff = Date.now() - d.getTime()
+	const mins = Math.floor(diff / 60_000)
+	if (mins < 1) return 'just now'
+	if (mins < 60) return `${mins}m ago`
+	const hrs = Math.floor(mins / 60)
+	if (hrs < 24) return `${hrs}h ago`
+	const days = Math.floor(hrs / 24)
+	if (days < 7) return `${days}d ago`
+	return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
 
 interface Props { open: boolean; onClose: () => void; defaultWarehouse: string | null }
 
@@ -153,7 +168,10 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 									<div className="px-3 py-2.5 space-y-1.5">
 										<div className="flex items-center justify-between">
 											<span className="font-bold text-xs flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /> {t.stock_entry}</span>
-											<span className="text-[10px] text-slate-500 flex items-center gap-1"><Calendar className="w-3 h-3" />{t.posting_date}</span>
+											<span className="text-[10px] text-slate-500 flex items-center gap-1">
+												<Clock className="w-3 h-3" />
+												{formatSentTime(t.sent_datetime) ?? t.posting_date}
+											</span>
 										</div>
 										<div className="flex items-center gap-2 text-xs">
 											<span className="text-red-600 font-semibold truncate">{t.source_warehouse}</span>

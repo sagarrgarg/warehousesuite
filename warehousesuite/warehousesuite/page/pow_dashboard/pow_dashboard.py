@@ -758,6 +758,7 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
         sql_query = """
         SELECT
             se.posting_date AS posting_date,
+            se.creation AS sent_datetime,
             se.name AS stock_entry,
             sei.name AS ste_detail,
             sei.s_warehouse AS source_warehouse,
@@ -844,6 +845,7 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
                 grouped_data[stock_entry] = {
                     'stock_entry': stock_entry,
                     'posting_date': row['posting_date'],
+                    'sent_datetime': str(row['sent_datetime']) if row.get('sent_datetime') else None,
                     'source_warehouse': row['source_warehouse'],
                     'in_transit_warehouse': row['in_transit_warehouse'],
                     'dest_warehouse': row['dest_warehouse'],
@@ -2630,4 +2632,170 @@ def fix_stock_entry_warehouses(stock_entry_name):
         return {
             "status": "error",
             "message": str(e)
-        } 
+        }
+
+
+@frappe.whitelist()
+def get_warehouse_analytics(pow_profile=None):
+	"""Warehouse-level analytics: transfer acceptance times and stock count variance.
+
+	Args:
+		pow_profile: POW Profile name. When set, restricts to target warehouses
+			on that profile (+ descendants). Asserts user is on the profile.
+	"""
+	from datetime import datetime, timedelta
+
+	now = datetime.now()
+	d7 = now - timedelta(days=7)
+	d30 = now - timedelta(days=30)
+	d180 = now - timedelta(days=180)
+
+	if not pow_profile:
+		frappe.throw("pow_profile is required", frappe.PermissionError)
+
+	from warehousesuite.utils.pow_warehouse_scope import (
+		assert_user_on_pow_profile,
+		get_pow_profile_source_warehouse_scope,
+	)
+	assert_user_on_pow_profile(pow_profile)
+	wh_list = get_pow_profile_source_warehouse_scope(pow_profile)
+	wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
+	if not wh_list:
+		return {"transfer_stats": [], "stock_count_stats": [], "hourly_heatmap": [], "concern_rates": [], "daily_volumes": []}
+
+	ph = ", ".join(["%s"] * len(wh_list))
+	wh_clause_send = f" AND send.custom_for_which_warehouse_to_transfer IN ({ph})"
+	wh_clause_se = f" AND se.custom_for_which_warehouse_to_transfer IN ({ph})"
+	wh_clause_sc = f" AND sc.warehouse IN ({ph})"
+
+	date_params = [d180, d30, d7, d180, d30, d7, d30, d30]
+	transfer_stats = frappe.db.sql(f"""
+		SELECT
+			send.custom_for_which_warehouse_to_transfer AS warehouse,
+			COUNT(*) AS total_transfers,
+			ROUND(AVG(TIMESTAMPDIFF(MINUTE, send.creation, recv.creation)), 1) AS avg_mins_all,
+			ROUND(AVG(CASE WHEN send.creation >= %s THEN TIMESTAMPDIFF(MINUTE, send.creation, recv.creation) END), 1) AS avg_mins_6m,
+			ROUND(AVG(CASE WHEN send.creation >= %s THEN TIMESTAMPDIFF(MINUTE, send.creation, recv.creation) END), 1) AS avg_mins_30d,
+			ROUND(AVG(CASE WHEN send.creation >= %s THEN TIMESTAMPDIFF(MINUTE, send.creation, recv.creation) END), 1) AS avg_mins_7d,
+			COUNT(CASE WHEN send.creation >= %s THEN 1 END) AS count_6m,
+			COUNT(CASE WHEN send.creation >= %s THEN 1 END) AS count_30d,
+			COUNT(CASE WHEN send.creation >= %s THEN 1 END) AS count_7d,
+			ROUND(MIN(CASE WHEN send.creation >= %s THEN TIMESTAMPDIFF(MINUTE, send.creation, recv.creation) END), 1) AS min_mins_30d,
+			ROUND(MAX(CASE WHEN send.creation >= %s THEN TIMESTAMPDIFF(MINUTE, send.creation, recv.creation) END), 1) AS max_mins_30d
+		FROM `tabStock Entry` recv
+		INNER JOIN `tabStock Entry` send ON recv.outgoing_stock_entry = send.name
+		WHERE send.add_to_transit = 1
+			AND recv.docstatus = 1
+			AND send.docstatus = 1
+			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
+			AND send.custom_for_which_warehouse_to_transfer != ''
+			{wh_clause_send}
+		GROUP BY send.custom_for_which_warehouse_to_transfer
+		ORDER BY count_30d DESC
+	""", date_params + wh_list, as_dict=True)
+
+	pending_counts = frappe.db.sql(f"""
+		SELECT
+			se.custom_for_which_warehouse_to_transfer AS warehouse,
+			COUNT(DISTINCT se.name) AS pending_count
+		FROM `tabStock Entry` se
+		INNER JOIN `tabStock Entry Detail` sei ON se.name = sei.parent
+		WHERE se.add_to_transit = 1
+			AND se.docstatus = 1
+			AND (sei.qty > IFNULL(sei.transferred_qty, 0))
+			AND (se.outgoing_stock_entry IS NULL OR se.outgoing_stock_entry = '')
+			AND se.custom_for_which_warehouse_to_transfer IS NOT NULL
+			{wh_clause_se}
+		GROUP BY se.custom_for_which_warehouse_to_transfer
+	""", wh_list or (), as_dict=True)
+	pending_map = {r.warehouse: r.pending_count for r in pending_counts}
+
+	for row in transfer_stats:
+		row["pending_count"] = pending_map.get(row["warehouse"], 0)
+
+	stock_count_stats = frappe.db.sql(f"""
+		SELECT
+			sc.warehouse,
+			COUNT(DISTINCT sc.name) AS total_counts,
+			COUNT(sci.name) AS total_items_counted,
+			SUM(CASE WHEN sci.difference != 0 THEN 1 ELSE 0 END) AS items_with_variance,
+			ROUND(SUM(ABS(sci.difference)), 2) AS total_abs_variance,
+			ROUND(AVG(ABS(sci.difference)), 2) AS avg_abs_variance,
+			MAX(sc.creation) AS last_count_date
+		FROM `tabPOW Stock Count` sc
+		INNER JOIN `tabPOW Stock Count Item` sci ON sci.parent = sc.name
+		WHERE sc.docstatus = 1
+			{wh_clause_sc}
+		GROUP BY sc.warehouse
+		ORDER BY total_counts DESC
+	""", wh_list or (), as_dict=True)
+
+	for row in stock_count_stats:
+		row["last_count_date"] = str(row["last_count_date"]) if row.get("last_count_date") else None
+		row["accuracy_pct"] = round(
+			(1 - (row["items_with_variance"] or 0) / row["total_items_counted"]) * 100, 1
+		) if row["total_items_counted"] else 0
+
+	hourly_heatmap = frappe.db.sql(f"""
+		SELECT
+			HOUR(send.creation) AS hour,
+			COUNT(*) AS count
+		FROM `tabStock Entry` send
+		WHERE send.add_to_transit = 1
+			AND send.docstatus = 1
+			AND send.creation >= %s
+			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
+			{wh_clause_send}
+		GROUP BY HOUR(send.creation)
+		ORDER BY hour
+	""", [d30] + wh_list, as_dict=True)
+
+	concern_rates = frappe.db.sql(f"""
+		SELECT
+			send.custom_for_which_warehouse_to_transfer AS warehouse,
+			COUNT(DISTINCT send.name) AS total_transfers,
+			COUNT(DISTINCT sc.source_document) AS transfers_with_concerns
+		FROM `tabStock Entry` send
+		LEFT JOIN `tabPOW Stock Concern` sc
+			ON sc.source_document = send.name
+			AND sc.source_document_type = 'Stock Entry'
+			AND sc.docstatus = 1
+		WHERE send.add_to_transit = 1
+			AND send.docstatus = 1
+			AND send.creation >= %s
+			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
+			{wh_clause_send}
+		GROUP BY send.custom_for_which_warehouse_to_transfer
+		ORDER BY transfers_with_concerns DESC
+	""", [d30] + wh_list, as_dict=True)
+
+	for row in concern_rates:
+		row["concern_pct"] = round(
+			(row["transfers_with_concerns"] / row["total_transfers"]) * 100, 1
+		) if row["total_transfers"] else 0
+
+	daily_volumes = frappe.db.sql(f"""
+		SELECT
+			send.custom_for_which_warehouse_to_transfer AS warehouse,
+			DATE(send.creation) AS day,
+			COUNT(*) AS count
+		FROM `tabStock Entry` send
+		WHERE send.add_to_transit = 1
+			AND send.docstatus = 1
+			AND send.creation >= %s
+			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
+			{wh_clause_send}
+		GROUP BY send.custom_for_which_warehouse_to_transfer, DATE(send.creation)
+		ORDER BY send.custom_for_which_warehouse_to_transfer, day
+	""", [d30] + wh_list, as_dict=True)
+
+	for row in daily_volumes:
+		row["day"] = str(row["day"])
+
+	return {
+		"transfer_stats": transfer_stats,
+		"stock_count_stats": stock_count_stats,
+		"hourly_heatmap": hourly_heatmap,
+		"concern_rates": concern_rates,
+		"daily_volumes": daily_volumes,
+	}

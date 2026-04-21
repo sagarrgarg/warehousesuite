@@ -1,11 +1,26 @@
 import { useState, useCallback } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { AlertTriangle, X, ArrowRight } from 'lucide-react'
+import { AlertTriangle, X, ArrowRight, Clock } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import type { TransferReceiveGroup, ConcernData } from '@/types'
 
 const DEFAULT_CONCERN: ConcernData = { concern_type: 'Quantity Mismatch', concern_description: '', priority: 'Medium', receiver_notes: '' }
+
+function formatSentTime(dt: string | null): string | null {
+  if (!dt) return null
+  const d = new Date(dt.replace(' ', 'T'))
+  if (isNaN(d.getTime())) return null
+  const diff = Date.now() - d.getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+}
 
 interface PendingReceiveCardProps {
   group: TransferReceiveGroup
@@ -104,9 +119,17 @@ export default function PendingReceiveCard({ group, company, onReceived, index =
           {/* Header row */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-semibold text-slate-900 dark:text-slate-100 truncate font-mono">{group.stock_entry}</span>
-            <span className={`text-[9px] font-semibold px-1 py-px rounded-sm shrink-0 ${statusStyle}`}>
-              {statusLabel}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {group.sent_datetime && (
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 flex items-center gap-0.5">
+                  <Clock className="w-2.5 h-2.5" />
+                  {formatSentTime(group.sent_datetime)}
+                </span>
+              )}
+              <span className={`text-[9px] font-semibold px-1 py-px rounded-sm ${statusStyle}`}>
+                {statusLabel}
+              </span>
+            </div>
           </div>
           {/* Route: source → dest */}
           <div className="flex items-center gap-1 mt-0.5 min-w-0">

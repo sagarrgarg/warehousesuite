@@ -23,7 +23,8 @@ import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModa
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, GripVertical, LayoutGrid } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, GripVertical, LayoutGrid, BarChart3 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { API, formatPowFetchError } from '@/lib/api'
 import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
 import { useTheme } from '@/hooks/useTheme'
@@ -44,6 +45,7 @@ type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-
 type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const {
     selectedProfile, selectedProfileName, setSelectedProfileName,
     profiles, isLoading, profilesError,
@@ -350,6 +352,14 @@ export default function Dashboard() {
                 {timeLabel}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={() => navigate('/analytics')}
+              title="Warehouse Analytics"
+              className="w-8 h-8 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-violet-600 hover:bg-violet-100/80 dark:text-slate-400 dark:hover:text-violet-300 dark:hover:bg-violet-950/50 transition-colors cursor-pointer"
+            >
+              <BarChart3 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+            </button>
             <button
               type="button"
               onClick={toggleTheme}

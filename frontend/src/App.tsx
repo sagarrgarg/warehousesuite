@@ -4,6 +4,7 @@ import { FrappeProvider } from 'frappe-react-sdk'
 import { Toaster } from 'sonner'
 import ErrorBoundary from './components/ErrorBoundary'
 import Dashboard from './pages/Dashboard'
+import Analytics from './pages/Analytics'
 
 function App() {
 	const [isReady, setIsReady] = useState(false)
@@ -35,6 +36,7 @@ function App() {
 				<BrowserRouter basename="/pow">
 					<Routes>
 						<Route index element={<Dashboard />} />
+						<Route path="analytics" element={<Analytics />} />
 						<Route path="*" element={<Navigate to="/" />} />
 					</Routes>
 				</BrowserRouter>

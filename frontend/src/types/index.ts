@@ -99,6 +99,7 @@ export interface DropdownItem {
 export interface TransferReceiveGroup {
 	stock_entry: string
 	posting_date: string
+	sent_datetime: string | null
 	source_warehouse: string
 	in_transit_warehouse: string
 	dest_warehouse: string
