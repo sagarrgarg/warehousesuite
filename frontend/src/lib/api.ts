@@ -117,6 +117,10 @@ export function isGenericFrappeSdkMessage(msg: string): boolean {
 	return GENERIC_FRAPPE_SDK_MESSAGES.has(String(msg).trim())
 }
 
+function stripHtml(html: string): string {
+	return html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, '\n\n').trim()
+}
+
 function parseFrappeServerMessages(raw: unknown): string {
 	if (typeof raw !== 'string' || !raw.trim()) return ''
 	try {
@@ -161,6 +165,10 @@ function extractMessageFromFrappeException(exception: string): string {
  * Prefer server `_server_messages`, then non-generic `message`, then `exception` traceback.
  */
 export function formatPowFetchError(err: unknown, fallback = 'Request failed'): string {
+	return stripHtml(_formatPowFetchErrorRaw(err, fallback))
+}
+
+function _formatPowFetchErrorRaw(err: unknown, fallback: string): string {
 	if (err == null) return fallback
 	if (typeof err === 'string') {
 		const t = err.trim()

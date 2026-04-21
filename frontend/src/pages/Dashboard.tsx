@@ -540,6 +540,7 @@ export default function Dashboard() {
             fetchError={woErrorText}
             onOpen={(woName) => setActiveWOName(woName)}
             onCreateNew={() => setShowCreateWO(true)}
+            onDirectMake={() => setShowDirectMfg(true)}
           />
         </div>
         <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b border-slate-200 dark:border-slate-700 ${mobileTab === 'requests' ? 'flex' : 'hidden'}`}>
@@ -561,6 +562,7 @@ export default function Dashboard() {
             onReceived={refreshAll}
             filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
             powProfileName={selectedProfileName}
+            onSend={() => setActiveModal('transfer-send')}
           />
         </div>
       </section>
@@ -580,6 +582,7 @@ export default function Dashboard() {
             fetchError={woErrorText}
             onOpen={(woName) => setActiveWOName(woName)}
             onCreateNew={() => setShowCreateWO(true)}
+            onDirectMake={() => setShowDirectMfg(true)}
           />
         </div>
         <div
@@ -629,6 +632,7 @@ export default function Dashboard() {
             onReceived={refreshAll}
             filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
             powProfileName={selectedProfileName}
+            onSend={() => setActiveModal('transfer-send')}
           />
         </div>
       </section>

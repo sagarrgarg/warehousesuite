@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, Zap } from 'lucide-react'
 import type { PendingWorkOrder } from '@/types'
 import WorkOrderCard from './WorkOrderCard'
 
@@ -9,6 +9,7 @@ interface PendingWorkOrdersPanelProps {
   fetchError?: string | null
   onOpen: (woName: string) => void
   onCreateNew?: () => void
+  onDirectMake?: () => void
 }
 
 export default function PendingWorkOrdersPanel({
@@ -17,6 +18,7 @@ export default function PendingWorkOrdersPanel({
   fetchError,
   onOpen,
   onCreateNew,
+  onDirectMake,
 }: PendingWorkOrdersPanelProps) {
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900">
@@ -30,15 +32,26 @@ export default function PendingWorkOrdersPanel({
             </span>
           )}
         </div>
-        {onCreateNew && (
-          <button
-            onClick={onCreateNew}
-            className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-purple-900/30"
-          >
-            <Plus className="w-3 h-3" />
-            New WO
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {onDirectMake && (
+            <button
+              onClick={onDirectMake}
+              className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-orange-500 hover:bg-orange-400 active:bg-orange-600 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-orange-900/30"
+            >
+              <Zap className="w-3 h-3" />
+              Make
+            </button>
+          )}
+          {onCreateNew && (
+            <button
+              onClick={onCreateNew}
+              className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-purple-900/30"
+            >
+              <Plus className="w-3 h-3" />
+              New WO
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Column header */}

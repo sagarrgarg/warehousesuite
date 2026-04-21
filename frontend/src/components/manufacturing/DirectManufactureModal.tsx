@@ -44,8 +44,7 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
   const [productionItem, setProductionItem] = useState('')
   const [productionItemName, setProductionItemName] = useState('')
   const [qtyInput, setQtyInput] = useState('1')
-  const [sourceWarehouse, setSourceWarehouse] = useState('')
-  const [fgWarehouse, setFgWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
+  const [warehouse, setWarehouse] = useState(warehouses.target_warehouses[0]?.warehouse ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
   const [itemSubstitutions, setItemSubstitutions] = useState<Record<string, string>>({})
@@ -66,22 +65,17 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
   const { call: fetchBomList } = useFrappePostCall(API.getBomsForItem)
   const { call: submitManufacture } = useFrappePostCall(API.directManufacture)
 
-  const sourceWhs = useMemo(() => {
+  const allWhs = useMemo(() => {
     const all: string[] = []
     const seen = new Set<string>()
-    for (const row of warehouses.source_warehouses) {
+    for (const row of warehouses.target_warehouses) {
       if (!seen.has(row.warehouse)) { seen.add(row.warehouse); all.push(row.warehouse) }
     }
-    for (const row of warehouses.target_warehouses) {
+    for (const row of warehouses.source_warehouses) {
       if (!seen.has(row.warehouse)) { seen.add(row.warehouse); all.push(row.warehouse) }
     }
     return all
   }, [warehouses])
-
-  const targetWhs = useMemo(
-    () => warehouses.target_warehouses.map(w => w.warehouse),
-    [warehouses.target_warehouses],
-  )
 
   useEffect(() => {
     if (!open) return
@@ -96,9 +90,8 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
     setItemQtyOverrides({})
     setSubmitting(false)
     setSuccess(null)
-    setSourceWarehouse(sourceWhs[0] ?? '')
-    setFgWarehouse(targetWhs[0] ?? '')
-  }, [open, sourceWhs, targetWhs])
+    setWarehouse(allWhs[0] ?? '')
+  }, [open, allWhs])
 
   const loadBomDetails = useCallback(async (itemCode: string, bomName?: string) => {
     setBomLoading(true)
@@ -195,7 +188,7 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
     })
   }, [bom, qtyForCalc, itemSubstitutions, itemQtyOverrides])
 
-  const canSubmit = !submitting && productionItem && bom && qtyParsed >= MIN_QTY && sourceWarehouse && fgWarehouse && company
+  const canSubmit = !submitting && productionItem && bom && qtyParsed >= MIN_QTY && warehouse && company
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !bom) return
@@ -215,8 +208,8 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
         bom_no: bom.bom_no,
         qty: qtyParsed,
         company,
-        fg_warehouse: fgWarehouse,
-        source_warehouse: sourceWarehouse,
+        fg_warehouse: warehouse,
+        source_warehouse: warehouse,
         ...(Object.keys(itemSubstitutions).length > 0 && { item_substitutions: JSON.stringify(itemSubstitutions) }),
         ...(Object.keys(qtyOverrides).length > 0 && { item_overrides: JSON.stringify(qtyOverrides) }),
         pow_profile: powProfileName,
@@ -233,7 +226,7 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, productionItem, bom, qtyParsed, company, fgWarehouse, sourceWarehouse, submitManufacture, itemSubstitutions, itemQtyOverrides, itemsWithStatus, powProfileName])
+  }, [canSubmit, productionItem, bom, qtyParsed, company, warehouse, submitManufacture, itemSubstitutions, itemQtyOverrides, itemsWithStatus, powProfileName])
 
   if (!open) return null
 
@@ -354,33 +347,15 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
 
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                Source Warehouse <span className="text-red-600">*</span>
-                <span className="ml-1 text-[10px] text-slate-500 normal-case font-normal">(raw materials from)</span>
+                Warehouse <span className="text-red-600">*</span>
               </label>
               <select
-                value={sourceWarehouse}
-                onChange={e => setSourceWarehouse(e.target.value)}
-                className={`${selectBase} ${!sourceWarehouse ? 'border-red-600' : ''}`}
+                value={warehouse}
+                onChange={e => setWarehouse(e.target.value)}
+                className={`${selectBase} ${!warehouse ? 'border-red-600' : ''}`}
               >
                 <option value="">— Select —</option>
-                {sourceWhs.map(w => (
-                  <option key={w} value={w}>{shortWh(w)}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-                FG Warehouse <span className="text-red-600">*</span>
-                <span className="ml-1 text-[10px] text-slate-500 normal-case font-normal">(finished goods to)</span>
-              </label>
-              <select
-                value={fgWarehouse}
-                onChange={e => setFgWarehouse(e.target.value)}
-                className={`${selectBase} ${!fgWarehouse ? 'border-red-600' : ''}`}
-              >
-                <option value="">— Select —</option>
-                {targetWhs.map(w => (
+                {allWhs.map(w => (
                   <option key={w} value={w}>{shortWh(w)}</option>
                 ))}
               </select>

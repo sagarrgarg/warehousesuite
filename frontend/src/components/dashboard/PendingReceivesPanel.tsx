@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { MapPin } from 'lucide-react'
+import { MapPin, ArrowUpFromLine } from 'lucide-react'
 import type { TransferReceiveGroup } from '@/types'
 import PendingReceiveCard from './PendingReceiveCard'
 
@@ -11,6 +11,7 @@ interface PendingReceivesPanelProps {
   onReceived: () => void
   filterEmptyHint?: string
   powProfileName: string | null
+  onSend?: () => void
 }
 
 function shortWarehouse(name: string) {
@@ -25,6 +26,7 @@ export default function PendingReceivesPanel({
   onReceived,
   filterEmptyHint,
   powProfileName,
+  onSend,
 }: PendingReceivesPanelProps) {
   const pendingReceives = receives.filter(r => r.status !== 'Complete')
 
@@ -60,11 +62,22 @@ export default function PendingReceivesPanel({
             </span>
           )}
         </div>
-        {grouped.length > 1 && (
-          <span className="text-[9px] text-slate-500 dark:text-slate-400">
-            {grouped.length} warehouses
-          </span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {grouped.length > 1 && (
+            <span className="text-[9px] text-slate-500 dark:text-slate-400">
+              {grouped.length} wh
+            </span>
+          )}
+          {onSend && (
+            <button
+              onClick={onSend}
+              className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-orange-600 hover:bg-orange-500 active:bg-orange-700 rounded px-2.5 py-1 transition-colors cursor-pointer touch-manipulation shadow-sm shadow-orange-900/30"
+            >
+              <ArrowUpFromLine className="w-3 h-3" />
+              Send
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Data feed */}
