@@ -1,6 +1,6 @@
 import {
   ArrowUpFromLine, ClipboardCheck, Search,
-  PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle,
+  PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle, Zap,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -32,6 +32,15 @@ const ACTIONS: ActionDef[] = [
     textClass: 'text-white',
     operationKey: 'material_transfer',
     badgeKey: 'sent',
+    reactView: true,
+  },
+  {
+    id: 'direct-manufacture',
+    label: 'Make',
+    icon: <Zap className="w-4 h-4" />,
+    color: 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-500',
+    textClass: 'text-white',
+    operationKey: 'manufacturing',
     reactView: true,
   },
   {

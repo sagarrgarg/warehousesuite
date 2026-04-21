@@ -7,6 +7,7 @@ this module is a thin auth + parsing layer.
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 from warehousesuite.services.pow_work_order_service import (
     get_pending_work_orders,
@@ -21,6 +22,7 @@ from warehousesuite.services.pow_work_order_service import (
     get_material_shortfall,
     raise_material_request_for_wo,
     get_alternative_items,
+    direct_manufacture,
 )
 
 
@@ -380,6 +382,59 @@ def get_item_alternatives(item_code):
     if not item_code:
         frappe.throw(_("item_code is required"))
     return get_alternative_items(item_code)
+
+
+@frappe.whitelist()
+def direct_manufacture_entry(
+    item_code,
+    bom_no,
+    qty,
+    company,
+    fg_warehouse,
+    source_warehouse,
+    item_substitutions=None,
+    item_overrides=None,
+    pow_profile=None,
+    pow_fg_batch_no=None,
+    batch_serial_data=None,
+):
+    """Create a Manufacture Stock Entry directly from a BOM, bypassing Work Orders.
+
+    Args:
+        item_code: finished goods item (required)
+        bom_no: BOM to manufacture from (required)
+        qty: quantity to produce (required)
+        company: company name (required)
+        fg_warehouse: target FG warehouse (required)
+        source_warehouse: raw material source warehouse (required)
+        item_substitutions: optional JSON dict {original_item: substitute_item}
+        pow_profile: POW Profile for warehouse scope validation
+        pow_fg_batch_no: optional FG batch number
+        batch_serial_data: optional JSON batch/serial selections
+
+    Returns:
+        dict with status, stock_entry, message.
+    """
+    if not all([item_code, bom_no, qty, company, fg_warehouse, source_warehouse]):
+        frappe.throw(_("item_code, bom_no, qty, company, fg_warehouse, and source_warehouse are required"))
+
+    if pow_profile:
+        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
+        _p, allowed = validate_pow_profile_access(pow_profile)
+        assert_warehouses_in_scope([fg_warehouse, source_warehouse], allowed, label="Warehouse")
+
+    return direct_manufacture(
+        item_code=item_code,
+        bom_no=bom_no,
+        qty=flt(qty),
+        company=company,
+        fg_warehouse=fg_warehouse,
+        source_warehouse=source_warehouse,
+        item_substitutions=item_substitutions,
+        item_overrides=item_overrides,
+        pow_fg_batch_no=pow_fg_batch_no or None,
+        batch_serial_data=batch_serial_data,
+    )
 
 
 @frappe.whitelist()

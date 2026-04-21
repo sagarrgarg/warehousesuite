@@ -19,6 +19,7 @@ import ItemInquiryModal from '@/components/item-inquiry/ItemInquiryModal'
 import StockConcernsModal from '@/components/concerns/StockConcernsModal'
 import NotificationBanner from '@/components/layout/NotificationBanner'
 import CreateWorkOrderModal from '@/components/manufacturing/CreateWorkOrderModal'
+import DirectManufactureModal from '@/components/manufacturing/DirectManufactureModal'
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
@@ -163,6 +164,7 @@ export default function Dashboard() {
 
   // WO modal state
   const [showCreateWO, setShowCreateWO] = useState(false)
+  const [showDirectMfg, setShowDirectMfg] = useState(false)
   const [activeWOName, setActiveWOName] = useState<string | null>(null)
   const [woDetailAction, setWoDetailAction] = useState<'manufacture' | 'request' | null>(null)
   const [woForAction, setWoForAction] = useState<WODetail | null>(null)
@@ -175,6 +177,7 @@ export default function Dashboard() {
     Boolean(fulfillMR) ||
     showRaiseMR ||
     showCreateWO ||
+    showDirectMfg ||
     Boolean(activeWOName) ||
     Boolean(woDetailAction)
 
@@ -286,6 +289,9 @@ export default function Dashboard() {
     switch (action) {
       case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report': case 'stock-concerns':
         setActiveModal(action as ModalType)
+        break
+      case 'direct-manufacture':
+        setShowDirectMfg(true)
         break
     }
   }
@@ -713,6 +719,14 @@ export default function Dashboard() {
         <CreateWorkOrderModal
           open
           onClose={() => { setShowCreateWO(false); refreshWOs() }}
+          warehouses={warehouses}
+          powProfileName={selectedProfileName}
+        />
+      )}
+      {showDirectMfg && warehouses && selectedProfileName && (
+        <DirectManufactureModal
+          open
+          onClose={() => setShowDirectMfg(false)}
           warehouses={warehouses}
           powProfileName={selectedProfileName}
         />

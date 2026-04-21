@@ -1296,6 +1296,148 @@ def _apply_substitutions_to_stock_entry(wo, stock_entry, item_substitutions=None
         row.allow_alternative_item = 1
 
 
+def direct_manufacture(
+	item_code,
+	bom_no,
+	qty,
+	company,
+	fg_warehouse,
+	source_warehouse,
+	item_substitutions=None,
+	item_overrides=None,
+	pow_fg_batch_no=None,
+	batch_serial_data=None,
+):
+	"""Create and submit a Manufacture Stock Entry directly from a BOM, no Work Order.
+
+	Uses ERPNext's Stock Entry BOM explosion (from_bom=1) to calculate raw
+	materials. FG row is appended manually. All operations use Frappe ORM —
+	no direct SQL.
+
+	Args:
+		item_code: finished goods item code
+		bom_no: BOM to explode
+		qty: quantity to manufacture
+		company: company name
+		fg_warehouse: target warehouse for finished goods
+		source_warehouse: source warehouse for raw materials
+		item_substitutions: optional dict {original_item: substitute_item}
+		pow_fg_batch_no: optional batch number for FG
+		batch_serial_data: optional dict of batch/serial selections per item
+
+	Returns:
+		dict with status, stock_entry, message
+	"""
+	qty = flt(qty)
+	if qty <= 0:
+		frappe.throw(_("Quantity must be greater than zero"))
+
+	bom = frappe.get_doc("BOM", bom_no)
+	if bom.item != item_code:
+		frappe.throw(_("BOM {0} is not for item {1}").format(bom_no, item_code))
+	if not bom.is_active or bom.docstatus != 1:
+		frappe.throw(_("BOM {0} is not active").format(bom_no))
+
+	subs = {}
+	if item_substitutions:
+		subs = frappe.parse_json(item_substitutions) if isinstance(item_substitutions, str) else item_substitutions
+
+	batch_data = {}
+	if batch_serial_data:
+		batch_data = frappe.parse_json(batch_serial_data) if isinstance(batch_serial_data, str) else batch_serial_data
+
+	se = frappe.new_doc("Stock Entry")
+	se.stock_entry_type = "Manufacture"
+	se.company = company
+	se.from_bom = 1
+	se.bom_no = bom_no
+	se.fg_completed_qty = qty
+	se.from_warehouse = source_warehouse
+	se.to_warehouse = fg_warehouse
+	se.posting_date = today()
+	se.posting_time = nowtime()
+	se.get_items()
+
+	if subs:
+		for item_row in se.items:
+			if item_row.is_finished_item or item_row.is_scrap_item:
+				continue
+			original = item_row.item_code
+			substitute = subs.get(original)
+			if not substitute or substitute == original:
+				continue
+
+			alt_codes = _get_recursive_alternative_codes(original)
+			if substitute not in alt_codes:
+				frappe.throw(
+					_("{0} is not a valid alternative for {1}").format(substitute, original)
+				)
+
+			sub_doc = frappe.get_doc("Item", substitute)
+			item_row.original_item = original
+			item_row.item_code = substitute
+			item_row.item_name = sub_doc.item_name
+			item_row.stock_uom = sub_doc.stock_uom
+			item_row.uom = sub_doc.stock_uom
+			item_row.description = sub_doc.description or sub_doc.item_name
+
+	overrides = {}
+	if item_overrides:
+		overrides = frappe.parse_json(item_overrides) if isinstance(item_overrides, str) else item_overrides
+
+	if overrides:
+		for item_row in se.items:
+			if item_row.is_finished_item or item_row.is_scrap_item:
+				continue
+			key = item_row.item_code
+			if key in overrides:
+				item_row.qty = flt(overrides[key])
+				item_row.transfer_qty = flt(overrides[key]) * flt(item_row.conversion_factor or 1)
+
+	fg_item = frappe.get_doc("Item", item_code)
+	se.append("items", {
+		"item_code": item_code,
+		"item_name": fg_item.item_name,
+		"description": fg_item.description or fg_item.item_name,
+		"qty": qty,
+		"uom": bom.uom or fg_item.stock_uom,
+		"stock_uom": fg_item.stock_uom,
+		"conversion_factor": 1,
+		"t_warehouse": fg_warehouse,
+		"is_finished_item": 1,
+	})
+
+	if pow_fg_batch_no:
+		fg_row = se.items[-1]
+		fg_row.batch_no = pow_fg_batch_no
+		fg_row.use_serial_batch_fields = 1
+
+	if batch_data:
+		for item_row in se.items:
+			if item_row.is_finished_item or item_row.is_scrap_item:
+				continue
+			key = item_row.item_code
+			if key in batch_data and batch_data[key]:
+				entry = batch_data[key]
+				if isinstance(entry, list):
+					entry = entry[0] if entry else {}
+				if entry.get("batch_no"):
+					item_row.batch_no = entry["batch_no"]
+					item_row.use_serial_batch_fields = 1
+				if entry.get("serial_no"):
+					item_row.serial_no = entry["serial_no"]
+					item_row.use_serial_batch_fields = 1
+
+	se.insert()
+	se.submit()
+
+	return {
+		"status": "success",
+		"stock_entry": se.name,
+		"message": _("Manufactured {0} × {1} via {2}").format(qty, item_code, se.name),
+	}
+
+
 def _get_item_availability(item_code, allowed_warehouses=None):
     """Return up to 10 positive-stock warehouses for an item."""
     availability = _query_bin_availability_for_item(item_code, allowed_warehouses, limit=10)

@@ -56,6 +56,7 @@ export const API = {
 	raiseMRForWO: `${WO_BASE}.raise_mr_for_work_order`,
 	getItemAlternatives: `${WO_BASE}.get_item_alternatives`,
 	getBomsForItem: `${WO_BASE}.get_boms_for_item`,
+	directManufacture: `${WO_BASE}.direct_manufacture_entry`,
 
 	// Sales Order pending delivery (POW profile gated)
 	getSOPendingLines: `${SO_REP_BASE}.get_pow_so_pending_lines`,
