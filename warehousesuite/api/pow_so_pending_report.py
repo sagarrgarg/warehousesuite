@@ -82,6 +82,167 @@ def search_so_report_customers(pow_profile, txt=None):
 
 
 @frappe.whitelist()
+def get_so_analytics(pow_profile):
+	"""Sales Order analytics: turnaround, nearly complete, modifications, top cities/parties."""
+	from datetime import datetime, timedelta
+	from frappe.utils import flt
+
+	profile = assert_pow_so_pending_report_access(pow_profile)
+	company = profile.company
+	now = datetime.now()
+	d7 = now - timedelta(days=7)
+	d30 = now - timedelta(days=30)
+	d180 = now - timedelta(days=180)
+
+	turnaround_sql = """
+		SELECT
+			period,
+			COUNT(*) as order_count,
+			ROUND(AVG(hrs_to_dn), 1) as avg_hrs_to_dn,
+			ROUND(AVG(hrs_to_si), 1) as avg_hrs_to_si
+		FROM (
+			SELECT
+				so.name,
+				so.creation as so_created,
+				CASE
+					WHEN so.creation >= %s THEN '7d'
+					WHEN so.creation >= %s THEN '30d'
+					ELSE '6m'
+				END as period,
+				(SELECT TIMESTAMPDIFF(HOUR, so.creation, MIN(dn.creation))
+				 FROM `tabDelivery Note Item` dni
+				 INNER JOIN `tabDelivery Note` dn ON dni.parent = dn.name AND dn.docstatus = 1
+				 WHERE dni.against_sales_order = so.name) as hrs_to_dn,
+				(SELECT TIMESTAMPDIFF(HOUR, so.creation, MIN(si.creation))
+				 FROM `tabSales Invoice Item` sii
+				 INNER JOIN `tabSales Invoice` si ON sii.parent = si.name AND si.docstatus = 1
+				 WHERE sii.sales_order = so.name) as hrs_to_si
+			FROM `tabSales Order` so
+			WHERE so.docstatus = 1
+				AND so.company = %s
+				AND so.creation >= %s
+				AND so.status NOT IN ('Cancelled')
+		) t
+		WHERE hrs_to_dn IS NOT NULL
+		GROUP BY period
+	"""
+	turnaround = frappe.db.sql(turnaround_sql, [d7, d30, company, d180], as_dict=True)
+
+	nearly_complete = frappe.db.sql("""
+		SELECT
+			so.name, so.customer_name, so.grand_total,
+			so.per_delivered, so.per_billed, so.status,
+			so.transaction_date,
+			TIMESTAMPDIFF(DAY, so.transaction_date, CURDATE()) as days_open
+		FROM `tabSales Order` so
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
+			AND so.per_delivered >= 80 AND so.per_billed >= 80
+		ORDER BY so.per_delivered DESC
+		LIMIT 50
+	""", [company], as_dict=True)
+
+	ignore_count = frappe.db.sql("""
+		SELECT COUNT(*) as cnt
+		FROM `tabSales Order` so
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
+			AND so.per_delivered >= 95
+	""", [company], as_dict=True)[0].cnt
+
+	pending_summary = frappe.db.sql("""
+		SELECT
+			so.status,
+			COUNT(*) as cnt,
+			SUM(so.grand_total) as total_value
+		FROM `tabSales Order` so
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
+		GROUP BY so.status
+		ORDER BY cnt DESC
+	""", [company], as_dict=True)
+
+	modifications = frappe.db.sql("""
+		SELECT
+			CASE
+				WHEN v.creation >= %s THEN '7d'
+				WHEN v.creation >= %s THEN '30d'
+				ELSE '6m'
+			END as period,
+			COUNT(DISTINCT v.docname) as orders_modified,
+			COUNT(*) as total_changes
+		FROM `tabVersion` v
+		WHERE v.ref_doctype = 'Sales Order'
+			AND v.creation >= %s
+		GROUP BY period
+	""", [d7, d30, d180], as_dict=True)
+
+	amendments = frappe.db.sql("""
+		SELECT
+			CASE
+				WHEN so.creation >= %s THEN '7d'
+				WHEN so.creation >= %s THEN '30d'
+				ELSE '6m'
+			END as period,
+			COUNT(*) as cnt
+		FROM `tabSales Order` so
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.amended_from IS NOT NULL AND so.amended_from != ''
+			AND so.creation >= %s
+		GROUP BY period
+	""", [d7, d30, company, d180], as_dict=True)
+
+	top_cities = frappe.db.sql("""
+		SELECT addr.city, COUNT(*) as order_count,
+			ROUND(SUM(so.grand_total), 0) as total_value,
+			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
+			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_30d
+		FROM `tabSales Order` so
+		LEFT JOIN `tabAddress` addr ON so.customer_address = addr.name
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.creation >= %s
+			AND addr.city IS NOT NULL AND addr.city != ''
+		GROUP BY addr.city
+		ORDER BY order_count DESC
+		LIMIT 10
+	""", [d7, d30, company, d180], as_dict=True)
+
+	top_customers = frappe.db.sql("""
+		SELECT so.customer_name, COUNT(*) as order_count,
+			ROUND(SUM(so.grand_total), 0) as total_value,
+			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
+			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_30d
+		FROM `tabSales Order` so
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.creation >= %s
+		GROUP BY so.customer_name
+		ORDER BY order_count DESC
+		LIMIT 10
+	""", [d7, d30, company, d180], as_dict=True)
+
+	for row in nearly_complete:
+		row["transaction_date"] = str(row["transaction_date"]) if row.get("transaction_date") else None
+
+	return {
+		"turnaround": turnaround,
+		"nearly_complete": nearly_complete,
+		"nearly_complete_count": len(nearly_complete),
+		"ignore_count": ignore_count,
+		"pending_summary": pending_summary,
+		"modifications": modifications,
+		"amendments": amendments,
+		"top_cities": top_cities,
+		"top_customers": top_customers,
+	}
+
+
+@frappe.whitelist()
 def search_so_report_items(pow_profile, txt=None):
     """Typeahead: items on pending SO lines in profile warehouse scope."""
     profile = assert_pow_so_pending_report_access(pow_profile)

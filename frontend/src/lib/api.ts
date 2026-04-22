@@ -59,6 +59,7 @@ export const API = {
 	directManufacture: `${WO_BASE}.direct_manufacture_entry`,
 
 	// Sales Order pending delivery (POW profile gated)
+	getSOAnalytics: `${SO_REP_BASE}.get_so_analytics`,
 	getSOPendingLines: `${SO_REP_BASE}.get_pow_so_pending_lines`,
 	getSOPendingSummary: `${SO_REP_BASE}.get_pow_so_pending_summary`,
 	searchSOReportCustomers: `${SO_REP_BASE}.search_so_report_customers`,
