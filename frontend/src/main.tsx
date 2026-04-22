@@ -25,7 +25,7 @@ if (import.meta.env.DEV) {
 				const v = typeof values.message === 'string'
 					? JSON.parse(values.message)
 					: values.message
-				if (!window.frappe) (window as any).frappe = {}
+				if (!(window as any).frappe) (window as any).frappe = {}
 				;(window as any).frappe.boot = v
 			}
 			renderApp()

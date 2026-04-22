@@ -56,8 +56,8 @@ export default function NotificationBanner({ powProfileName }: Props) {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [animState, setAnimState] = useState<'visible' | 'exit' | 'enter'>('visible')
   const [blink, setBlink] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
-  const blinkRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const blinkRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const currentNotif = notifications.length > 0
     ? notifications[currentIdx % notifications.length]
