@@ -14,9 +14,11 @@ def _create_stock_entry_types():
 	}
 	for name, purpose in type_map.items():
 		if not frappe.db.exists("Stock Entry Type", name):
-			frappe.get_doc({
-				"doctype": "Stock Entry Type",
-				"name": name,
-				"purpose": purpose,
-			}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "Stock Entry Type",
+					"name": name,
+					"purpose": purpose,
+				}
+			).insert(ignore_permissions=True)
 			frappe.db.commit()

@@ -2,89 +2,88 @@
 
 import frappe
 
-from warehousesuite.utils.pow_warehouse_scope import get_pow_profile_delivery_warehouse_scope
 from warehousesuite.services.pow_so_pending_report_service import (
-    assert_pow_so_pending_report_access,
-    get_so_pending_delivery_lines,
-    get_so_pending_delivery_summary,
-    search_customers_for_so_report,
-    search_items_for_so_report,
+	assert_pow_so_pending_report_access,
+	get_so_pending_delivery_lines,
+	get_so_pending_delivery_summary,
+	search_customers_for_so_report,
+	search_items_for_so_report,
 )
+from warehousesuite.utils.pow_warehouse_scope import get_pow_profile_delivery_warehouse_scope
 
 
 def _parse_filters(customer=None, sales_order=None, item_search=None, item_code=None):
-    """Build filters dict for service (customer + item_code exact from pickers)."""
-    filters = {}
-    if customer and str(customer).strip():
-        filters["customer"] = str(customer).strip()
-    if sales_order and str(sales_order).strip():
-        filters["sales_order"] = str(sales_order).strip()
-    ic = (item_code or "").strip()
-    if ic:
-        filters["item_code"] = ic
-    elif item_search and str(item_search).strip():
-        filters["item_search"] = str(item_search).strip()
-    return filters or None
+	"""Build filters dict for service (customer + item_code exact from pickers)."""
+	filters = {}
+	if customer and str(customer).strip():
+		filters["customer"] = str(customer).strip()
+	if sales_order and str(sales_order).strip():
+		filters["sales_order"] = str(sales_order).strip()
+	ic = (item_code or "").strip()
+	if ic:
+		filters["item_code"] = ic
+	elif item_search and str(item_search).strip():
+		filters["item_search"] = str(item_search).strip()
+	return filters or None
 
 
 @frappe.whitelist()
 def get_pow_so_pending_lines(
-    pow_profile,
-    customer=None,
-    sales_order=None,
-    item_search=None,
-    item_code=None,
-    start=0,
-    page_length=None,
+	pow_profile,
+	customer=None,
+	sales_order=None,
+	item_search=None,
+	item_code=None,
+	start=0,
+	page_length=None,
 ):
-    """Tab 1: pending SO lines (paginated). Scoped to profile warehouses."""
-    profile = assert_pow_so_pending_report_access(pow_profile)
-    allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
-    return get_so_pending_delivery_lines(
-        profile.company,
-        filters=_parse_filters(customer, sales_order, item_search, item_code),
-        allowed_warehouses=allowed,
-        start=start,
-        page_length=page_length,
-    )
+	"""Tab 1: pending SO lines (paginated). Scoped to profile warehouses."""
+	profile = assert_pow_so_pending_report_access(pow_profile)
+	allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+	return get_so_pending_delivery_lines(
+		profile.company,
+		filters=_parse_filters(customer, sales_order, item_search, item_code),
+		allowed_warehouses=allowed,
+		start=start,
+		page_length=page_length,
+	)
 
 
 @frappe.whitelist()
 def get_pow_so_pending_summary(
-    pow_profile,
-    customer=None,
-    sales_order=None,
-    item_search=None,
-    item_code=None,
-    start=0,
-    page_length=None,
+	pow_profile,
+	customer=None,
+	sales_order=None,
+	item_search=None,
+	item_code=None,
+	start=0,
+	page_length=None,
 ):
-    """Tab 2: pending qty by item (paginated). Same scope as lines."""
-    profile = assert_pow_so_pending_report_access(pow_profile)
-    allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
-    return get_so_pending_delivery_summary(
-        profile.company,
-        filters=_parse_filters(customer, sales_order, item_search, item_code),
-        allowed_warehouses=allowed,
-        start=start,
-        page_length=page_length,
-    )
+	"""Tab 2: pending qty by item (paginated). Same scope as lines."""
+	profile = assert_pow_so_pending_report_access(pow_profile)
+	allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+	return get_so_pending_delivery_summary(
+		profile.company,
+		filters=_parse_filters(customer, sales_order, item_search, item_code),
+		allowed_warehouses=allowed,
+		start=start,
+		page_length=page_length,
+	)
 
 
 @frappe.whitelist()
 def search_so_report_customers(pow_profile, txt=None):
-    """Typeahead: customers with pending SO lines in profile warehouse scope."""
-    profile = assert_pow_so_pending_report_access(pow_profile)
-    allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
-    return search_customers_for_so_report(
-        profile.company, txt=txt, allowed_warehouses=allowed
-    )
+	"""Typeahead: customers with pending SO lines in profile warehouse scope."""
+	profile = assert_pow_so_pending_report_access(pow_profile)
+	allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+	return search_customers_for_so_report(profile.company, txt=txt, allowed_warehouses=allowed)
 
 
 @frappe.whitelist()
 def get_so_analytics(pow_profile):
 	"""Sales Order analytics: turnaround, nearly complete, modifications, top cities/parties."""
 	from datetime import datetime, timedelta
+
 	from frappe.utils import flt
 
 	profile = assert_pow_so_pending_report_access(pow_profile)
@@ -139,7 +138,8 @@ def get_so_analytics(pow_profile):
 	"""
 	turnaround = frappe.db.sql(turnaround_sql, [d7, d30, company, d180], as_dict=True)
 
-	nearly_complete = frappe.db.sql(f"""
+	nearly_complete = frappe.db.sql(
+		f"""
 		SELECT
 			so.name, so.customer_name, so.grand_total,
 			so.per_delivered, so.per_billed, so.status,
@@ -154,9 +154,13 @@ def get_so_analytics(pow_profile):
 			{NO_INTERNAL}
 		ORDER BY TIMESTAMPDIFF(DAY, so.transaction_date, CURDATE()) DESC
 		LIMIT 50
-	""", [company], as_dict=True)
+	""",
+		[company],
+		as_dict=True,
+	)
 
-	ignore_count = frappe.db.sql(f"""
+	ignore_count = frappe.db.sql(
+		f"""
 		SELECT COUNT(*) as cnt
 		FROM `tabSales Order` so
 		WHERE so.docstatus = 1
@@ -164,9 +168,13 @@ def get_so_analytics(pow_profile):
 			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
 			AND so.per_delivered >= 95
 			{NO_INTERNAL}
-	""", [company], as_dict=True)[0].cnt
+	""",
+		[company],
+		as_dict=True,
+	)[0].cnt
 
-	pending_summary = frappe.db.sql(f"""
+	pending_summary = frappe.db.sql(
+		f"""
 		SELECT
 			so.status,
 			COUNT(*) as cnt,
@@ -178,9 +186,13 @@ def get_so_analytics(pow_profile):
 			{NO_INTERNAL}
 		GROUP BY so.status
 		ORDER BY cnt DESC
-	""", [company], as_dict=True)
+	""",
+		[company],
+		as_dict=True,
+	)
 
-	modifications = frappe.db.sql("""
+	modifications = frappe.db.sql(
+		"""
 		SELECT
 			CASE
 				WHEN v.creation >= %s THEN '7d'
@@ -193,9 +205,13 @@ def get_so_analytics(pow_profile):
 		WHERE v.ref_doctype = 'Sales Order'
 			AND v.creation >= %s
 		GROUP BY period
-	""", [d7, d30, d180], as_dict=True)
+	""",
+		[d7, d30, d180],
+		as_dict=True,
+	)
 
-	amendments = frappe.db.sql(f"""
+	amendments = frappe.db.sql(
+		f"""
 		SELECT
 			CASE
 				WHEN so.creation >= %s THEN '7d'
@@ -210,9 +226,13 @@ def get_so_analytics(pow_profile):
 			AND so.creation >= %s
 			{NO_INTERNAL}
 		GROUP BY period
-	""", [d7, d30, company, d180], as_dict=True)
+	""",
+		[d7, d30, company, d180],
+		as_dict=True,
+	)
 
-	top_cities = frappe.db.sql(f"""
+	top_cities = frappe.db.sql(
+		f"""
 		SELECT addr.city, COUNT(*) as order_count,
 			ROUND(SUM(so.grand_total), 0) as total_value,
 			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
@@ -227,9 +247,13 @@ def get_so_analytics(pow_profile):
 		GROUP BY addr.city
 		ORDER BY order_count DESC
 		LIMIT 10
-	""", [d7, d30, company, d180], as_dict=True)
+	""",
+		[d7, d30, company, d180],
+		as_dict=True,
+	)
 
-	top_customers = frappe.db.sql(f"""
+	top_customers = frappe.db.sql(
+		f"""
 		SELECT so.customer_name, COUNT(*) as order_count,
 			ROUND(SUM(so.grand_total), 0) as total_value,
 			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
@@ -242,12 +266,16 @@ def get_so_analytics(pow_profile):
 		GROUP BY so.customer_name
 		ORDER BY order_count DESC
 		LIMIT 10
-	""", [d7, d30, company, d180], as_dict=True)
+	""",
+		[d7, d30, company, d180],
+		as_dict=True,
+	)
 
 	for row in nearly_complete:
 		row["transaction_date"] = str(row["transaction_date"]) if row.get("transaction_date") else None
 
-	unfulfillment = frappe.db.sql(f"""
+	unfulfillment = frappe.db.sql(
+		f"""
 		SELECT
 			CASE
 				WHEN so.creation >= %s THEN '7d'
@@ -266,9 +294,13 @@ def get_so_analytics(pow_profile):
 			AND so.status NOT IN ('Cancelled')
 			{NO_INTERNAL}
 		GROUP BY period
-	""", [d7, d14, d30, company, d180], as_dict=True)
+	""",
+		[d7, d14, d30, company, d180],
+		as_dict=True,
+	)
 
-	top_skus = frappe.db.sql(f"""
+	top_skus = frappe.db.sql(
+		f"""
 		SELECT
 			soi.item_code,
 			soi.item_name,
@@ -288,7 +320,10 @@ def get_so_analytics(pow_profile):
 		GROUP BY soi.item_code, soi.item_name, soi.stock_uom
 		ORDER BY total_qty DESC
 		LIMIT 15
-	""", [d7, d14, d30, company, d180], as_dict=True)
+	""",
+		[d7, d14, d30, company, d180],
+		as_dict=True,
+	)
 
 	return {
 		"turnaround": turnaround,
@@ -307,9 +342,7 @@ def get_so_analytics(pow_profile):
 
 @frappe.whitelist()
 def search_so_report_items(pow_profile, txt=None):
-    """Typeahead: items on pending SO lines in profile warehouse scope."""
-    profile = assert_pow_so_pending_report_access(pow_profile)
-    allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
-    return search_items_for_so_report(
-        profile.company, txt=txt, allowed_warehouses=allowed
-    )
+	"""Typeahead: items on pending SO lines in profile warehouse scope."""
+	profile = assert_pow_so_pending_report_access(pow_profile)
+	allowed = get_pow_profile_delivery_warehouse_scope(pow_profile)
+	return search_items_for_so_report(profile.company, txt=txt, allowed_warehouses=allowed)

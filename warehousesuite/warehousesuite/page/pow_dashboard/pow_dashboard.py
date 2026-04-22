@@ -1,225 +1,236 @@
-import frappe
 import json
 import re
+
+import frappe
 from frappe import _
-from frappe.utils import now_datetime, flt, format_datetime
+from frappe.utils import flt, format_datetime, now_datetime
 
 from warehousesuite.warehousesuite.doctype.pow_stock_count.pow_stock_count import (
-    item_row_has_difference,
+	item_row_has_difference,
 )
+
 
 @frappe.whitelist()
 def get_applicable_pow_profiles():
-    user = frappe.session.user
-    profiles = frappe.get_all(
-        "POW Profile",
-        filters={"disabled": 0},
-        fields=["name", "name1", "company"],
-    )
-    # Filter profiles where user is in applicable_users
-    result = []
-    for profile in profiles:
-        users = frappe.get_all(
-            "POW Profile User",
-            filters={"parent": profile.name, "user": user},
-            fields=["user"],
-            parent_doctype="POW Profile"
-        )
-        if users:
-            result.append(profile)
-    return result
+	user = frappe.session.user
+	profiles = frappe.get_all(
+		"POW Profile",
+		filters={"disabled": 0},
+		fields=["name", "name1", "company"],
+	)
+	# Filter profiles where user is in applicable_users
+	result = []
+	for profile in profiles:
+		users = frappe.get_all(
+			"POW Profile User",
+			filters={"parent": profile.name, "user": user},
+			fields=["user"],
+			parent_doctype="POW Profile",
+		)
+		if users:
+			result.append(profile)
+	return result
+
 
 @frappe.whitelist()
 def get_active_pow_session():
-    """Get active POW session for current user"""
-    user = frappe.session.user
-    active_session = frappe.get_all(
-        "POW Session",
-        filters={
-            "assigned_user": user,
-            "session_status": "Open",
-            "docstatus": 1
-        },
-        fields=["name", "pow_profile", "company", "opening_shift_time"],
-        limit=1
-    )
-    return active_session[0] if active_session else None
+	"""Get active POW session for current user"""
+	user = frappe.session.user
+	active_session = frappe.get_all(
+		"POW Session",
+		filters={"assigned_user": user, "session_status": "Open", "docstatus": 1},
+		fields=["name", "pow_profile", "company", "opening_shift_time"],
+		limit=1,
+	)
+	return active_session[0] if active_session else None
+
 
 @frappe.whitelist()
 def create_pow_session(pow_profile, default_warehouse=None):
-    user = frappe.session.user
-    doc = frappe.new_doc("POW Session")
-    doc.pow_profile = pow_profile
-    doc.company = frappe.db.get_value("POW Profile", pow_profile, "company")
-    doc.assigned_user = user
-    doc.session_status = "Open"
-    doc.opening_shift_time = now_datetime()
-    
-    # Add default warehouse if provided
-    if default_warehouse:
-        doc.default_warehouse = default_warehouse
-    
-    doc.insert()
-    doc.submit()
-    return doc.name
+	user = frappe.session.user
+	doc = frappe.new_doc("POW Session")
+	doc.pow_profile = pow_profile
+	doc.company = frappe.db.get_value("POW Profile", pow_profile, "company")
+	doc.assigned_user = user
+	doc.session_status = "Open"
+	doc.opening_shift_time = now_datetime()
+
+	# Add default warehouse if provided
+	if default_warehouse:
+		doc.default_warehouse = default_warehouse
+
+	doc.insert()
+	doc.submit()
+	return doc.name
+
 
 @frappe.whitelist()
 def update_session_default_warehouse(session_name, default_warehouse):
-    """Update the default warehouse for an active session"""
-    try:
-        session = frappe.get_doc("POW Session", session_name)
-        session.default_warehouse = default_warehouse
-        session.save()
-        return {"status": "success", "message": "Default warehouse updated"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+	"""Update the default warehouse for an active session"""
+	try:
+		session = frappe.get_doc("POW Session", session_name)
+		session.default_warehouse = default_warehouse
+		session.save()
+		return {"status": "success", "message": "Default warehouse updated"}
+	except Exception as e:
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def close_pow_session(session_name):
-    """Close the current POW session"""
-    try:
-        assigned = frappe.db.get_value("POW Session", session_name, "assigned_user")
-        if assigned and assigned != frappe.session.user and "System Manager" not in frappe.get_roles():
-            frappe.throw(_("You can only close your own session."), frappe.PermissionError)
+	"""Close the current POW session"""
+	try:
+		assigned = frappe.db.get_value("POW Session", session_name, "assigned_user")
+		if assigned and assigned != frappe.session.user and "System Manager" not in frappe.get_roles():
+			frappe.throw(_("You can only close your own session."), frappe.PermissionError)
 
-        current_status = frappe.db.get_value("POW Session", session_name, "session_status")
-        if current_status == "Close":
-            return {"status": "error", "message": "Session is already closed"}
-        
-        # Update session status and closing time directly in database
-        frappe.db.set_value("POW Session", session_name, "session_status", "Close")
-        frappe.db.set_value("POW Session", session_name, "closing_shift_time", now_datetime())
-        
-        # Commit the changes
-        frappe.db.commit()
-        
-        return {"status": "success", "message": f"Session {session_name} closed successfully"}
-    except Exception as e:
-        frappe.logger().error(f"Error closing POW session {session_name}: {str(e)}")
-        return {"status": "error", "message": str(e)}
+		current_status = frappe.db.get_value("POW Session", session_name, "session_status")
+		if current_status == "Close":
+			return {"status": "error", "message": "Session is already closed"}
+
+		# Update session status and closing time directly in database
+		frappe.db.set_value("POW Session", session_name, "session_status", "Close")
+		frappe.db.set_value("POW Session", session_name, "closing_shift_time", now_datetime())
+
+		# Commit the changes
+		frappe.db.commit()
+
+		return {"status": "success", "message": f"Session {session_name} closed successfully"}
+	except Exception as e:
+		frappe.logger().error(f"Error closing POW session {session_name}: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 def get_all_child_warehouses(parent_warehouse, exclude_in_transit_warehouse=None):
-    """Recursively get all child warehouses under a parent warehouse, excluding group and in-transit warehouses"""
-    child_warehouses = []
-    
-    # Get direct children, excluding group warehouses and in-transit warehouses
-    children = frappe.get_all(
-        "Warehouse",
-        filters={
-            "parent_warehouse": parent_warehouse,
-            "is_group": 0  # Exclude group warehouses
-        },
-        fields=["name", "warehouse_name", "warehouse_type"]
-    )
-    
-    for child in children:
-        # Skip in-transit warehouses if specified
-        if exclude_in_transit_warehouse and child.name == exclude_in_transit_warehouse:
-            continue
-            
-        # Only add non-group warehouses
-        if not child.get("is_group"):
-            child_warehouses.append({
-                "name": child.name,
-                "warehouse_name": child.warehouse_name
-            })
-        
-        # Recursively get children of this child
-        grand_children = get_all_child_warehouses(child.name, exclude_in_transit_warehouse)
-        child_warehouses.extend(grand_children)
-    
-    return child_warehouses
+	"""Recursively get all child warehouses under a parent warehouse, excluding group and in-transit warehouses"""
+	child_warehouses = []
+
+	# Get direct children, excluding group warehouses and in-transit warehouses
+	children = frappe.get_all(
+		"Warehouse",
+		filters={
+			"parent_warehouse": parent_warehouse,
+			"is_group": 0,  # Exclude group warehouses
+		},
+		fields=["name", "warehouse_name", "warehouse_type"],
+	)
+
+	for child in children:
+		# Skip in-transit warehouses if specified
+		if exclude_in_transit_warehouse and child.name == exclude_in_transit_warehouse:
+			continue
+
+		# Only add non-group warehouses
+		if not child.get("is_group"):
+			child_warehouses.append({"name": child.name, "warehouse_name": child.warehouse_name})
+
+		# Recursively get children of this child
+		grand_children = get_all_child_warehouses(child.name, exclude_in_transit_warehouse)
+		child_warehouses.extend(grand_children)
+
+	return child_warehouses
+
 
 @frappe.whitelist()
 def get_pow_profile_warehouses(pow_profile):
-    """Get source, target, and in-transit warehouses from POW profile"""
-    profile = frappe.get_doc("POW Profile", pow_profile)
-    
-    # Get source warehouses
-    source_warehouses = []
-    if profile.source_warehouse:
-        for row in profile.source_warehouse:
-            source_warehouses.append({
-                "warehouse": row.warehouse,
-                "warehouse_name": frappe.db.get_value("Warehouse", row.warehouse, "warehouse_name")
-            })
-    
-    # Get in-transit warehouse (single selection) - get this first to exclude it from target warehouses
-    in_transit_warehouse = None
-    in_transit_warehouse_name = None
-    if profile.in_transit_warehouse:
-        in_transit_warehouse = profile.in_transit_warehouse
-        in_transit_warehouse_name = frappe.db.get_value("Warehouse", profile.in_transit_warehouse, "warehouse_name")
-    
-    # Get target warehouses (including all descendants, excluding in-transit warehouses)
-    target_warehouses = []
-    if profile.target_warehouse:
-        for row in profile.target_warehouse:
-            # Check if the direct target warehouse is not a group warehouse
-            warehouse_doc = frappe.get_doc("Warehouse", row.warehouse)
-            if not warehouse_doc.is_group:
-                target_warehouses.append({
-                    "warehouse": row.warehouse,
-                    "warehouse_name": frappe.db.get_value("Warehouse", row.warehouse, "warehouse_name")
-                })
-            
-            # Add all child warehouses recursively, excluding in-transit warehouses
-            child_warehouses = get_all_child_warehouses(row.warehouse, in_transit_warehouse)
-            for child in child_warehouses:
-                target_warehouses.append({
-                    "warehouse": child["name"],
-                    "warehouse_name": child["warehouse_name"]
-                })
-    
-    # Create in-transit warehouse object for return
-    in_transit_warehouse_obj = None
-    if in_transit_warehouse and in_transit_warehouse_name:
-        in_transit_warehouse_obj = {
-            "warehouse": in_transit_warehouse,
-            "warehouse_name": in_transit_warehouse_name
-        }
-    
-    return {
-        "source_warehouses": source_warehouses,
-        "target_warehouses": target_warehouses,
-        "in_transit_warehouse": in_transit_warehouse_obj
-    }
+	"""Get source, target, and in-transit warehouses from POW profile"""
+	profile = frappe.get_doc("POW Profile", pow_profile)
+
+	# Get source warehouses
+	source_warehouses = []
+	if profile.source_warehouse:
+		for row in profile.source_warehouse:
+			source_warehouses.append(
+				{
+					"warehouse": row.warehouse,
+					"warehouse_name": frappe.db.get_value("Warehouse", row.warehouse, "warehouse_name"),
+				}
+			)
+
+	# Get in-transit warehouse (single selection) - get this first to exclude it from target warehouses
+	in_transit_warehouse = None
+	in_transit_warehouse_name = None
+	if profile.in_transit_warehouse:
+		in_transit_warehouse = profile.in_transit_warehouse
+		in_transit_warehouse_name = frappe.db.get_value(
+			"Warehouse", profile.in_transit_warehouse, "warehouse_name"
+		)
+
+	# Get target warehouses (including all descendants, excluding in-transit warehouses)
+	target_warehouses = []
+	if profile.target_warehouse:
+		for row in profile.target_warehouse:
+			# Check if the direct target warehouse is not a group warehouse
+			warehouse_doc = frappe.get_doc("Warehouse", row.warehouse)
+			if not warehouse_doc.is_group:
+				target_warehouses.append(
+					{
+						"warehouse": row.warehouse,
+						"warehouse_name": frappe.db.get_value("Warehouse", row.warehouse, "warehouse_name"),
+					}
+				)
+
+			# Add all child warehouses recursively, excluding in-transit warehouses
+			child_warehouses = get_all_child_warehouses(row.warehouse, in_transit_warehouse)
+			for child in child_warehouses:
+				target_warehouses.append(
+					{"warehouse": child["name"], "warehouse_name": child["warehouse_name"]}
+				)
+
+	# Create in-transit warehouse object for return
+	in_transit_warehouse_obj = None
+	if in_transit_warehouse and in_transit_warehouse_name:
+		in_transit_warehouse_obj = {
+			"warehouse": in_transit_warehouse,
+			"warehouse_name": in_transit_warehouse_name,
+		}
+
+	return {
+		"source_warehouses": source_warehouses,
+		"target_warehouses": target_warehouses,
+		"in_transit_warehouse": in_transit_warehouse_obj,
+	}
+
 
 @frappe.whitelist()
 def get_pow_profile_operations(pow_profile):
-    """Get allowed operations from POW profile"""
-    profile = frappe.get_doc("POW Profile", pow_profile)
-    
-    return {
-        "material_transfer": bool(profile.material_transfer),
-        "manufacturing": bool(profile.manufacturing),
-        "purchase_receipt": bool(profile.purchase_receipt),
-        "repack": bool(profile.repack),
-        "delivery_note": bool(profile.delivery_note),
-        "stock_count": bool(profile.stock_count),
-        "sales_order_pending_report": bool(
-            getattr(profile, "sales_order_pending_report", 0)
-        ),
-        "stock_concern": bool(getattr(profile, "stock_concern", 0)),
-    }
+	"""Get allowed operations from POW profile"""
+	profile = frappe.get_doc("POW Profile", pow_profile)
+
+	return {
+		"material_transfer": bool(profile.material_transfer),
+		"manufacturing": bool(profile.manufacturing),
+		"purchase_receipt": bool(profile.purchase_receipt),
+		"repack": bool(profile.repack),
+		"delivery_note": bool(profile.delivery_note),
+		"stock_count": bool(profile.stock_count),
+		"sales_order_pending_report": bool(getattr(profile, "sales_order_pending_report", 0)),
+		"stock_concern": bool(getattr(profile, "stock_concern", 0)),
+	}
+
 
 @frappe.whitelist()
 def get_items_for_dropdown(warehouse=None, show_only_stock_items=False, pow_profile=None):
-    """Get items for dropdown with item_code:item_name format and optional stock filtering.
+	"""Get items for dropdown with item_code:item_name format and optional stock filtering.
 
-    When ``pow_profile`` is set, validates that ``warehouse`` belongs to the
-    profile scope before returning stock data.
-    """
-    try:
-        show_only_stock_items = show_only_stock_items in (True, 1, "1", "true", "True")
+	When ``pow_profile`` is set, validates that ``warehouse`` belongs to the
+	profile scope before returning stock data.
+	"""
+	try:
+		show_only_stock_items = show_only_stock_items in (True, 1, "1", "true", "True")
 
-        if pow_profile and warehouse:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
-        if warehouse and show_only_stock_items:
-            # Use efficient JOIN query for items with stock (like stock count)
-            items = frappe.db.sql("""
+		if pow_profile and warehouse:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
+
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+		if warehouse and show_only_stock_items:
+			# Use efficient JOIN query for items with stock (like stock count)
+			items = frappe.db.sql(
+				"""
                 SELECT
                     b.item_code,
                     i.item_name,
@@ -233,529 +244,569 @@ def get_items_for_dropdown(warehouse=None, show_only_stock_items=False, pow_prof
                     AND b.actual_qty > 0
                     AND i.disabled = 0
                 ORDER BY i.item_name
-            """, warehouse, as_dict=True)
+            """,
+				warehouse,
+				as_dict=True,
+			)
 
-            # Format the results
-            result = [{
-                "item_code": item.item_code,
-                "item_name": item.item_name or item.item_code,
-                "stock_qty": item.stock_qty,
-                "stock_uom": item.stock_uom,
-                "has_batch_no": item.has_batch_no,
-                "has_serial_no": item.has_serial_no,
-            } for item in items]
-            
-        else:
-            # Get all enabled items when no warehouse specified or show_only_stock_items is False
-            items = frappe.get_all(
-                "Item",
-                filters={"disabled": 0},
-                fields=["name as item_code", "item_name", "stock_uom", "has_batch_no", "has_serial_no"],
-            )
+			# Format the results
+			result = [
+				{
+					"item_code": item.item_code,
+					"item_name": item.item_name or item.item_code,
+					"stock_qty": item.stock_qty,
+					"stock_uom": item.stock_uom,
+					"has_batch_no": item.has_batch_no,
+					"has_serial_no": item.has_serial_no,
+				}
+				for item in items
+			]
 
-            result = []
-            for item in items:
-                item_data = {
-                    "item_code": item.item_code,
-                    "item_name": item.item_name or item.item_code,
-                    "stock_uom": item.stock_uom,
-                    "stock_qty": 0,
-                    "has_batch_no": item.has_batch_no,
-                    "has_serial_no": item.has_serial_no,
-                }
-                
-                # Get stock information if warehouse is specified
-                if warehouse:
-                    stock_qty = frappe.db.get_value("Bin", 
-                        {"item_code": item.item_code, "warehouse": warehouse}, 
-                        "actual_qty") or 0
-                    item_data["stock_qty"] = stock_qty
-                
-                result.append(item_data)
-        
-        return result
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in get_items_for_dropdown: {str(e)}")
-        return []
+		else:
+			# Get all enabled items when no warehouse specified or show_only_stock_items is False
+			items = frappe.get_all(
+				"Item",
+				filters={"disabled": 0},
+				fields=["name as item_code", "item_name", "stock_uom", "has_batch_no", "has_serial_no"],
+			)
+
+			result = []
+			for item in items:
+				item_data = {
+					"item_code": item.item_code,
+					"item_name": item.item_name or item.item_code,
+					"stock_uom": item.stock_uom,
+					"stock_qty": 0,
+					"has_batch_no": item.has_batch_no,
+					"has_serial_no": item.has_serial_no,
+				}
+
+				# Get stock information if warehouse is specified
+				if warehouse:
+					stock_qty = (
+						frappe.db.get_value(
+							"Bin", {"item_code": item.item_code, "warehouse": warehouse}, "actual_qty"
+						)
+						or 0
+					)
+					item_data["stock_qty"] = stock_qty
+
+				result.append(item_data)
+
+		return result
+
+	except Exception as e:
+		frappe.logger().error(f"Error in get_items_for_dropdown: {e!s}")
+		return []
+
 
 @frappe.whitelist()
 def get_item_uoms(item_code):
-    """Get available UOMs for an item with conversion factors."""
-    item = frappe.get_doc("Item", item_code)
-    allowed_uoms = [item.stock_uom]
-    uom_conversions = {item.stock_uom: 1}
+	"""Get available UOMs for an item with conversion factors."""
+	item = frappe.get_doc("Item", item_code)
+	allowed_uoms = [item.stock_uom]
+	uom_conversions = {item.stock_uom: 1}
 
-    if item.uoms:
-        for uom_entry in item.uoms:
-            if uom_entry.uom and uom_entry.uom not in allowed_uoms:
-                allowed_uoms.append(uom_entry.uom)
-                uom_conversions[uom_entry.uom] = uom_entry.conversion_factor or 1
+	if item.uoms:
+		for uom_entry in item.uoms:
+			if uom_entry.uom and uom_entry.uom not in allowed_uoms:
+				allowed_uoms.append(uom_entry.uom)
+				uom_conversions[uom_entry.uom] = uom_entry.conversion_factor or 1
 
-    return {"uoms": allowed_uoms, "uom_conversions": uom_conversions, "stock_uom": item.stock_uom}
+	return {"uoms": allowed_uoms, "uom_conversions": uom_conversions, "stock_uom": item.stock_uom}
+
 
 @frappe.whitelist()
 def get_item_availability(item_code, pow_profile=None):
-    """Return available UOMs with conversion factors and warehouse-wise stock for an item.
+	"""Return available UOMs with conversion factors and warehouse-wise stock for an item.
 
-    When ``pow_profile`` is set, stock is limited to the profile's source ∪ target
-    warehouse scope. Without it, returns stock across all warehouses (legacy / Desk).
-    """
-    item = frappe.get_doc("Item", item_code)
+	When ``pow_profile`` is set, stock is limited to the profile's source ∪ target
+	warehouse scope. Without it, returns stock across all warehouses (legacy / Desk).
+	"""
+	item = frappe.get_doc("Item", item_code)
 
-    uoms = [item.stock_uom]
-    uom_conversions = [{"uom": item.stock_uom, "conversion_factor": 1}]
-    for row in item.uoms or []:
-        if row.uom and row.uom not in uoms:
-            uoms.append(row.uom)
-            uom_conversions.append({"uom": row.uom, "conversion_factor": row.conversion_factor or 1})
+	uoms = [item.stock_uom]
+	uom_conversions = [{"uom": item.stock_uom, "conversion_factor": 1}]
+	for row in item.uoms or []:
+		if row.uom and row.uom not in uoms:
+			uoms.append(row.uom)
+			uom_conversions.append({"uom": row.uom, "conversion_factor": row.conversion_factor or 1})
 
-    sql = """
+	sql = """
         SELECT b.warehouse, w.warehouse_name, b.actual_qty
         FROM `tabBin` b
         LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
         WHERE b.item_code = %s AND b.actual_qty > 0
     """
-    params = [item_code]
+	params = [item_code]
 
-    if pow_profile:
-        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
-        _p, allowed = validate_pow_profile_access(pow_profile)
-        if allowed:
-            placeholders = ", ".join(["%s"] * len(allowed))
-            sql += f" AND b.warehouse IN ({placeholders})"
-            params.extend(allowed)
-        else:
-            return {"uoms": uoms, "stock_uom": item.stock_uom, "uom_conversions": uom_conversions, "availability": []}
+	if pow_profile:
+		from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
 
-    sql += " ORDER BY b.actual_qty DESC"
-    bins = frappe.db.sql(sql, params, as_dict=True)
+		_p, allowed = validate_pow_profile_access(pow_profile)
+		if allowed:
+			placeholders = ", ".join(["%s"] * len(allowed))
+			sql += f" AND b.warehouse IN ({placeholders})"
+			params.extend(allowed)
+		else:
+			return {
+				"uoms": uoms,
+				"stock_uom": item.stock_uom,
+				"uom_conversions": uom_conversions,
+				"availability": [],
+			}
 
-    return {
-        "uoms": uoms,
-        "stock_uom": item.stock_uom,
-        "uom_conversions": uom_conversions,
-        "availability": [
-            {"warehouse": r.warehouse, "warehouse_name": r.warehouse_name or r.warehouse, "qty": r.actual_qty}
-            for r in bins
-        ],
-    }
+	sql += " ORDER BY b.actual_qty DESC"
+	bins = frappe.db.sql(sql, params, as_dict=True)
+
+	return {
+		"uoms": uoms,
+		"stock_uom": item.stock_uom,
+		"uom_conversions": uom_conversions,
+		"availability": [
+			{"warehouse": r.warehouse, "warehouse_name": r.warehouse_name or r.warehouse, "qty": r.actual_qty}
+			for r in bins
+		],
+	}
 
 
 @frappe.whitelist()
 def get_item_stock_info(item_code, warehouse, pow_profile=None):
-    """Get stock information for an item in a warehouse.
+	"""Get stock information for an item in a warehouse.
 
-    When ``pow_profile`` is provided, the warehouse is validated against the
-    profile's delivery scope before returning any data.
-    """
-    if pow_profile:
-        from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-        _p, allowed = validate_pow_profile_access(pow_profile)
-        assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+	When ``pow_profile`` is provided, the warehouse is validated against the
+	profile's delivery scope before returning any data.
+	"""
+	if pow_profile:
+		from warehousesuite.utils.pow_warehouse_scope import (
+			assert_warehouses_in_scope,
+			validate_pow_profile_access,
+		)
 
-    stock_qty = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty") or 0
-    stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+		_p, allowed = validate_pow_profile_access(pow_profile)
+		assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
 
-    return {
-        "stock_qty": stock_qty,
-        "stock_uom": stock_uom
-    }
+	stock_qty = (
+		frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty") or 0
+	)
+	stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+
+	return {"stock_qty": stock_qty, "stock_uom": stock_uom}
+
 
 @frappe.whitelist()
 def get_uom_conversion_factor(item_code, from_uom, to_uom):
-    """Get UOM conversion factor between two UOMs for an item"""
-    try:
-        if from_uom == to_uom:
-            return {"conversion_factor": 1.0, "from_uom_must_be_whole_number": False, "to_uom_must_be_whole_number": False}
-        
-        # Get UOM information
-        from_uom_must_be_whole_number = frappe.db.get_value("UOM", from_uom, "must_be_whole_number") or False
-        to_uom_must_be_whole_number = frappe.db.get_value("UOM", to_uom, "must_be_whole_number") or False
-        
-        # Get the item
-        item = frappe.get_doc("Item", item_code)
-        
-        # If converting from stock UOM to another UOM
-        if from_uom == item.stock_uom:
-            # Find the conversion factor in item UOMs
-            for uom_entry in item.uoms:
-                if uom_entry.uom == to_uom:
-                    # If 1 Carton = 10 Pcs, then to convert Pcs to Carton, divide by 10
-                    return {
-                        "conversion_factor": 1.0 / uom_entry.conversion_factor,
-                        "from_uom_must_be_whole_number": from_uom_must_be_whole_number,
-                        "to_uom_must_be_whole_number": to_uom_must_be_whole_number
-                    }
-        
-        # If converting to stock UOM from another UOM
-        elif to_uom == item.stock_uom:
-            # Find the conversion factor in item UOMs
-            for uom_entry in item.uoms:
-                if uom_entry.uom == from_uom:
-                    # If 1 Carton = 10 Pcs, then to convert Carton to Pcs, multiply by 10
-                    return {
-                        "conversion_factor": uom_entry.conversion_factor,
-                        "from_uom_must_be_whole_number": from_uom_must_be_whole_number,
-                        "to_uom_must_be_whole_number": to_uom_must_be_whole_number
-                    }
-        
-        # If converting between two non-stock UOMs
-        else:
-            # First convert from_uom to stock UOM, then to to_uom
-            from_to_stock = None
-            to_to_stock = None
-            
-            for uom_entry in item.uoms:
-                if uom_entry.uom == from_uom:
-                    from_to_stock = uom_entry.conversion_factor  # Convert to stock UOM
-                elif uom_entry.uom == to_uom:
-                    to_to_stock = 1.0 / uom_entry.conversion_factor  # Convert from stock UOM
-            
-            if from_to_stock and to_to_stock:
-                return {
-                    "conversion_factor": from_to_stock * to_to_stock,
-                    "from_uom_must_be_whole_number": from_uom_must_be_whole_number,
-                    "to_uom_must_be_whole_number": to_uom_must_be_whole_number
-                }
-        
-        # If no conversion found, return 1.0
-        return {
-            "conversion_factor": 1.0,
-            "from_uom_must_be_whole_number": from_uom_must_be_whole_number,
-            "to_uom_must_be_whole_number": to_uom_must_be_whole_number
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting UOM conversion factor: {str(e)}")
-        return {
-            "conversion_factor": 1.0,
-            "from_uom_must_be_whole_number": False,
-            "to_uom_must_be_whole_number": False
-        }
+	"""Get UOM conversion factor between two UOMs for an item"""
+	try:
+		if from_uom == to_uom:
+			return {
+				"conversion_factor": 1.0,
+				"from_uom_must_be_whole_number": False,
+				"to_uom_must_be_whole_number": False,
+			}
+
+		# Get UOM information
+		from_uom_must_be_whole_number = frappe.db.get_value("UOM", from_uom, "must_be_whole_number") or False
+		to_uom_must_be_whole_number = frappe.db.get_value("UOM", to_uom, "must_be_whole_number") or False
+
+		# Get the item
+		item = frappe.get_doc("Item", item_code)
+
+		# If converting from stock UOM to another UOM
+		if from_uom == item.stock_uom:
+			# Find the conversion factor in item UOMs
+			for uom_entry in item.uoms:
+				if uom_entry.uom == to_uom:
+					# If 1 Carton = 10 Pcs, then to convert Pcs to Carton, divide by 10
+					return {
+						"conversion_factor": 1.0 / uom_entry.conversion_factor,
+						"from_uom_must_be_whole_number": from_uom_must_be_whole_number,
+						"to_uom_must_be_whole_number": to_uom_must_be_whole_number,
+					}
+
+		# If converting to stock UOM from another UOM
+		elif to_uom == item.stock_uom:
+			# Find the conversion factor in item UOMs
+			for uom_entry in item.uoms:
+				if uom_entry.uom == from_uom:
+					# If 1 Carton = 10 Pcs, then to convert Carton to Pcs, multiply by 10
+					return {
+						"conversion_factor": uom_entry.conversion_factor,
+						"from_uom_must_be_whole_number": from_uom_must_be_whole_number,
+						"to_uom_must_be_whole_number": to_uom_must_be_whole_number,
+					}
+
+		# If converting between two non-stock UOMs
+		else:
+			# First convert from_uom to stock UOM, then to to_uom
+			from_to_stock = None
+			to_to_stock = None
+
+			for uom_entry in item.uoms:
+				if uom_entry.uom == from_uom:
+					from_to_stock = uom_entry.conversion_factor  # Convert to stock UOM
+				elif uom_entry.uom == to_uom:
+					to_to_stock = 1.0 / uom_entry.conversion_factor  # Convert from stock UOM
+
+			if from_to_stock and to_to_stock:
+				return {
+					"conversion_factor": from_to_stock * to_to_stock,
+					"from_uom_must_be_whole_number": from_uom_must_be_whole_number,
+					"to_uom_must_be_whole_number": to_uom_must_be_whole_number,
+				}
+
+		# If no conversion found, return 1.0
+		return {
+			"conversion_factor": 1.0,
+			"from_uom_must_be_whole_number": from_uom_must_be_whole_number,
+			"to_uom_must_be_whole_number": to_uom_must_be_whole_number,
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting UOM conversion factor: {e!s}")
+		return {
+			"conversion_factor": 1.0,
+			"from_uom_must_be_whole_number": False,
+			"to_uom_must_be_whole_number": False,
+		}
+
 
 @frappe.whitelist()
 def get_stock_info_in_uom(item_code, warehouse, uom, pow_profile=None):
-    """Get stock information for an item in a specific UOM."""
-    try:
-        stock_info = get_item_stock_info(item_code, warehouse, pow_profile=pow_profile)
-        stock_qty = stock_info["stock_qty"]
-        stock_uom = stock_info["stock_uom"]
-        
-        # Get UOM whole number info
-        uom_must_be_whole_number = frappe.db.get_value("UOM", uom, "must_be_whole_number") or False
-        stock_uom_must_be_whole_number = frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
-        
-        # If the requested UOM is the same as stock UOM, return as is
-        if uom == stock_uom:
-            return {
-                "stock_qty": stock_qty,
-                "stock_uom": stock_uom,
-                "converted_qty": stock_qty,
-                "converted_uom": uom,
-                "uom_must_be_whole_number": uom_must_be_whole_number,
-                "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
-                "display_text": f"{stock_qty} {stock_uom}"
-            }
-        
-        # Get conversion factor
-        conversion_result = get_uom_conversion_factor(item_code, stock_uom, uom)
-        conversion_factor = conversion_result["conversion_factor"]
-        
-        # Convert quantity (stock_qty is in stock UOM, convert to target UOM)
-        converted_qty = stock_qty * conversion_factor
-        
-        # Handle display format for whole number UOMs
-        display_text = ""
-        if uom_must_be_whole_number:
-            # Calculate whole units and remaining stock units
-            whole_units = int(converted_qty)
-            remaining_stock_units = stock_qty - (whole_units / conversion_factor)
-            
-            if whole_units > 0 and remaining_stock_units > 0:
-                display_text = f"{whole_units} {uom} {remaining_stock_units} {stock_uom}"
-            elif whole_units > 0:
-                display_text = f"{whole_units} {uom}"
-            else:
-                display_text = f"{stock_qty} {stock_uom}"
-        else:
-            # For non-whole number UOMs, show decimal
-            display_text = f"{converted_qty:.2f} {uom}"
-        
-        return {
-            "stock_qty": stock_qty,
-            "stock_uom": stock_uom,
-            "converted_qty": converted_qty,
-            "converted_uom": uom,
-            "conversion_factor": conversion_factor,
-            "uom_must_be_whole_number": uom_must_be_whole_number,
-            "stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
-            "display_text": display_text
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting stock info in UOM: {str(e)}")
-        return {
-            "stock_qty": 0,
-            "stock_uom": "Unknown",
-            "converted_qty": 0,
-            "converted_uom": uom,
-            "conversion_factor": 1.0,
-            "uom_must_be_whole_number": False,
-            "stock_uom_must_be_whole_number": False,
-            "display_text": f"0 {uom}"
-        }
+	"""Get stock information for an item in a specific UOM."""
+	try:
+		stock_info = get_item_stock_info(item_code, warehouse, pow_profile=pow_profile)
+		stock_qty = stock_info["stock_qty"]
+		stock_uom = stock_info["stock_uom"]
+
+		# Get UOM whole number info
+		uom_must_be_whole_number = frappe.db.get_value("UOM", uom, "must_be_whole_number") or False
+		stock_uom_must_be_whole_number = (
+			frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
+		)
+
+		# If the requested UOM is the same as stock UOM, return as is
+		if uom == stock_uom:
+			return {
+				"stock_qty": stock_qty,
+				"stock_uom": stock_uom,
+				"converted_qty": stock_qty,
+				"converted_uom": uom,
+				"uom_must_be_whole_number": uom_must_be_whole_number,
+				"stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
+				"display_text": f"{stock_qty} {stock_uom}",
+			}
+
+		# Get conversion factor
+		conversion_result = get_uom_conversion_factor(item_code, stock_uom, uom)
+		conversion_factor = conversion_result["conversion_factor"]
+
+		# Convert quantity (stock_qty is in stock UOM, convert to target UOM)
+		converted_qty = stock_qty * conversion_factor
+
+		# Handle display format for whole number UOMs
+		display_text = ""
+		if uom_must_be_whole_number:
+			# Calculate whole units and remaining stock units
+			whole_units = int(converted_qty)
+			remaining_stock_units = stock_qty - (whole_units / conversion_factor)
+
+			if whole_units > 0 and remaining_stock_units > 0:
+				display_text = f"{whole_units} {uom} {remaining_stock_units} {stock_uom}"
+			elif whole_units > 0:
+				display_text = f"{whole_units} {uom}"
+			else:
+				display_text = f"{stock_qty} {stock_uom}"
+		else:
+			# For non-whole number UOMs, show decimal
+			display_text = f"{converted_qty:.2f} {uom}"
+
+		return {
+			"stock_qty": stock_qty,
+			"stock_uom": stock_uom,
+			"converted_qty": converted_qty,
+			"converted_uom": uom,
+			"conversion_factor": conversion_factor,
+			"uom_must_be_whole_number": uom_must_be_whole_number,
+			"stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
+			"display_text": display_text,
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting stock info in UOM: {e!s}")
+		return {
+			"stock_qty": 0,
+			"stock_uom": "Unknown",
+			"converted_qty": 0,
+			"converted_uom": uom,
+			"conversion_factor": 1.0,
+			"uom_must_be_whole_number": False,
+			"stock_uom_must_be_whole_number": False,
+			"display_text": f"0 {uom}",
+		}
+
 
 @frappe.whitelist()
-def create_transfer_stock_entry(source_warehouse, target_warehouse, in_transit_warehouse, items, company, session_name=None, remarks=None, pow_profile=None, batch_serial_data=None):
-    """Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
-    try:
-        from warehousesuite.utils.pow_warehouse_scope import (
-            validate_pow_profile_access,
-            assert_warehouses_in_scope,
-        )
+def create_transfer_stock_entry(
+	source_warehouse,
+	target_warehouse,
+	in_transit_warehouse,
+	items,
+	company,
+	session_name=None,
+	remarks=None,
+	pow_profile=None,
+	batch_serial_data=None,
+):
+	"""Create stock entry for transfer (source -> in-transit) with proper stock ledger fields"""
+	try:
+		from warehousesuite.utils.pow_warehouse_scope import (
+			assert_warehouses_in_scope,
+			validate_pow_profile_access,
+		)
 
-        if pow_profile:
-            _profile, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope(
-                [source_warehouse, target_warehouse],
-                allowed,
-                label="Warehouse",
-            )
+		if pow_profile:
+			_profile, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope(
+				[source_warehouse, target_warehouse],
+				allowed,
+				label="Warehouse",
+			)
 
-        # Parse items
-        try:
-            items = frappe.parse_json(items)
-        except Exception as e:
-            frappe.throw(_("Invalid items data format"))
-        
-        # Parse batch/serial data if provided
-        bs_data = {}
-        if batch_serial_data:
-            try:
-                bs_data = frappe.parse_json(batch_serial_data)
-            except Exception:
-                frappe.throw(_("Invalid batch/serial data format"))
+		# Parse items
+		try:
+			items = frappe.parse_json(items)
+		except Exception:
+			frappe.throw(_("Invalid items data format"))
 
-        # Basic input validation
-        if not source_warehouse or not target_warehouse or not in_transit_warehouse:
-            frappe.logger().warning(f"Missing warehouse: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}")
-            frappe.throw(_("Source, Target and Transit warehouses are required"))
-        
-        if not items or not isinstance(items, list):
-            frappe.logger().warning(f"Invalid items format: {items}")
-            frappe.throw(_("Items list is required"))
-        
-        # Create stock entry
-        stock_entry = frappe.new_doc("Stock Entry")
-        stock_entry.stock_entry_type = "Material Transfer"
-        stock_entry.company = company
-        stock_entry.from_warehouse = source_warehouse
-        stock_entry.to_warehouse = in_transit_warehouse
-        stock_entry.add_to_transit = 1
-        stock_entry.posting_date = frappe.utils.today()
-        stock_entry.posting_time = frappe.utils.nowtime()
-        
-        # Add items — if batch/serial data exists, split into per-batch rows
-        for item in items:
-            if not item.get("item_code") or not item.get("qty") or not item.get("uom"):
-                frappe.throw(_("Item Code, Quantity and UOM are required for all items"))
+		# Parse batch/serial data if provided
+		bs_data = {}
+		if batch_serial_data:
+			try:
+				bs_data = frappe.parse_json(batch_serial_data)
+			except Exception:
+				frappe.throw(_("Invalid batch/serial data format"))
 
-            item_doc = frappe.get_doc("Item", item["item_code"])
+		# Basic input validation
+		if not source_warehouse or not target_warehouse or not in_transit_warehouse:
+			frappe.logger().warning(
+				f"Missing warehouse: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}"
+			)
+			frappe.throw(_("Source, Target and Transit warehouses are required"))
 
-            conversion_factor = frappe.get_value("UOM Conversion Detail",
-                {"parent": item["item_code"], "uom": item["uom"]}, "conversion_factor") or 1.0
+		if not items or not isinstance(items, list):
+			frappe.logger().warning(f"Invalid items format: {items}")
+			frappe.throw(_("Items list is required"))
 
-            valuation_rate = frappe.get_value("Stock Ledger Entry",
-                {
-                    "item_code": item["item_code"],
-                    "warehouse": source_warehouse,
-                    "is_cancelled": 0
-                },
-                "valuation_rate",
-                order_by="posting_date desc, posting_time desc, creation desc"
-            ) or 0
+		# Create stock entry
+		stock_entry = frappe.new_doc("Stock Entry")
+		stock_entry.stock_entry_type = "Material Transfer"
+		stock_entry.company = company
+		stock_entry.from_warehouse = source_warehouse
+		stock_entry.to_warehouse = in_transit_warehouse
+		stock_entry.add_to_transit = 1
+		stock_entry.posting_date = frappe.utils.today()
+		stock_entry.posting_time = frappe.utils.nowtime()
 
-            # Check if this item has batch/serial selections
-            item_bs = bs_data.get(item["item_code"]) if bs_data else None
+		# Add items — if batch/serial data exists, split into per-batch rows
+		for item in items:
+			if not item.get("item_code") or not item.get("qty") or not item.get("uom"):
+				frappe.throw(_("Item Code, Quantity and UOM are required for all items"))
 
-            if item_bs and isinstance(item_bs, list) and len(item_bs) > 0:
-                # Multi-batch: one SE Detail row per batch entry
-                for bs_entry in item_bs:
-                    entry_qty = flt(bs_entry.get("qty", 0))
-                    if entry_qty <= 0:
-                        continue
-                    stock_entry.append("items", {
-                        "item_code": item["item_code"],
-                        "item_name": item_doc.item_name,
-                        "description": item_doc.description,
-                        "qty": entry_qty,
-                        "transfer_qty": flt(entry_qty * conversion_factor),
-                        "uom": item["uom"],
-                        "stock_uom": item_doc.stock_uom,
-                        "conversion_factor": conversion_factor,
-                        "s_warehouse": source_warehouse,
-                        "t_warehouse": in_transit_warehouse,
-                        "basic_rate": flt(valuation_rate),
-                        "basic_amount": flt(valuation_rate * entry_qty),
-                        "valuation_rate": valuation_rate,
-                        "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
-                        "batch_no": bs_entry.get("batch_no") or None,
-                        "serial_no": bs_entry.get("serial_no") or None,
-                        "use_serial_batch_fields": 1 if (bs_entry.get("batch_no") or bs_entry.get("serial_no")) else 0,
-                    })
-            else:
-                # No batch/serial — single row
-                qty = flt(item["qty"])
-                stock_entry.append("items", {
-                    "item_code": item["item_code"],
-                    "item_name": item_doc.item_name,
-                    "description": item_doc.description,
-                    "qty": qty,
-                    "transfer_qty": flt(qty * conversion_factor),
-                    "uom": item["uom"],
-                    "stock_uom": item_doc.stock_uom,
-                    "conversion_factor": conversion_factor,
-                    "s_warehouse": source_warehouse,
-                    "t_warehouse": in_transit_warehouse,
-                    "basic_rate": flt(valuation_rate),
-                    "basic_amount": flt(valuation_rate * qty),
-                    "valuation_rate": valuation_rate,
-                    "allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
-                })
+			item_doc = frappe.get_doc("Item", item["item_code"])
 
-        # Set custom field for final target warehouse
-        stock_entry.custom_for_which_warehouse_to_transfer = target_warehouse
+			conversion_factor = (
+				frappe.get_value(
+					"UOM Conversion Detail",
+					{"parent": item["item_code"], "uom": item["uom"]},
+					"conversion_factor",
+				)
+				or 1.0
+			)
 
-        # Set POW Session ID if provided
-        if session_name:
-            stock_entry.custom_pow_session_id = session_name
+			valuation_rate = (
+				frappe.get_value(
+					"Stock Ledger Entry",
+					{"item_code": item["item_code"], "warehouse": source_warehouse, "is_cancelled": 0},
+					"valuation_rate",
+					order_by="posting_date desc, posting_time desc, creation desc",
+				)
+				or 0
+			)
 
-        # Set remarks if provided
-        if remarks:
-            stock_entry.remarks = remarks
-        
-        try:
-            # Start a new transaction
-            frappe.db.begin()
-            
-            # First try to insert without submitting to catch validation errors
-            stock_entry.insert(ignore_permissions=True)
-            
-            # If insert succeeds, try to submit
-            try:
-                stock_entry.submit()
-                
-                # If both succeed, commit the transaction
-                frappe.db.commit()
-                
-                return {
-                    "status": "success",
-                    "stock_entry": stock_entry.name,
-                    "message": f"Transfer created: {stock_entry.name}"
-                }
-                
-            except Exception as submit_error:
-                # If submit fails, rollback and raise the error
-                frappe.db.rollback()
-                raise submit_error
-            
-        except frappe.ValidationError as e:
-            # Handle validation errors from ERPNext
-            error_msg = str(e)
-            frappe.logger().warning(f"Validation error in transfer creation: {error_msg}")
-            frappe.db.rollback()
-            
-            # Extract meaningful error messages
-            if "Insufficient stock" in error_msg.lower():
-                return {
-                    "status": "error",
-                    "error_type": "insufficient_stock",
-                    "message": error_msg
-                }
-            elif "negative stock" in error_msg.lower():
-                return {
-                    "status": "error", 
-                    "error_type": "negative_stock",
-                    "message": error_msg
-                }
-            else:
-                return {
-                    "status": "error",
-                    "error_type": "validation_error",
-                    "message": error_msg
-                }
-                
-        except frappe.DuplicateEntryError as e:
-            frappe.logger().warning(f"Duplicate entry error in transfer creation: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "duplicate_entry",
-                "message": str(e)
-            }
-            
-        except frappe.MandatoryError as e:
-            frappe.logger().warning(f"Mandatory field error in transfer creation: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "mandatory_error",
-                "message": f"Required field missing: {str(e)}"
-            }
-            
-        except Exception as e:
-            frappe.logger().error(f"Error in create_transfer_stock_entry: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "system_error",
-                "message": "An error occurred while creating the transfer. Please try again."
-            }
-            
-    except Exception as e:
-        frappe.logger().error(f"Error preparing transfer data: {str(e)}")
-        return {
-            "status": "error",
-            "error_type": "system_error",
-            "message": "An error occurred while preparing the transfer data. Please try again."
-        }
+			# Check if this item has batch/serial selections
+			item_bs = bs_data.get(item["item_code"]) if bs_data else None
+
+			if item_bs and isinstance(item_bs, list) and len(item_bs) > 0:
+				# Multi-batch: one SE Detail row per batch entry
+				for bs_entry in item_bs:
+					entry_qty = flt(bs_entry.get("qty", 0))
+					if entry_qty <= 0:
+						continue
+					stock_entry.append(
+						"items",
+						{
+							"item_code": item["item_code"],
+							"item_name": item_doc.item_name,
+							"description": item_doc.description,
+							"qty": entry_qty,
+							"transfer_qty": flt(entry_qty * conversion_factor),
+							"uom": item["uom"],
+							"stock_uom": item_doc.stock_uom,
+							"conversion_factor": conversion_factor,
+							"s_warehouse": source_warehouse,
+							"t_warehouse": in_transit_warehouse,
+							"basic_rate": flt(valuation_rate),
+							"basic_amount": flt(valuation_rate * entry_qty),
+							"valuation_rate": valuation_rate,
+							"allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
+							"batch_no": bs_entry.get("batch_no") or None,
+							"serial_no": bs_entry.get("serial_no") or None,
+							"use_serial_batch_fields": 1
+							if (bs_entry.get("batch_no") or bs_entry.get("serial_no"))
+							else 0,
+						},
+					)
+			else:
+				# No batch/serial — single row
+				qty = flt(item["qty"])
+				stock_entry.append(
+					"items",
+					{
+						"item_code": item["item_code"],
+						"item_name": item_doc.item_name,
+						"description": item_doc.description,
+						"qty": qty,
+						"transfer_qty": flt(qty * conversion_factor),
+						"uom": item["uom"],
+						"stock_uom": item_doc.stock_uom,
+						"conversion_factor": conversion_factor,
+						"s_warehouse": source_warehouse,
+						"t_warehouse": in_transit_warehouse,
+						"basic_rate": flt(valuation_rate),
+						"basic_amount": flt(valuation_rate * qty),
+						"valuation_rate": valuation_rate,
+						"allow_zero_valuation_rate": 1 if valuation_rate == 0 else 0,
+					},
+				)
+
+		# Set custom field for final target warehouse
+		stock_entry.custom_for_which_warehouse_to_transfer = target_warehouse
+
+		# Set POW Session ID if provided
+		if session_name:
+			stock_entry.custom_pow_session_id = session_name
+
+		# Set remarks if provided
+		if remarks:
+			stock_entry.remarks = remarks
+
+		try:
+			# Start a new transaction
+			frappe.db.begin()
+
+			# First try to insert without submitting to catch validation errors
+			stock_entry.insert(ignore_permissions=True)
+
+			# If insert succeeds, try to submit
+			try:
+				stock_entry.submit()
+
+				# If both succeed, commit the transaction
+				frappe.db.commit()
+
+				return {
+					"status": "success",
+					"stock_entry": stock_entry.name,
+					"message": f"Transfer created: {stock_entry.name}",
+				}
+
+			except Exception as submit_error:
+				# If submit fails, rollback and raise the error
+				frappe.db.rollback()
+				raise submit_error
+
+		except frappe.ValidationError as e:
+			# Handle validation errors from ERPNext
+			error_msg = str(e)
+			frappe.logger().warning(f"Validation error in transfer creation: {error_msg}")
+			frappe.db.rollback()
+
+			# Extract meaningful error messages
+			if "Insufficient stock" in error_msg.lower():
+				return {"status": "error", "error_type": "insufficient_stock", "message": error_msg}
+			elif "negative stock" in error_msg.lower():
+				return {"status": "error", "error_type": "negative_stock", "message": error_msg}
+			else:
+				return {"status": "error", "error_type": "validation_error", "message": error_msg}
+
+		except frappe.DuplicateEntryError as e:
+			frappe.logger().warning(f"Duplicate entry error in transfer creation: {e!s}")
+			frappe.db.rollback()
+			return {"status": "error", "error_type": "duplicate_entry", "message": str(e)}
+
+		except frappe.MandatoryError as e:
+			frappe.logger().warning(f"Mandatory field error in transfer creation: {e!s}")
+			frappe.db.rollback()
+			return {
+				"status": "error",
+				"error_type": "mandatory_error",
+				"message": f"Required field missing: {e!s}",
+			}
+
+		except Exception as e:
+			frappe.logger().error(f"Error in create_transfer_stock_entry: {e!s}")
+			frappe.db.rollback()
+			return {
+				"status": "error",
+				"error_type": "system_error",
+				"message": "An error occurred while creating the transfer. Please try again.",
+			}
+
+	except Exception as e:
+		frappe.logger().error(f"Error preparing transfer data: {e!s}")
+		return {
+			"status": "error",
+			"error_type": "system_error",
+			"message": "An error occurred while preparing the transfer data. Please try again.",
+		}
+
 
 def _get_warehouses_for_receive_filter(warehouse):
-    """Get list of warehouses to match: the warehouse itself, its children, and its parent.
-    This ensures we match when:
-    - dest = selected (e.g. Finished Goods - RKCW)
-    - dest = child of selected (e.g. a sub-warehouse)
-    - dest = parent of selected (e.g. Finished Goods when user selected Finished Goods - RKCW)
-    """
-    if not warehouse:
-        return []
-    warehouses = [warehouse]
-    children = get_all_child_warehouses(warehouse)
-    warehouses.extend(c["name"] for c in children)
-    # Add parent so we match transfers destined to parent warehouse
-    parent = frappe.db.get_value("Warehouse", warehouse, "parent_warehouse")
-    if parent:
-        warehouses.append(parent)
-    return list(dict.fromkeys(warehouses))  # dedupe preserving order
+	"""Get list of warehouses to match: the warehouse itself, its children, and its parent.
+	This ensures we match when:
+	- dest = selected (e.g. Finished Goods - RKCW)
+	- dest = child of selected (e.g. a sub-warehouse)
+	- dest = parent of selected (e.g. Finished Goods when user selected Finished Goods - RKCW)
+	"""
+	if not warehouse:
+		return []
+	warehouses = [warehouse]
+	children = get_all_child_warehouses(warehouse)
+	warehouses.extend(c["name"] for c in children)
+	# Add parent so we match transfers destined to parent warehouse
+	parent = frappe.db.get_value("Warehouse", warehouse, "parent_warehouse")
+	if parent:
+		warehouses.append(parent)
+	return list(dict.fromkeys(warehouses))  # dedupe preserving order
 
 
 @frappe.whitelist()
 def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profile=None):
-    """Get transfer receive data filtered by warehouse(s).
+	"""Get transfer receive data filtered by warehouse(s).
 
-    Args:
-        default_warehouse: Single warehouse (legacy, expands to include children/parent).
-        warehouses: JSON list of warehouse names. Each is expanded via
-                    ``_get_warehouses_for_receive_filter`` so children/parents are included.
-        pow_profile: POW Profile name. When set, restricts destinations to **target**
-                    warehouses on that profile (plus descendants), asserts the user is on
-                    the profile, and **ignores** ``warehouses`` / ``default_warehouse`` for
-                    filtering so the client cannot widen scope. Use this for the POW
-                    dashboard incoming list.
-    """
-    try:
-        sql_query = """
+	Args:
+	    default_warehouse: Single warehouse (legacy, expands to include children/parent).
+	    warehouses: JSON list of warehouse names. Each is expanded via
+	                ``_get_warehouses_for_receive_filter`` so children/parents are included.
+	    pow_profile: POW Profile name. When set, restricts destinations to **target**
+	                warehouses on that profile (plus descendants), asserts the user is on
+	                the profile, and **ignores** ``warehouses`` / ``default_warehouse`` for
+	                filtering so the client cannot widen scope. Use this for the POW
+	                dashboard incoming list.
+	"""
+	try:
+		sql_query = """
         SELECT
             se.posting_date AS posting_date,
             se.creation AS sent_datetime,
@@ -792,427 +843,429 @@ def get_transfer_receive_data(default_warehouse=None, warehouses=None, pow_profi
             AND (se.outgoing_stock_entry IS NULL OR se.outgoing_stock_entry = '')
         """
 
-        params = []
-        profile_scoped = False
-        wh_list = None
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import (
-                assert_user_on_pow_profile,
-                get_pow_profile_source_warehouse_scope,
-            )
+		params = []
+		profile_scoped = False
+		wh_list = None
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_user_on_pow_profile,
+				get_pow_profile_source_warehouse_scope,
+			)
 
-            assert_user_on_pow_profile(pow_profile)
-            wh_list = get_pow_profile_source_warehouse_scope(pow_profile)
-            wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
-            if not wh_list:
-                return []
-            profile_scoped = True
-        elif warehouses:
-            wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
+			assert_user_on_pow_profile(pow_profile)
+			wh_list = get_pow_profile_source_warehouse_scope(pow_profile)
+			wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
+			if not wh_list:
+				return []
+			profile_scoped = True
+		elif warehouses:
+			wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
 
-        if wh_list:
-            if profile_scoped:
-                all_dest = list(dict.fromkeys(wh_list))
-            else:
-                all_dest = []
-                for wh in wh_list:
-                    all_dest.extend(_get_warehouses_for_receive_filter(wh))
-                all_dest = list(dict.fromkeys(w.strip() for w in all_dest if w and w.strip()))
-            if all_dest:
-                placeholders = ", ".join(["%s"] * len(all_dest))
-                sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
-                params = all_dest
-            else:
-                return []
-        elif default_warehouse:
-            dest_warehouses = _get_warehouses_for_receive_filter(default_warehouse)
-            dest_warehouses = [w.strip() for w in dest_warehouses if w and w.strip()]
-            if dest_warehouses:
-                placeholders = ", ".join(["%s"] * len(dest_warehouses))
-                sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
-                params = dest_warehouses
-        
-        sql_query += " ORDER BY se.posting_date DESC"
-        
-        # Execute the query
-        result = frappe.db.sql(sql_query, params or (), as_dict=True)
-        
-        # Group by stock entry for better organization
-        grouped_data = {}
-        for row in result:
-            stock_entry = row['stock_entry']
-            if stock_entry not in grouped_data:
-                grouped_data[stock_entry] = {
-                    'stock_entry': stock_entry,
-                    'posting_date': row['posting_date'],
-                    'sent_datetime': str(row['sent_datetime']) if row.get('sent_datetime') else None,
-                    'source_warehouse': row['source_warehouse'],
-                    'in_transit_warehouse': row['in_transit_warehouse'],
-                    'dest_warehouse': row['dest_warehouse'],
-                    'ref_so': row.get('ref_so'),
-                    'created_by': row['created_by'],
-                    'pow_session_id': row['pow_session_id'],
-                    'remarks': row['remarks'],
-                    'items': []
-                }
-            
-            # Get stock UOM and conversion factor for the item
-            stock_uom = frappe.db.get_value("Item", row['item_code'], "stock_uom") or row['uom']
-            
-            # Get conversion factor using the same logic as transfer send
-            conversion_result = get_uom_conversion_factor(row['item_code'], row['uom'], stock_uom)
-            conversion_factor = conversion_result.get("conversion_factor", 1.0)
-            
-            # Get UOM information for display formatting
-            uom_must_be_whole_number = frappe.db.get_value("UOM", row['uom'], "must_be_whole_number") or False
-            stock_uom_must_be_whole_number = frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
-            
-            grouped_data[stock_entry]['items'].append({
-                'ste_detail': row['ste_detail'],
-                'item_code': row['item_code'],
-                'item_name': row['item_name'],
-                'qty': row['qty'],
-                'uom': row['uom'],
-                'stock_uom': stock_uom,
-                'conversion_factor': conversion_factor,
-                'uom_must_be_whole_number': uom_must_be_whole_number,
-                'stock_uom_must_be_whole_number': stock_uom_must_be_whole_number,
-                'transferred_qty': row['transferred_qty'],
-                'remaining_qty': row['qty'] - row['transferred_qty'],
-                'has_batch_no': row.get('has_batch_no', 0),
-                'has_serial_no': row.get('has_serial_no', 0),
-                'serial_and_batch_bundle': row.get('serial_and_batch_bundle'),
-                'batch_no': row.get('batch_no'),
-            })
-        
-        # Add completion status and progress information
-        for transfer in grouped_data.values():
-            total_items = len(transfer['items'])
-            completed_items = sum(1 for item in transfer['items'] if item['remaining_qty'] == 0)
-            transfer['completion_percentage'] = (completed_items / total_items * 100) if total_items > 0 else 0
-            transfer['status'] = 'Complete' if completed_items == total_items else 'Partial' if completed_items > 0 else 'Pending'
-            transfer['completed_items'] = completed_items
-            transfer['total_items'] = total_items
-            
-            # Check for open concerns for this stock entry
-            open_concerns = frappe.get_all("POW Stock Concern", 
-                filters={
-                    "source_document_type": "Stock Entry",
-                    "source_document": transfer['stock_entry'],
-                    "status": "Open",
-                    "docstatus": 1
-                },
-                fields=["name", "concern_description", "priority", "reported_by", "reported_date"]
-            )
-            
-            transfer['has_open_concerns'] = len(open_concerns) > 0
-            transfer['open_concerns'] = open_concerns
-            transfer['concern_count'] = len(open_concerns)
-        
-        # Debug logging for grouped data
-        frappe.logger().info(f"Returning {len(grouped_data)} grouped transfers")
-        for stock_entry, transfer_data in list(grouped_data.items())[:2]:  # Log first 2 transfers
-            frappe.logger().info(f"Transfer {stock_entry}: remarks={repr(transfer_data.get('remarks'))}")
+		if wh_list:
+			if profile_scoped:
+				all_dest = list(dict.fromkeys(wh_list))
+			else:
+				all_dest = []
+				for wh in wh_list:
+					all_dest.extend(_get_warehouses_for_receive_filter(wh))
+				all_dest = list(dict.fromkeys(w.strip() for w in all_dest if w and w.strip()))
+			if all_dest:
+				placeholders = ", ".join(["%s"] * len(all_dest))
+				sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
+				params = all_dest
+			else:
+				return []
+		elif default_warehouse:
+			dest_warehouses = _get_warehouses_for_receive_filter(default_warehouse)
+			dest_warehouses = [w.strip() for w in dest_warehouses if w and w.strip()]
+			if dest_warehouses:
+				placeholders = ", ".join(["%s"] * len(dest_warehouses))
+				sql_query += f" AND se.custom_for_which_warehouse_to_transfer IN ({placeholders})"
+				params = dest_warehouses
 
-        return list(grouped_data.values())
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in get_transfer_receive_data: {str(e)}")
-        import traceback
-        frappe.logger().error(f"Traceback: {traceback.format_exc()}")
-        frappe.throw(f"Error getting transfer receive data: {str(e)}")
+		sql_query += " ORDER BY se.posting_date DESC"
+
+		# Execute the query
+		result = frappe.db.sql(sql_query, params or (), as_dict=True)
+
+		# Group by stock entry for better organization
+		grouped_data = {}
+		for row in result:
+			stock_entry = row["stock_entry"]
+			if stock_entry not in grouped_data:
+				grouped_data[stock_entry] = {
+					"stock_entry": stock_entry,
+					"posting_date": row["posting_date"],
+					"sent_datetime": str(row["sent_datetime"]) if row.get("sent_datetime") else None,
+					"source_warehouse": row["source_warehouse"],
+					"in_transit_warehouse": row["in_transit_warehouse"],
+					"dest_warehouse": row["dest_warehouse"],
+					"ref_so": row.get("ref_so"),
+					"created_by": row["created_by"],
+					"pow_session_id": row["pow_session_id"],
+					"remarks": row["remarks"],
+					"items": [],
+				}
+
+			# Get stock UOM and conversion factor for the item
+			stock_uom = frappe.db.get_value("Item", row["item_code"], "stock_uom") or row["uom"]
+
+			# Get conversion factor using the same logic as transfer send
+			conversion_result = get_uom_conversion_factor(row["item_code"], row["uom"], stock_uom)
+			conversion_factor = conversion_result.get("conversion_factor", 1.0)
+
+			# Get UOM information for display formatting
+			uom_must_be_whole_number = frappe.db.get_value("UOM", row["uom"], "must_be_whole_number") or False
+			stock_uom_must_be_whole_number = (
+				frappe.db.get_value("UOM", stock_uom, "must_be_whole_number") or False
+			)
+
+			grouped_data[stock_entry]["items"].append(
+				{
+					"ste_detail": row["ste_detail"],
+					"item_code": row["item_code"],
+					"item_name": row["item_name"],
+					"qty": row["qty"],
+					"uom": row["uom"],
+					"stock_uom": stock_uom,
+					"conversion_factor": conversion_factor,
+					"uom_must_be_whole_number": uom_must_be_whole_number,
+					"stock_uom_must_be_whole_number": stock_uom_must_be_whole_number,
+					"transferred_qty": row["transferred_qty"],
+					"remaining_qty": row["qty"] - row["transferred_qty"],
+					"has_batch_no": row.get("has_batch_no", 0),
+					"has_serial_no": row.get("has_serial_no", 0),
+					"serial_and_batch_bundle": row.get("serial_and_batch_bundle"),
+					"batch_no": row.get("batch_no"),
+				}
+			)
+
+		# Add completion status and progress information
+		for transfer in grouped_data.values():
+			total_items = len(transfer["items"])
+			completed_items = sum(1 for item in transfer["items"] if item["remaining_qty"] == 0)
+			transfer["completion_percentage"] = (
+				(completed_items / total_items * 100) if total_items > 0 else 0
+			)
+			transfer["status"] = (
+				"Complete"
+				if completed_items == total_items
+				else "Partial"
+				if completed_items > 0
+				else "Pending"
+			)
+			transfer["completed_items"] = completed_items
+			transfer["total_items"] = total_items
+
+			# Check for open concerns for this stock entry
+			open_concerns = frappe.get_all(
+				"POW Stock Concern",
+				filters={
+					"source_document_type": "Stock Entry",
+					"source_document": transfer["stock_entry"],
+					"status": "Open",
+					"docstatus": 1,
+				},
+				fields=["name", "concern_description", "priority", "reported_by", "reported_date"],
+			)
+
+			transfer["has_open_concerns"] = len(open_concerns) > 0
+			transfer["open_concerns"] = open_concerns
+			transfer["concern_count"] = len(open_concerns)
+
+		# Debug logging for grouped data
+		frappe.logger().info(f"Returning {len(grouped_data)} grouped transfers")
+		for stock_entry, transfer_data in list(grouped_data.items())[:2]:  # Log first 2 transfers
+			frappe.logger().info(f"Transfer {stock_entry}: remarks={transfer_data.get('remarks')!r}")
+
+		return list(grouped_data.values())
+
+	except Exception as e:
+		frappe.logger().error(f"Error in get_transfer_receive_data: {e!s}")
+		import traceback
+
+		frappe.logger().error(f"Traceback: {traceback.format_exc()}")
+		frappe.throw(f"Error getting transfer receive data: {e!s}")
+
 
 @frappe.whitelist()
-def receive_transfer_stock_entry(stock_entry_name, items_data, company, session_name=None, pow_profile=None, batch_serial_data=None):
-    """Create stock entry for receiving transfer (in-transit -> destination).
+def receive_transfer_stock_entry(
+	stock_entry_name, items_data, company, session_name=None, pow_profile=None, batch_serial_data=None
+):
+	"""Create stock entry for receiving transfer (in-transit -> destination).
 
-    Args:
-        stock_entry_name: outbound transit Stock Entry name.
-        items_data: JSON list of ``{item_code, qty, ste_detail}``.
-        company: company name.
-        session_name: optional POW Session reference.
-        pow_profile: POW Profile name (required from the POW dashboard).
-                     The server asserts the user is on the profile and that
-                     the SE destination warehouse falls within the profile's
-                     **target** scope.  If omitted, the check is skipped
-                     (desk / API callers that do not use POW profiles).
-    """
-    try:
-        from erpnext.stock.doctype.stock_entry.stock_entry import make_stock_in_entry
+	Args:
+	    stock_entry_name: outbound transit Stock Entry name.
+	    items_data: JSON list of ``{item_code, qty, ste_detail}``.
+	    company: company name.
+	    session_name: optional POW Session reference.
+	    pow_profile: POW Profile name (required from the POW dashboard).
+	                 The server asserts the user is on the profile and that
+	                 the SE destination warehouse falls within the profile's
+	                 **target** scope.  If omitted, the check is skipped
+	                 (desk / API callers that do not use POW profiles).
+	"""
+	try:
+		from erpnext.stock.doctype.stock_entry.stock_entry import make_stock_in_entry
 
-        # ── POW Profile authorisation ──
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import (
-                assert_user_on_pow_profile,
-                get_pow_profile_source_warehouse_scope,
-            )
+		# ── POW Profile authorisation ──
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_user_on_pow_profile,
+				get_pow_profile_source_warehouse_scope,
+			)
 
-            assert_user_on_pow_profile(pow_profile)
+			assert_user_on_pow_profile(pow_profile)
 
-        items_data = frappe.parse_json(items_data)
-        batch_serial_map = frappe.parse_json(batch_serial_data) if batch_serial_data else {}
+		items_data = frappe.parse_json(items_data)
+		batch_serial_map = frappe.parse_json(batch_serial_data) if batch_serial_data else {}
 
-        original_se = frappe.get_doc("Stock Entry", stock_entry_name)
+		original_se = frappe.get_doc("Stock Entry", stock_entry_name)
 
-        if pow_profile:
-            dest_wh = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
-            allowed = get_pow_profile_source_warehouse_scope(pow_profile)
-            if not dest_wh:
-                frappe.throw(
-                    _("This transfer has no destination warehouse set. Cannot verify permissions."),
-                    frappe.PermissionError,
-                )
-            if not allowed or dest_wh not in allowed:
-                frappe.throw(
-                    _("You are not allowed to receive at warehouse {0} under this profile.").format(dest_wh),
-                    frappe.PermissionError,
-                )
+		if pow_profile:
+			dest_wh = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
+			allowed = get_pow_profile_source_warehouse_scope(pow_profile)
+			if not dest_wh:
+				frappe.throw(
+					_("This transfer has no destination warehouse set. Cannot verify permissions."),
+					frappe.PermissionError,
+				)
+			if not allowed or dest_wh not in allowed:
+				frappe.throw(
+					_("You are not allowed to receive at warehouse {0} under this profile.").format(dest_wh),
+					frappe.PermissionError,
+				)
 
-        items_to_receive = {}
-        for item in items_data:
-            if item.get('qty', 0) > 0:
-                for se_item in original_se.items:
-                    if se_item.item_code == item['item_code']:
-                        ste_detail = item.get('ste_detail', se_item.name)
-                        if ste_detail == se_item.name:
-                            pending = flt(se_item.qty) - flt(se_item.transferred_qty)
-                            if pending <= 0:
-                                continue
-                            items_to_receive[ste_detail] = {
-                                'qty': min(float(item['qty']), pending),
-                                'item_code': item['item_code'],
-                                'original_qty': se_item.qty,
-                                'transferred_qty': se_item.transferred_qty or 0
-                            }
-                            break
+		items_to_receive = {}
+		for item in items_data:
+			if item.get("qty", 0) > 0:
+				for se_item in original_se.items:
+					if se_item.item_code == item["item_code"]:
+						ste_detail = item.get("ste_detail", se_item.name)
+						if ste_detail == se_item.name:
+							pending = flt(se_item.qty) - flt(se_item.transferred_qty)
+							if pending <= 0:
+								continue
+							items_to_receive[ste_detail] = {
+								"qty": min(float(item["qty"]), pending),
+								"item_code": item["item_code"],
+								"original_qty": se_item.qty,
+								"transferred_qty": se_item.transferred_qty or 0,
+							}
+							break
 
-        if not items_to_receive:
-            return {
-                "status": "error",
-                "error_type": "already_received",
-                "message": "All items have already been received for this transfer."
-            }
+		if not items_to_receive:
+			return {
+				"status": "error",
+				"error_type": "already_received",
+				"message": "All items have already been received for this transfer.",
+			}
 
-        new_se = make_stock_in_entry(stock_entry_name)
+		new_se = make_stock_in_entry(stock_entry_name)
 
-        items_to_remove = []
-        for item in new_se.items:
-            if item.ste_detail in items_to_receive:
-                item.qty = items_to_receive[item.ste_detail]['qty']
-                item.transfer_qty = item.qty * item.conversion_factor
-            else:
-                items_to_remove.append(item)
+		items_to_remove = []
+		for item in new_se.items:
+			if item.ste_detail in items_to_receive:
+				item.qty = items_to_receive[item.ste_detail]["qty"]
+				item.transfer_qty = item.qty * item.conversion_factor
+			else:
+				items_to_remove.append(item)
 
-        for item in items_to_remove:
-            new_se.items.remove(item)
+		for item in items_to_remove:
+			new_se.items.remove(item)
 
-        if not new_se.items:
-            return {
-                "status": "error",
-                "error_type": "already_received",
-                "message": "All items have already been received for this transfer."
-            }
+		if not new_se.items:
+			return {
+				"status": "error",
+				"error_type": "already_received",
+				"message": "All items have already been received for this transfer.",
+			}
 
-        if session_name:
-            new_se.custom_pow_session_id = session_name
+		if session_name:
+			new_se.custom_pow_session_id = session_name
 
-        dest_warehouse = getattr(original_se, 'custom_for_which_warehouse_to_transfer', None)
-        if dest_warehouse:
-            new_se.to_warehouse = dest_warehouse
-            for item in new_se.items:
-                if item.s_warehouse != dest_warehouse:
-                    item.t_warehouse = dest_warehouse
-        
-        # Validate and submit with transaction handling
-        try:
-            # Start a new transaction
-            frappe.db.begin()
-            
-            # Set batch_no + use_serial_batch_fields on receive items
-            if batch_serial_map:
-                for item in new_se.items:
-                    ste_detail_key = item.ste_detail
-                    if ste_detail_key and ste_detail_key in batch_serial_map:
-                        entries = batch_serial_map[ste_detail_key]
-                        if entries and len(entries) > 0:
-                            first_entry = entries[0]
-                            if first_entry.get("batch_no"):
-                                item.batch_no = first_entry["batch_no"]
-                                item.use_serial_batch_fields = 1
-                            if first_entry.get("serial_no"):
-                                item.serial_no = first_entry["serial_no"]
-                                item.use_serial_batch_fields = 1
+		dest_warehouse = getattr(original_se, "custom_for_which_warehouse_to_transfer", None)
+		if dest_warehouse:
+			new_se.to_warehouse = dest_warehouse
+			for item in new_se.items:
+				if item.s_warehouse != dest_warehouse:
+					item.t_warehouse = dest_warehouse
 
-            # First try to insert without submitting to catch validation errors
-            new_se.insert(ignore_permissions=True)
-            
-            # If insert succeeds, try to submit
-            try:
-                new_se.submit()
-                
-                # If both succeed, commit the transaction
-                frappe.db.commit()
-                
-                frappe.logger().info(f"Transfer receive completed: {new_se.name}")
-                
-                return {
-                    "status": "success",
-                    "stock_entry": new_se.name,
-                    "message": f"Transfer received: {new_se.name}"
-                }
-                
-            except Exception as submit_error:
-                # If submit fails, rollback and raise the error
-                frappe.db.rollback()
-                raise submit_error
-            
-        except frappe.ValidationError as e:
-            # Handle validation errors from ERPNext
-            error_msg = str(e)
-            frappe.logger().warning(f"Validation error in transfer receive: {error_msg}")
-            frappe.db.rollback()
-            
-            # Extract meaningful error messages
-            if "exceeds pending quantity" in error_msg.lower():
-                return {
-                    "status": "error",
-                    "error_type": "exceeds_pending",
-                    "message": error_msg
-                }
-            elif "insufficient stock" in error_msg.lower():
-                return {
-                    "status": "error",
-                    "error_type": "insufficient_stock",
-                    "message": error_msg
-                }
-            elif "negative stock" in error_msg.lower():
-                return {
-                    "status": "error",
-                    "error_type": "negative_stock",
-                    "message": error_msg
-                }
-            else:
-                return {
-                    "status": "error",
-                    "error_type": "validation_error",
-                    "message": error_msg
-                }
-                
-        except frappe.DuplicateEntryError as e:
-            frappe.logger().warning(f"Duplicate entry error in transfer receive: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "duplicate_entry",
-                "message": str(e)
-            }
-            
-        except frappe.MandatoryError as e:
-            frappe.logger().warning(f"Mandatory field error in transfer receive: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "mandatory_error",
-                "message": f"Required field missing: {str(e)}"
-            }
-            
-        except Exception as e:
-            frappe.logger().error(f"Error in transfer receive submission: {str(e)}")
-            frappe.db.rollback()
-            return {
-                "status": "error",
-                "error_type": "system_error",
-                "message": "An error occurred while submitting the transfer receive. Please try again."
-            }
-            
-    except Exception as e:
-        frappe.logger().error(f"Error preparing transfer receive data: {str(e)}")
-        return {
-            "status": "error",
-            "error_type": "system_error",
-            "message": "An error occurred while preparing the transfer receive data. Please try again."
-        }
+		# Validate and submit with transaction handling
+		try:
+			# Start a new transaction
+			frappe.db.begin()
+
+			# Set batch_no + use_serial_batch_fields on receive items
+			if batch_serial_map:
+				for item in new_se.items:
+					ste_detail_key = item.ste_detail
+					if ste_detail_key and ste_detail_key in batch_serial_map:
+						entries = batch_serial_map[ste_detail_key]
+						if entries and len(entries) > 0:
+							first_entry = entries[0]
+							if first_entry.get("batch_no"):
+								item.batch_no = first_entry["batch_no"]
+								item.use_serial_batch_fields = 1
+							if first_entry.get("serial_no"):
+								item.serial_no = first_entry["serial_no"]
+								item.use_serial_batch_fields = 1
+
+			# First try to insert without submitting to catch validation errors
+			new_se.insert(ignore_permissions=True)
+
+			# If insert succeeds, try to submit
+			try:
+				new_se.submit()
+
+				# If both succeed, commit the transaction
+				frappe.db.commit()
+
+				frappe.logger().info(f"Transfer receive completed: {new_se.name}")
+
+				return {
+					"status": "success",
+					"stock_entry": new_se.name,
+					"message": f"Transfer received: {new_se.name}",
+				}
+
+			except Exception as submit_error:
+				# If submit fails, rollback and raise the error
+				frappe.db.rollback()
+				raise submit_error
+
+		except frappe.ValidationError as e:
+			# Handle validation errors from ERPNext
+			error_msg = str(e)
+			frappe.logger().warning(f"Validation error in transfer receive: {error_msg}")
+			frappe.db.rollback()
+
+			# Extract meaningful error messages
+			if "exceeds pending quantity" in error_msg.lower():
+				return {"status": "error", "error_type": "exceeds_pending", "message": error_msg}
+			elif "insufficient stock" in error_msg.lower():
+				return {"status": "error", "error_type": "insufficient_stock", "message": error_msg}
+			elif "negative stock" in error_msg.lower():
+				return {"status": "error", "error_type": "negative_stock", "message": error_msg}
+			else:
+				return {"status": "error", "error_type": "validation_error", "message": error_msg}
+
+		except frappe.DuplicateEntryError as e:
+			frappe.logger().warning(f"Duplicate entry error in transfer receive: {e!s}")
+			frappe.db.rollback()
+			return {"status": "error", "error_type": "duplicate_entry", "message": str(e)}
+
+		except frappe.MandatoryError as e:
+			frappe.logger().warning(f"Mandatory field error in transfer receive: {e!s}")
+			frappe.db.rollback()
+			return {
+				"status": "error",
+				"error_type": "mandatory_error",
+				"message": f"Required field missing: {e!s}",
+			}
+
+		except Exception as e:
+			frappe.logger().error(f"Error in transfer receive submission: {e!s}")
+			frappe.db.rollback()
+			return {
+				"status": "error",
+				"error_type": "system_error",
+				"message": "An error occurred while submitting the transfer receive. Please try again.",
+			}
+
+	except Exception as e:
+		frappe.logger().error(f"Error preparing transfer receive data: {e!s}")
+		return {
+			"status": "error",
+			"error_type": "system_error",
+			"message": "An error occurred while preparing the transfer receive data. Please try again.",
+		}
+
 
 @frappe.whitelist()
 def create_pow_stock_count(warehouse, company, session_name=None):
-    """Create a new POW Stock Count"""
-    try:
-        # Create new POW Stock Count
-        stock_count = frappe.new_doc("POW Stock Count")
-        stock_count.company = company
-        stock_count.warehouse = warehouse
-        stock_count.status = "Draft"
-        
-        # Set POW Session ID if provided
-        if session_name:
-            stock_count.pow_session_id = session_name
-        
-        stock_count.insert()
-        
-        return {
-            "status": "success",
-            "stock_count": stock_count.name,
-            "message": f"Stock count created: {stock_count.name}"
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in create_pow_stock_count: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+	"""Create a new POW Stock Count"""
+	try:
+		# Create new POW Stock Count
+		stock_count = frappe.new_doc("POW Stock Count")
+		stock_count.company = company
+		stock_count.warehouse = warehouse
+		stock_count.status = "Draft"
+
+		# Set POW Session ID if provided
+		if session_name:
+			stock_count.pow_session_id = session_name
+
+		stock_count.insert()
+
+		return {
+			"status": "success",
+			"stock_count": stock_count.name,
+			"message": f"Stock count created: {stock_count.name}",
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in create_pow_stock_count: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def get_pow_stock_counts(session_name=None, status=None):
-    """Get POW Stock Counts for the current user or session"""
-    try:
-        filters = {}
-        
-        if session_name:
-            filters["pow_session_id"] = session_name
-        else:
-            # Get counts for current user
-            filters["counted_by"] = frappe.session.user
-        
-        if status:
-            filters["status"] = status
-        
-        # Get all stock counts including submitted ones
-        stock_counts = frappe.get_all(
-            "POW Stock Count",
-            filters=filters,
-            fields=["name", "warehouse", "count_date", "status", "company", "docstatus"],
-            order_by="creation desc"
-        )
-        
-        # For submitted documents, get the actual status from database
-        for count in stock_counts:
-            if count.docstatus == 1:  # Submitted document
-                # Get the current status from database
-                actual_status = frappe.db.get_value("POW Stock Count", count.name, "status")
-                if actual_status:
-                    count.status = actual_status
-        
-        return stock_counts
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in get_pow_stock_counts: {str(e)}")
-        return [] 
+	"""Get POW Stock Counts for the current user or session"""
+	try:
+		filters = {}
+
+		if session_name:
+			filters["pow_session_id"] = session_name
+		else:
+			# Get counts for current user
+			filters["counted_by"] = frappe.session.user
+
+		if status:
+			filters["status"] = status
+
+		# Get all stock counts including submitted ones
+		stock_counts = frappe.get_all(
+			"POW Stock Count",
+			filters=filters,
+			fields=["name", "warehouse", "count_date", "status", "company", "docstatus"],
+			order_by="creation desc",
+		)
+
+		# For submitted documents, get the actual status from database
+		for count in stock_counts:
+			if count.docstatus == 1:  # Submitted document
+				# Get the current status from database
+				actual_status = frappe.db.get_value("POW Stock Count", count.name, "status")
+				if actual_status:
+					count.status = actual_status
+
+		return stock_counts
+
+	except Exception as e:
+		frappe.logger().error(f"Error in get_pow_stock_counts: {e!s}")
+		return []
+
 
 @frappe.whitelist()
 def get_warehouse_items_for_stock_count(warehouse, pow_profile=None):
-    """Get all items with stock in the specified warehouse for stock count."""
-    try:
-        if not warehouse:
-            return []
+	"""Get all items with stock in the specified warehouse for stock count."""
+	try:
+		if not warehouse:
+			return []
 
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
-        
-        # Get items with stock in the warehouse, including batch/serial flags
-        items = frappe.db.sql("""
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
+
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
+		# Get items with stock in the warehouse, including batch/serial flags
+		items = frappe.db.sql(
+			"""
             SELECT
                 b.item_code,
                 i.item_name,
@@ -1224,1049 +1277,1054 @@ def get_warehouse_items_for_stock_count(warehouse, pow_profile=None):
             INNER JOIN `tabItem` i ON b.item_code = i.name
             WHERE b.warehouse = %s AND b.actual_qty > 0
             ORDER BY i.item_name
-        """, warehouse, as_dict=True)
+        """,
+			warehouse,
+			as_dict=True,
+		)
 
-        # Expand batched items: one line per batch instead of one line per item
-        from warehousesuite.services.pow_batch_serial_service import get_available_batches
+		# Expand batched items: one line per batch instead of one line per item
+		from warehousesuite.services.pow_batch_serial_service import get_available_batches
 
-        result = []
-        for item in items:
-            if item.get("has_batch_no"):
-                batches = get_available_batches(item["item_code"], warehouse)
-                if batches:
-                    for batch in batches:
-                        result.append({
-                            "item_code": item["item_code"],
-                            "item_name": item["item_name"],
-                            "stock_uom": item["stock_uom"],
-                            "current_qty": batch["qty"],
-                            "has_batch_no": item["has_batch_no"],
-                            "has_serial_no": item["has_serial_no"],
-                            "batch_no": batch["batch_no"],
-                        })
-                else:
-                    # Batch item but no batches found — show aggregate line
-                    result.append(item)
-            else:
-                result.append(item)
+		result = []
+		for item in items:
+			if item.get("has_batch_no"):
+				batches = get_available_batches(item["item_code"], warehouse)
+				if batches:
+					for batch in batches:
+						result.append(
+							{
+								"item_code": item["item_code"],
+								"item_name": item["item_name"],
+								"stock_uom": item["stock_uom"],
+								"current_qty": batch["qty"],
+								"has_batch_no": item["has_batch_no"],
+								"has_serial_no": item["has_serial_no"],
+								"batch_no": batch["batch_no"],
+							}
+						)
+				else:
+					# Batch item but no batches found — show aggregate line
+					result.append(item)
+			else:
+				result.append(item)
 
-        return result
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in get_warehouse_items_for_stock_count: {str(e)}")
-        return [] 
+		return result
+
+	except Exception as e:
+		frappe.logger().error(f"Error in get_warehouse_items_for_stock_count: {e!s}")
+		return []
+
 
 @frappe.whitelist()
 def create_pow_stock_count_with_items(warehouse, company, session_name, items_data):
-    """Create a new POW Stock Count with items"""
-    try:
-        items_data = frappe.parse_json(items_data)
-        
-        # Create new POW Stock Count
-        stock_count = frappe.new_doc("POW Stock Count")
-        stock_count.company = company
-        stock_count.warehouse = warehouse
-        stock_count.status = "Draft"
-        
-        # Set POW Session ID if provided
-        if session_name:
-            stock_count.pow_session_id = session_name
-        
-        # Add items — variance rows only (counted vs system)
-        appended = 0
-        for item in items_data:
-            if item.get("physical_qty") is None:
-                continue
-            phy = float(item["physical_qty"])
-            if not item_row_has_difference(phy, item.get("current_qty")):
-                continue
-            row_data = {
-                "item_code": item["item_code"],
-                "item_name": item["item_name"],
-                "warehouse": warehouse,
-                "current_stock": item["current_qty"],
-                "counted_qty": phy,
-                "uom": item["stock_uom"],
-            }
-            if item.get("batch_no"):
-                row_data["batch_no"] = item["batch_no"]
-            stock_count.append("items", row_data)
-            appended += 1
+	"""Create a new POW Stock Count with items"""
+	try:
+		items_data = frappe.parse_json(items_data)
 
-        stock_count.insert()
+		# Create new POW Stock Count
+		stock_count = frappe.new_doc("POW Stock Count")
+		stock_count.company = company
+		stock_count.warehouse = warehouse
+		stock_count.status = "Draft"
 
-        return {
-            "status": "success",
-            "stock_count": stock_count.name,
-            "message": _("Stock count created with {0} variance line(s): {1}").format(
-                appended, stock_count.name
-            ),
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in create_pow_stock_count_with_items: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+		# Set POW Session ID if provided
+		if session_name:
+			stock_count.pow_session_id = session_name
+
+		# Add items — variance rows only (counted vs system)
+		appended = 0
+		for item in items_data:
+			if item.get("physical_qty") is None:
+				continue
+			phy = float(item["physical_qty"])
+			if not item_row_has_difference(phy, item.get("current_qty")):
+				continue
+			row_data = {
+				"item_code": item["item_code"],
+				"item_name": item["item_name"],
+				"warehouse": warehouse,
+				"current_stock": item["current_qty"],
+				"counted_qty": phy,
+				"uom": item["stock_uom"],
+			}
+			if item.get("batch_no"):
+				row_data["batch_no"] = item["batch_no"]
+			stock_count.append("items", row_data)
+			appended += 1
+
+		stock_count.insert()
+
+		return {
+			"status": "success",
+			"stock_count": stock_count.name,
+			"message": _("Stock count created with {0} variance line(s): {1}").format(
+				appended, stock_count.name
+			),
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in create_pow_stock_count_with_items: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def check_existing_draft_stock_count(warehouse, session_name):
-    """Check if there's an existing draft stock count for this warehouse and session"""
-    try:
-        existing_draft = frappe.get_all(
-            "POW Stock Count",
-            filters={
-                "warehouse": warehouse,
-                "pow_session_id": session_name,
-                "status": "Draft",
-                "docstatus": 0  # Only look for unsaved/draft documents
-            },
-            fields=["name", "warehouse", "creation"],
-            limit=1
-        )
-        
-        return {
-            "has_draft": len(existing_draft) > 0,
-            "draft_info": existing_draft[0] if existing_draft else None
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in check_existing_draft_stock_count: {str(e)}")
-        return {"has_draft": False, "draft_info": None}
+	"""Check if there's an existing draft stock count for this warehouse and session"""
+	try:
+		existing_draft = frappe.get_all(
+			"POW Stock Count",
+			filters={
+				"warehouse": warehouse,
+				"pow_session_id": session_name,
+				"status": "Draft",
+				"docstatus": 0,  # Only look for unsaved/draft documents
+			},
+			fields=["name", "warehouse", "creation"],
+			limit=1,
+		)
+
+		return {
+			"has_draft": len(existing_draft) > 0,
+			"draft_info": existing_draft[0] if existing_draft else None,
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in check_existing_draft_stock_count: {e!s}")
+		return {"has_draft": False, "draft_info": None}
+
 
 @frappe.whitelist()
 def save_pow_stock_count_draft(warehouse, company, session_name, items_data, pow_profile=None):
-    """Save a POW Stock Count as draft"""
-    try:
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+	"""Save a POW Stock Count as draft"""
+	try:
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
 
-        items_data = frappe.parse_json(items_data)
-        
-        # Check for existing draft
-        existing_check = check_existing_draft_stock_count(warehouse, session_name)
-        if existing_check["has_draft"]:
-            # Update existing draft
-            stock_count = frappe.get_doc("POW Stock Count", existing_check["draft_info"]["name"])
-            # Clear existing items
-            stock_count.items = []
-        else:
-            # Create new draft
-            stock_count = frappe.new_doc("POW Stock Count")
-            stock_count.company = company
-            stock_count.warehouse = warehouse
-            stock_count.status = "Draft"
-            
-            # Set POW Session ID if provided
-            if session_name:
-                stock_count.pow_session_id = session_name
-        
-        # Add items — variance rows only
-        for item in items_data:
-            phy = float(item["physical_qty"])
-            if not item_row_has_difference(phy, item.get("current_qty")):
-                continue
-            row_data = {
-                "item_code": item["item_code"],
-                "item_name": item["item_name"],
-                "warehouse": warehouse,
-                "current_stock": item["current_qty"],
-                "counted_qty": phy,
-                "uom": item["stock_uom"],
-            }
-            if item.get("batch_no"):
-                row_data["batch_no"] = item["batch_no"]
-            stock_count.append("items", row_data)
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
 
-        # Save as draft (don't submit) - this will have docstatus = 0
-        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during save
-        stock_count.save()
+		items_data = frappe.parse_json(items_data)
 
-        return {
-            "status": "success",
-            "stock_count": stock_count.name,
-            "message": _("Stock count draft saved: {0}").format(stock_count.name),
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in save_pow_stock_count_draft: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+		# Check for existing draft
+		existing_check = check_existing_draft_stock_count(warehouse, session_name)
+		if existing_check["has_draft"]:
+			# Update existing draft
+			stock_count = frappe.get_doc("POW Stock Count", existing_check["draft_info"]["name"])
+			# Clear existing items
+			stock_count.items = []
+		else:
+			# Create new draft
+			stock_count = frappe.new_doc("POW Stock Count")
+			stock_count.company = company
+			stock_count.warehouse = warehouse
+			stock_count.status = "Draft"
+
+			# Set POW Session ID if provided
+			if session_name:
+				stock_count.pow_session_id = session_name
+
+		# Add items — variance rows only
+		for item in items_data:
+			phy = float(item["physical_qty"])
+			if not item_row_has_difference(phy, item.get("current_qty")):
+				continue
+			row_data = {
+				"item_code": item["item_code"],
+				"item_name": item["item_name"],
+				"warehouse": warehouse,
+				"current_stock": item["current_qty"],
+				"counted_qty": phy,
+				"uom": item["stock_uom"],
+			}
+			if item.get("batch_no"):
+				row_data["batch_no"] = item["batch_no"]
+			stock_count.append("items", row_data)
+
+		# Save as draft (don't submit) - this will have docstatus = 0
+		stock_count.flags.ignore_draft_validation = True  # Skip draft validation during save
+		stock_count.save()
+
+		return {
+			"status": "success",
+			"stock_count": stock_count.name,
+			"message": _("Stock count draft saved: {0}").format(stock_count.name),
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in save_pow_stock_count_draft: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def create_and_submit_pow_stock_count(warehouse, company, session_name, items_data, pow_profile=None):
-    """Create and submit a new POW Stock Count with items"""
-    try:
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+	"""Create and submit a new POW Stock Count with items"""
+	try:
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
 
-        items_data = frappe.parse_json(items_data)
-        
-        # Check for existing draft and delete it if exists
-        existing_check = check_existing_draft_stock_count(warehouse, session_name)
-        if existing_check["has_draft"]:
-            try:
-                frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
-                frappe.db.commit()  # Ensure deletion is committed
-            except Exception as e:
-                frappe.logger().warning(f"Could not delete existing draft: {str(e)}")
-        
-        # Create new POW Stock Count
-        stock_count = frappe.new_doc("POW Stock Count")
-        stock_count.company = company
-        stock_count.warehouse = warehouse
-        stock_count.status = "Draft"  # Start as draft, will be updated on submit
-        
-        # Set POW Session ID if provided
-        if session_name:
-            stock_count.pow_session_id = session_name
-        
-        # Variance lines only (counted vs system)
-        diff_rows = []
-        for item in items_data:
-            if item.get("physical_qty") is None:
-                continue
-            phy = float(item["physical_qty"])
-            if not item_row_has_difference(phy, item.get("current_qty")):
-                continue
-            diff_rows.append(item)
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
 
-        if not diff_rows:
-            frappe.throw(_("No stock differences to submit."))
+		items_data = frappe.parse_json(items_data)
 
-        for item in diff_rows:
-            row_data = {
-                "item_code": item["item_code"],
-                "item_name": item["item_name"],
-                "warehouse": warehouse,
-                "current_stock": item["current_qty"],
-                "counted_qty": float(item["physical_qty"]),
-                "uom": item["stock_uom"],
-            }
-            if item.get("batch_no"):
-                row_data["batch_no"] = item["batch_no"]
-            stock_count.append("items", row_data)
+		# Check for existing draft and delete it if exists
+		existing_check = check_existing_draft_stock_count(warehouse, session_name)
+		if existing_check["has_draft"]:
+			try:
+				frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
+				frappe.db.commit()  # Ensure deletion is committed
+			except Exception as e:
+				frappe.logger().warning(f"Could not delete existing draft: {e!s}")
 
-        # Insert and submit the stock count
-        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
-        stock_count.insert()
-        stock_count.submit()  # This will trigger the on_submit method and set status to "Submitted"
+		# Create new POW Stock Count
+		stock_count = frappe.new_doc("POW Stock Count")
+		stock_count.company = company
+		stock_count.warehouse = warehouse
+		stock_count.status = "Draft"  # Start as draft, will be updated on submit
 
-        # Refresh to get updated status and count_date from on_submit
-        stock_count.reload()
-        count_dt = stock_count.count_date
+		# Set POW Session ID if provided
+		if session_name:
+			stock_count.pow_session_id = session_name
 
-        time_hint = format_datetime(count_dt) if count_dt else ""
-        return {
-            "status": "success",
-            "stock_count": stock_count.name,
-            "count_date": str(count_dt) if count_dt else None,
-            "count_date_formatted": time_hint or None,
-            "message": _(
-                "Stock count {0} submitted. Count recorded at: {1}. Variance line(s): {2}."
-            ).format(stock_count.name, time_hint or _("(time pending)"), len(diff_rows)),
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in create_and_submit_pow_stock_count: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+		# Variance lines only (counted vs system)
+		diff_rows = []
+		for item in items_data:
+			if item.get("physical_qty") is None:
+				continue
+			phy = float(item["physical_qty"])
+			if not item_row_has_difference(phy, item.get("current_qty")):
+				continue
+			diff_rows.append(item)
+
+		if not diff_rows:
+			frappe.throw(_("No stock differences to submit."))
+
+		for item in diff_rows:
+			row_data = {
+				"item_code": item["item_code"],
+				"item_name": item["item_name"],
+				"warehouse": warehouse,
+				"current_stock": item["current_qty"],
+				"counted_qty": float(item["physical_qty"]),
+				"uom": item["stock_uom"],
+			}
+			if item.get("batch_no"):
+				row_data["batch_no"] = item["batch_no"]
+			stock_count.append("items", row_data)
+
+		# Insert and submit the stock count
+		stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
+		stock_count.insert()
+		stock_count.submit()  # This will trigger the on_submit method and set status to "Submitted"
+
+		# Refresh to get updated status and count_date from on_submit
+		stock_count.reload()
+		count_dt = stock_count.count_date
+
+		time_hint = format_datetime(count_dt) if count_dt else ""
+		return {
+			"status": "success",
+			"stock_count": stock_count.name,
+			"count_date": str(count_dt) if count_dt else None,
+			"count_date_formatted": time_hint or None,
+			"message": _("Stock count {0} submitted. Count recorded at: {1}. Variance line(s): {2}.").format(
+				stock_count.name, time_hint or _("(time pending)"), len(diff_rows)
+			),
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in create_and_submit_pow_stock_count: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def create_stock_match_entry(warehouse, company, session_name, items_count, pow_profile=None):
-    """Create a POW Stock Count entry for when all quantities match (no differences)"""
-    try:
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+	"""Create a POW Stock Count entry for when all quantities match (no differences)"""
+	try:
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
 
-        # Check for existing draft and delete it if exists
-        existing_check = check_existing_draft_stock_count(warehouse, session_name)
-        if existing_check["has_draft"]:
-            try:
-                frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
-                frappe.db.commit()  # Ensure deletion is committed
-            except Exception as e:
-                frappe.logger().warning(f"Could not delete existing draft: {str(e)}")
-        
-        # Create new POW Stock Count for stock match
-        stock_count = frappe.new_doc("POW Stock Count")
-        stock_count.company = company
-        stock_count.warehouse = warehouse
-        stock_count.status = "Submitted"  # Auto-submit since no differences
-        stock_count.count_date = frappe.utils.now_datetime()
-        stock_count.counted_by = frappe.session.user
-        
-        # Add a note about the stock match
-        stock_count.remarks = f"Stock count completed for {items_count} items. All physical quantities match current stock levels. No discrepancies found."
-        
-        # Set POW Session ID if provided
-        if session_name:
-            stock_count.pow_session_id = session_name
-        
-        # Insert and submit the stock count
-        stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
-        stock_count.insert()
-        stock_count.submit()  # Submit immediately since submitted
-        stock_count.reload()
-        count_dt = stock_count.count_date
-        time_hint = format_datetime(count_dt) if count_dt else ""
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
 
-        return {
-            "status": "success",
-            "stock_count": stock_count.name,
-            "count_date": str(count_dt) if count_dt else None,
-            "count_date_formatted": time_hint or None,
-            "message": _(
-                "Stock verification recorded as {0}. All {1} items match. Count time: {2}."
-            ).format(stock_count.name, items_count, time_hint or _("(time pending)")),
-        }
+		# Check for existing draft and delete it if exists
+		existing_check = check_existing_draft_stock_count(warehouse, session_name)
+		if existing_check["has_draft"]:
+			try:
+				frappe.delete_doc("POW Stock Count", existing_check["draft_info"]["name"], force=True)
+				frappe.db.commit()  # Ensure deletion is committed
+			except Exception as e:
+				frappe.logger().warning(f"Could not delete existing draft: {e!s}")
 
-    except Exception as e:
-        frappe.logger().error(f"Error in create_stock_match_entry: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+		# Create new POW Stock Count for stock match
+		stock_count = frappe.new_doc("POW Stock Count")
+		stock_count.company = company
+		stock_count.warehouse = warehouse
+		stock_count.status = "Submitted"  # Auto-submit since no differences
+		stock_count.count_date = frappe.utils.now_datetime()
+		stock_count.counted_by = frappe.session.user
+
+		# Add a note about the stock match
+		stock_count.remarks = f"Stock count completed for {items_count} items. All physical quantities match current stock levels. No discrepancies found."
+
+		# Set POW Session ID if provided
+		if session_name:
+			stock_count.pow_session_id = session_name
+
+		# Insert and submit the stock count
+		stock_count.flags.ignore_draft_validation = True  # Skip draft validation during creation
+		stock_count.insert()
+		stock_count.submit()  # Submit immediately since submitted
+		stock_count.reload()
+		count_dt = stock_count.count_date
+		time_hint = format_datetime(count_dt) if count_dt else ""
+
+		return {
+			"status": "success",
+			"stock_count": stock_count.name,
+			"count_date": str(count_dt) if count_dt else None,
+			"count_date_formatted": time_hint or None,
+			"message": _("Stock verification recorded as {0}. All {1} items match. Count time: {2}.").format(
+				stock_count.name, items_count, time_hint or _("(time pending)")
+			),
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in create_stock_match_entry: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def validate_transfer_receive_quantities(stock_entry_name, items_data):
-    """Validate only UI-specific aspects of transfer receive"""
-    try:
-        items_data = frappe.parse_json(items_data)
-        validation_errors = []
-        
-        if not items_data:
-            return {
-                "status": "error",
-                "message": "No items provided for validation"
-            }
-            
-        # Get the original stock entry
-        original_se = frappe.get_doc("Stock Entry", stock_entry_name)
-        
-        # Only validate UI-specific requirements
-        for item_data in items_data:
-            item_code = item_data.get('item_code')
-            qty = item_data.get('qty', 0)
-            ste_detail = item_data.get('ste_detail')
-            
-            # Basic data validation
-            if not item_code:
-                validation_errors.append(f"Item code is required")
-                continue
-                
-            if not qty or qty <= 0:
-                validation_errors.append(f"Quantity must be greater than 0 for item {item_code}")
-                continue
-            
-            # Find corresponding original item
-            original_item = None
-            for item in original_se.items:
-                if ste_detail and item.name == ste_detail:
-                    original_item = item
-                    break
-                elif not ste_detail and item.item_code == item_code:
-                    original_item = item
-                    break
-            
-            if not original_item:
-                validation_errors.append(f"Item {item_code} not found in original transfer")
-                continue
-                # Get the quantity for this specific row
-                total_sent_qty = original_item.qty
-                transferred_qty = original_item.transferred_qty or 0
-                
-                # Calculate remaining quantity for this specific row
-                remaining_qty = total_sent_qty - transferred_qty
-                
-                # Check if quantity exceeds remaining for this specific row
-                if qty > remaining_qty:
-                    validation_errors.append({
-                        'item_code': item_code,
-                        'item_name': original_item.item_name,
-                        'requested_qty': qty,
-                        'remaining_qty': remaining_qty,
-                        'total_sent_qty': total_sent_qty,
-                        'already_received_qty': transferred_qty,
-                        'uom': original_item.uom,
-                        'error_type': 'exceeds_remaining'
-                    })
-                
-                # Accumulate total requested qty per item for stock validation
-                if item_code not in item_totals:
-                    item_totals[item_code] = {
-                        'total_requested': 0,
-                        'uom': original_item.uom,
-                        'item_name': original_item.item_name
-                    }
-                item_totals[item_code]['total_requested'] += qty
-        
-        # Check actual stock in in-transit warehouse for each item
-        from erpnext.stock.utils import get_stock_balance
-        in_transit_warehouse = original_se.to_warehouse
-        
-        for item_code, item_info in item_totals.items():
-            actual_stock_qty = get_stock_balance(item_code, in_transit_warehouse) or 0
-            
-            if item_info['total_requested'] > actual_stock_qty:
-                validation_errors.append({
-                    'item_code': item_code,
-                    'item_name': item_info['item_name'],
-                    'requested_qty': item_info['total_requested'],
-                    'available_stock': actual_stock_qty,
-                    'uom': item_info['uom'],
-                    'warehouse': in_transit_warehouse,
-                    'error_type': 'insufficient_stock'
-                })
-        
-        return {
-            "status": "success",
-            "valid": len(validation_errors) == 0,
-            "errors": validation_errors,
-            "discrepancies": discrepancies
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error validating transfer receive quantities: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+	"""Validate only UI-specific aspects of transfer receive"""
+	try:
+		items_data = frappe.parse_json(items_data)
+		validation_errors = []
+		item_totals = {}
+
+		if not items_data:
+			return {"status": "error", "message": "No items provided for validation"}
+
+		# Get the original stock entry
+		original_se = frappe.get_doc("Stock Entry", stock_entry_name)
+
+		# Only validate UI-specific requirements
+		for item_data in items_data:
+			item_code = item_data.get("item_code")
+			qty = item_data.get("qty", 0)
+			ste_detail = item_data.get("ste_detail")
+
+			# Basic data validation
+			if not item_code:
+				validation_errors.append("Item code is required")
+				continue
+
+			if not qty or qty <= 0:
+				validation_errors.append(f"Quantity must be greater than 0 for item {item_code}")
+				continue
+
+			# Find corresponding original item
+			original_item = None
+			for item in original_se.items:
+				if ste_detail and item.name == ste_detail:
+					original_item = item
+					break
+				elif not ste_detail and item.item_code == item_code:
+					original_item = item
+					break
+
+			if not original_item:
+				validation_errors.append(f"Item {item_code} not found in original transfer")
+				continue
+
+			total_sent_qty = original_item.qty
+			transferred_qty = original_item.transferred_qty or 0
+			remaining_qty = total_sent_qty - transferred_qty
+
+			if qty > remaining_qty:
+				validation_errors.append(
+					{
+						"item_code": item_code,
+						"item_name": original_item.item_name,
+						"requested_qty": qty,
+						"remaining_qty": remaining_qty,
+						"total_sent_qty": total_sent_qty,
+						"already_received_qty": transferred_qty,
+						"uom": original_item.uom,
+						"error_type": "exceeds_remaining",
+					}
+				)
+
+			if item_code not in item_totals:
+				item_totals[item_code] = {
+					"total_requested": 0,
+					"uom": original_item.uom,
+					"item_name": original_item.item_name,
+				}
+			item_totals[item_code]["total_requested"] += qty
+
+		from erpnext.stock.utils import get_stock_balance
+
+		in_transit_warehouse = original_se.to_warehouse
+
+		for item_code, item_info in item_totals.items():
+			actual_stock_qty = get_stock_balance(item_code, in_transit_warehouse) or 0
+
+			if item_info["total_requested"] > actual_stock_qty:
+				validation_errors.append(
+					{
+						"item_code": item_code,
+						"item_name": item_info["item_name"],
+						"requested_qty": item_info["total_requested"],
+						"available_stock": actual_stock_qty,
+						"uom": item_info["uom"],
+						"warehouse": in_transit_warehouse,
+						"error_type": "insufficient_stock",
+					}
+				)
+
+		return {
+			"status": "success",
+			"valid": len(validation_errors) == 0,
+			"errors": validation_errors,
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error validating transfer receive quantities: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
-def create_concerns_from_discrepancies(concern_data, source_document_type, source_document, pow_session_id=None):
-    """Create stock concerns from transfer discrepancies"""
-    try:
-        from warehousesuite.warehousesuite.utils.validation import (
-            validate_concern_data, create_api_response
-        )
-        
-        concern_data = frappe.parse_json(concern_data)
-        
-        # Validate concern data
-        validation_result = validate_concern_data(concern_data)
-        
-        if not validation_result.is_valid:
-            return create_api_response(validation_result)
-        
-        # Get company with fallback
-        company = frappe.defaults.get_global_default('company')
-        if not company:
-            company = frappe.db.get_single_value('Global Defaults', 'default_company')
-        if not company:
-            company = frappe.get_all('Company', limit=1, pluck='name')[0] if frappe.get_all('Company') else None
-        
-        # Create concern for the entire stock entry
-        concern = frappe.new_doc("POW Stock Concern")
-        concern.company = company
-        concern.concern_type = concern_data.get('concern_type', 'Quantity Mismatch')
-        concern.priority = concern_data.get('priority', 'Medium')
-        concern.source_document_type = source_document_type
-        concern.source_document = source_document
-        concern.pow_session_id = pow_session_id
-        concern.concern_description = concern_data.get('concern_description', f'Concern raised for {source_document_type}: {source_document}')
-        concern.receiver_notes = concern_data.get('receiver_notes', '')
-        
-        # Validate concern before insert
-        concern.validate()
-        
-        # Insert and submit the concern
-        concern.insert()
-        concern.submit()
-        
-        # Commit the transaction
-        frappe.db.commit()
-        
-        return {
-            "status": "success",
-            "concern_ids": [concern.name],
-            "message": f"Stock concern created successfully: {concern.name}"
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error creating concern: {str(e)}")
-        return {
-            "status": "error",
-            "message": "An error occurred while creating the concern. Please try again."
-        } 
+def create_concerns_from_discrepancies(
+	concern_data, source_document_type, source_document, pow_session_id=None
+):
+	"""Create stock concerns from transfer discrepancies"""
+	try:
+		from warehousesuite.warehousesuite.utils.validation import create_api_response, validate_concern_data
+
+		concern_data = frappe.parse_json(concern_data)
+
+		# Validate concern data
+		validation_result = validate_concern_data(concern_data)
+
+		if not validation_result.is_valid:
+			return create_api_response(validation_result)
+
+		# Get company with fallback
+		company = frappe.defaults.get_global_default("company")
+		if not company:
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+		if not company:
+			company = (
+				frappe.get_all("Company", limit=1, pluck="name")[0] if frappe.get_all("Company") else None
+			)
+
+		# Create concern for the entire stock entry
+		concern = frappe.new_doc("POW Stock Concern")
+		concern.company = company
+		concern.concern_type = concern_data.get("concern_type", "Quantity Mismatch")
+		concern.priority = concern_data.get("priority", "Medium")
+		concern.source_document_type = source_document_type
+		concern.source_document = source_document
+		concern.pow_session_id = pow_session_id
+		concern.concern_description = concern_data.get(
+			"concern_description", f"Concern raised for {source_document_type}: {source_document}"
+		)
+		concern.receiver_notes = concern_data.get("receiver_notes", "")
+
+		# Validate concern before insert
+		concern.validate()
+
+		# Insert and submit the concern
+		concern.insert()
+		concern.submit()
+
+		# Commit the transaction
+		frappe.db.commit()
+
+		return {
+			"status": "success",
+			"concern_ids": [concern.name],
+			"message": f"Stock concern created successfully: {concern.name}",
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error creating concern: {e!s}")
+		return {
+			"status": "error",
+			"message": "An error occurred while creating the concern. Please try again.",
+		}
+
 
 @frappe.whitelist()
 def test_pow_stock_concern_creation():
-    """Test function to verify POW Stock Concern doctype is working (System Manager only)."""
-    if "System Manager" not in frappe.get_roles():
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-    try:
-        frappe.logger().info("Testing POW Stock Concern creation...")
-        
-        # Get company
-        company = frappe.defaults.get_global_default('company')
-        if not company:
-            company = frappe.db.get_single_value('Global Defaults', 'default_company')
-        if not company:
-            company = frappe.get_all('Company', limit=1, pluck='name')[0] if frappe.get_all('Company') else None
-        
-        frappe.logger().info(f"Using company: {company}")
-        
-        # Create a test concern
-        concern = frappe.new_doc("POW Stock Concern")
-        concern.company = company
-        concern.concern_type = "Quantity Mismatch"
-        concern.priority = "Medium"
-        concern.source_document_type = "Stock Entry"
-        concern.source_document = "TEST-STOCK-ENTRY-001"
-        concern.concern_description = "Test concern creation for stock entry level"
-        concern.receiver_notes = "Test receiver notes"
-        
-        frappe.logger().info(f"Test concern data: {concern.as_dict()}")
-        
-        # Validate, insert and submit
-        concern.validate()
-        concern.insert()
-        concern.submit()
-        frappe.db.commit()
-        
-        frappe.logger().info(f"Test concern created successfully: {concern.name}")
-        
-        # Clean up - delete the test concern
-        frappe.delete_doc("POW Stock Concern", concern.name)
-        frappe.db.commit()
-        
-        return {
-            "status": "success",
-            "message": f"Test concern created and deleted successfully. Concern Name: {concern.name}"
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error in test concern creation: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+	"""Test function to verify POW Stock Concern doctype is working (System Manager only)."""
+	if "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	try:
+		frappe.logger().info("Testing POW Stock Concern creation...")
+
+		# Get company
+		company = frappe.defaults.get_global_default("company")
+		if not company:
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+		if not company:
+			company = (
+				frappe.get_all("Company", limit=1, pluck="name")[0] if frappe.get_all("Company") else None
+			)
+
+		frappe.logger().info(f"Using company: {company}")
+
+		# Create a test concern
+		concern = frappe.new_doc("POW Stock Concern")
+		concern.company = company
+		concern.concern_type = "Quantity Mismatch"
+		concern.priority = "Medium"
+		concern.source_document_type = "Stock Entry"
+		concern.source_document = "TEST-STOCK-ENTRY-001"
+		concern.concern_description = "Test concern creation for stock entry level"
+		concern.receiver_notes = "Test receiver notes"
+
+		frappe.logger().info(f"Test concern data: {concern.as_dict()}")
+
+		# Validate, insert and submit
+		concern.validate()
+		concern.insert()
+		concern.submit()
+		frappe.db.commit()
+
+		frappe.logger().info(f"Test concern created successfully: {concern.name}")
+
+		# Clean up - delete the test concern
+		frappe.delete_doc("POW Stock Concern", concern.name)
+		frappe.db.commit()
+
+		return {
+			"status": "success",
+			"message": f"Test concern created and deleted successfully. Concern Name: {concern.name}",
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error in test concern creation: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def get_item_inquiry_data(item_code, allowed_warehouses=None, pow_profile=None):
-    """Get comprehensive item information for inquiry modal.
+	"""Get comprehensive item information for inquiry modal.
 
-    When ``pow_profile`` is set, the warehouse scope is derived server-side
-    (ignoring any client-supplied ``allowed_warehouses``).
-    """
-    try:
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
-            _p, allowed_warehouses = validate_pow_profile_access(pow_profile)
+	When ``pow_profile`` is set, the warehouse scope is derived server-side
+	(ignoring any client-supplied ``allowed_warehouses``).
+	"""
+	try:
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
 
-        item = frappe.get_doc("Item", item_code)
+			_p, allowed_warehouses = validate_pow_profile_access(pow_profile)
 
-        item_data = {
-            "item_code": item.name,
-            "item_name": item.item_name,
-            "item_group": item.item_group,
-            "description": item.description,
-            "image": item.image,
-            "brand": item.brand,
-            "stock_uom": item.stock_uom,
-            "weight": item.weight_per_unit or 0,
-            "weight_uom": item.weight_uom or "",
-            "disabled": item.disabled,
-            "has_variants": item.has_variants,
-            "variant_of": item.variant_of,
-            "is_stock_item": item.is_stock_item
-        }
-        
-        # Get barcodes
-        barcodes = frappe.get_all("Item Barcode",
-            filters={"parent": item_code},
-            fields=["barcode", "barcode_type", "uom"],
-            order_by="idx"
-        )
-        item_data["barcodes"] = barcodes
-        
-        # Get UOM conversions
-        uom_conversions = []
-        if item.uoms:
-            for uom_entry in item.uoms:
-                uom_conversions.append({
-                    "uom": uom_entry.uom,
-                    "conversion_factor": uom_entry.conversion_factor
-                })
-        item_data["uom_conversions"] = uom_conversions
-        
-        stock_info = []
-        warehouse_filter = {"item_code": item_code}
+		item = frappe.get_doc("Item", item_code)
 
-        if allowed_warehouses:
-            if isinstance(allowed_warehouses, str):
-                allowed_warehouses = frappe.parse_json(allowed_warehouses)
-            warehouse_filter["warehouse"] = ["in", allowed_warehouses]
-        else:
-            warehouse_filter["warehouse"] = ["in", []]
+		item_data = {
+			"item_code": item.name,
+			"item_name": item.item_name,
+			"item_group": item.item_group,
+			"description": item.description,
+			"image": item.image,
+			"brand": item.brand,
+			"stock_uom": item.stock_uom,
+			"weight": item.weight_per_unit or 0,
+			"weight_uom": item.weight_uom or "",
+			"disabled": item.disabled,
+			"has_variants": item.has_variants,
+			"variant_of": item.variant_of,
+			"is_stock_item": item.is_stock_item,
+		}
 
-        bins = frappe.get_all("Bin",
-            filters=warehouse_filter,
-            fields=["warehouse", "actual_qty", "ordered_qty", "planned_qty",
-                   "reserved_qty", "projected_qty"],
-            order_by="warehouse"
-        )
-        
-        for bin_data in bins:
-            # Get warehouse type
-            warehouse_type = frappe.db.get_value("Warehouse", bin_data.warehouse, "warehouse_type") or "Standard"
-            
-            stock_info.append({
-                "warehouse": bin_data.warehouse,
-                "warehouse_type": warehouse_type,
-                "actual_qty": bin_data.actual_qty or 0,
-                "ordered_qty": bin_data.ordered_qty or 0,
-                "planned_qty": bin_data.planned_qty or 0,
-                "reserved_qty": bin_data.reserved_qty or 0,
-                "projected_qty": bin_data.projected_qty or 0,
-                "available_qty": (bin_data.actual_qty or 0) - (bin_data.reserved_qty or 0)
-            })
-            
-        item_data["stock_info"] = stock_info
-        
-        # Calculate total stock across allowed warehouses only
-        total_stock = sum(s["actual_qty"] for s in stock_info)
-        total_available = sum(s["available_qty"] for s in stock_info)
-        item_data["total_stock"] = total_stock
-        item_data["total_available"] = total_available
-        
-        # Get item attributes if any
-        attributes = []
-        if hasattr(item, 'attributes') and item.attributes:
-            for attr in item.attributes:
-                attributes.append({
-                    "attribute": attr.attribute,
-                    "attribute_value": attr.attribute_value
-                })
-        item_data["attributes"] = attributes
-        
-        # Get supplier information
-        suppliers = frappe.get_all("Item Supplier",
-            filters={"parent": item_code},
-            fields=["supplier", "supplier_part_no"],
-            order_by="idx",
-            limit=5
-        )
-        item_data["suppliers"] = suppliers
-        
-        return {
-            "status": "success",
-            "data": item_data
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting item inquiry data: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+		# Get barcodes
+		barcodes = frappe.get_all(
+			"Item Barcode",
+			filters={"parent": item_code},
+			fields=["barcode", "barcode_type", "uom"],
+			order_by="idx",
+		)
+		item_data["barcodes"] = barcodes
+
+		# Get UOM conversions
+		uom_conversions = []
+		if item.uoms:
+			for uom_entry in item.uoms:
+				uom_conversions.append(
+					{"uom": uom_entry.uom, "conversion_factor": uom_entry.conversion_factor}
+				)
+		item_data["uom_conversions"] = uom_conversions
+
+		stock_info = []
+		warehouse_filter = {"item_code": item_code}
+
+		if allowed_warehouses:
+			if isinstance(allowed_warehouses, str):
+				allowed_warehouses = frappe.parse_json(allowed_warehouses)
+			warehouse_filter["warehouse"] = ["in", allowed_warehouses]
+		else:
+			warehouse_filter["warehouse"] = ["in", []]
+
+		bins = frappe.get_all(
+			"Bin",
+			filters=warehouse_filter,
+			fields=["warehouse", "actual_qty", "ordered_qty", "planned_qty", "reserved_qty", "projected_qty"],
+			order_by="warehouse",
+		)
+
+		for bin_data in bins:
+			# Get warehouse type
+			warehouse_type = (
+				frappe.db.get_value("Warehouse", bin_data.warehouse, "warehouse_type") or "Standard"
+			)
+
+			stock_info.append(
+				{
+					"warehouse": bin_data.warehouse,
+					"warehouse_type": warehouse_type,
+					"actual_qty": bin_data.actual_qty or 0,
+					"ordered_qty": bin_data.ordered_qty or 0,
+					"planned_qty": bin_data.planned_qty or 0,
+					"reserved_qty": bin_data.reserved_qty or 0,
+					"projected_qty": bin_data.projected_qty or 0,
+					"available_qty": (bin_data.actual_qty or 0) - (bin_data.reserved_qty or 0),
+				}
+			)
+
+		item_data["stock_info"] = stock_info
+
+		# Calculate total stock across allowed warehouses only
+		total_stock = sum(s["actual_qty"] for s in stock_info)
+		total_available = sum(s["available_qty"] for s in stock_info)
+		item_data["total_stock"] = total_stock
+		item_data["total_available"] = total_available
+
+		# Get item attributes if any
+		attributes = []
+		if hasattr(item, "attributes") and item.attributes:
+			for attr in item.attributes:
+				attributes.append({"attribute": attr.attribute, "attribute_value": attr.attribute_value})
+		item_data["attributes"] = attributes
+
+		# Get supplier information
+		suppliers = frappe.get_all(
+			"Item Supplier",
+			filters={"parent": item_code},
+			fields=["supplier", "supplier_part_no"],
+			order_by="idx",
+			limit=5,
+		)
+		item_data["suppliers"] = suppliers
+
+		return {"status": "success", "data": item_data}
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting item inquiry data: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def get_company_info_for_labels(company=None, address_name=None):
-    """Get company information from WMS Settings and Company doctype for label printing"""
-    try:
-        company_info = {
-            'company_name': '',
-            'address': '',
-            'email': '',
-            'customer_care_number': '',
-            'website': ''
-        }
-        
-        # Get company (use provided or default)
-        if not company:
-            company = frappe.defaults.get_global_default('company')
-        if not company:
-            company = frappe.db.get_single_value('Global Defaults', 'default_company')
-        
-        if company:
-            # Get company name
-            company_info['company_name'] = frappe.db.get_value('Company', company, 'company_name') or company
-            
-            # Get company address (use provided address or default)
-            from frappe.contacts.doctype.address.address import get_default_address, render_address
-            if address_name:
-                try:
-                    address_doc = frappe.get_doc('Address', address_name)
-                    # Verify address is linked to the company
-                    linked_companies = [link.link_name for link in address_doc.links if link.link_doctype == 'Company']
-                    if company in linked_companies:
-                        company_info['address'] = render_address(address_doc, check_permissions=False) or ''
-                except:
-                    pass
-            
-            # If no address set, get default
-            if not company_info['address']:
-                company_address = get_default_address('Company', company)
-                if company_address:
-                    address_doc = frappe.get_doc('Address', company_address)
-                    company_info['address'] = render_address(address_doc, check_permissions=False) or ''
-            
-            # Get company website if available
-            company_website = frappe.db.get_value('Company', company, 'website')
-            if company_website:
-                company_info['website'] = company_website
-        
-        # Get WMS Settings for email and customer care
-        if frappe.db.exists("WMSuite Settings"):
-            wms_settings = frappe.get_single("WMSuite Settings")
-            company_info['email'] = getattr(wms_settings, 'company_email', '') or 'Not Available'
-            company_info['customer_care_number'] = getattr(wms_settings, 'customer_care_number', '') or 'Not Available'
-            company_info['website'] = getattr(wms_settings, 'company_website', '') or company_info.get('website', 'Not Available')
-        else:
-            company_info['email'] = 'Not Available'
-            company_info['customer_care_number'] = 'Not Available'
-            if not company_info.get('website'):
-                company_info['website'] = 'Not Available'
-        
-        return company_info
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting company info for labels: {str(e)}")
-    return {
-            'company_name': 'Not Available',
-            'address': 'Not Available',
-            'email': 'Not Available',
-            'customer_care_number': 'Not Available',
-            'website': 'Not Available'
-        }
+	"""Get company information from WMS Settings and Company doctype for label printing"""
+	try:
+		company_info = {
+			"company_name": "",
+			"address": "",
+			"email": "",
+			"customer_care_number": "",
+			"website": "",
+		}
+
+		# Get company (use provided or default)
+		if not company:
+			company = frappe.defaults.get_global_default("company")
+		if not company:
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+
+		if company:
+			# Get company name
+			company_info["company_name"] = frappe.db.get_value("Company", company, "company_name") or company
+
+			# Get company address (use provided address or default)
+			from frappe.contacts.doctype.address.address import get_default_address, render_address
+
+			if address_name:
+				try:
+					address_doc = frappe.get_doc("Address", address_name)
+					# Verify address is linked to the company
+					linked_companies = [
+						link.link_name for link in address_doc.links if link.link_doctype == "Company"
+					]
+					if company in linked_companies:
+						company_info["address"] = render_address(address_doc, check_permissions=False) or ""
+				except Exception:
+					pass
+
+			# If no address set, get default
+			if not company_info["address"]:
+				company_address = get_default_address("Company", company)
+				if company_address:
+					address_doc = frappe.get_doc("Address", company_address)
+					company_info["address"] = render_address(address_doc, check_permissions=False) or ""
+
+			# Get company website if available
+			company_website = frappe.db.get_value("Company", company, "website")
+			if company_website:
+				company_info["website"] = company_website
+
+		# Get WMS Settings for email and customer care
+		if frappe.db.exists("WMSuite Settings"):
+			wms_settings = frappe.get_single("WMSuite Settings")
+			company_info["email"] = getattr(wms_settings, "company_email", "") or "Not Available"
+			company_info["customer_care_number"] = (
+				getattr(wms_settings, "customer_care_number", "") or "Not Available"
+			)
+			company_info["website"] = getattr(wms_settings, "company_website", "") or company_info.get(
+				"website", "Not Available"
+			)
+		else:
+			company_info["email"] = "Not Available"
+			company_info["customer_care_number"] = "Not Available"
+			if not company_info.get("website"):
+				company_info["website"] = "Not Available"
+
+		return company_info
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting company info for labels: {e!s}")
+	return {
+		"company_name": "Not Available",
+		"address": "Not Available",
+		"email": "Not Available",
+		"customer_care_number": "Not Available",
+		"website": "Not Available",
+	}
+
 
 @frappe.whitelist()
 def analyze_print_format_variables(print_format_name):
-    """Analyze print format raw_commands to detect which variables are used"""
-    try:
-        print_format_doc = frappe.get_doc("Print Format", print_format_name)
-        
-        if not print_format_doc.raw_printing or not print_format_doc.raw_commands:
-            return {
-                "uses_selected_uom": False,
-                "uses_company_info": False,
-                "uses_company_address": False
-            }
-        
-        raw_commands = print_format_doc.raw_commands or ""
-        
-        # Check for selected_uom variable usage
-        uses_selected_uom = (
-            "selected_uom" in raw_commands or 
-            "{{ selected_uom }}" in raw_commands or
-            "{{selected_uom}}" in raw_commands
-        )
-        
-        # Check for company_info variable usage
-        uses_company_info = (
-            "company_info" in raw_commands or
-            "{{ company_info }}" in raw_commands or
-            "{{company_info}}" in raw_commands or
-            "company_name" in raw_commands or
-            "{{ company_name }}" in raw_commands or
-            "{{company_name}}" in raw_commands or
-            "company_email" in raw_commands or
-            "{{ company_email }}" in raw_commands or
-            "{{company_email}}" in raw_commands or
-            "customer_care_number" in raw_commands or
-            "{{ customer_care_number }}" in raw_commands or
-            "{{customer_care_number}}" in raw_commands or
-            "company_website" in raw_commands or
-            "{{ company_website }}" in raw_commands or
-            "{{company_website}}" in raw_commands
-        )
-        
-        return {
-            "uses_selected_uom": uses_selected_uom,
-            "uses_company_info": uses_company_info
-        }
-    except Exception as e:
-        frappe.logger().error(f"Error analyzing print format {print_format_name}: {str(e)}")
-        return {
-            "uses_selected_uom": False,
-            "uses_company_info": False
-        }
+	"""Analyze print format raw_commands to detect which variables are used"""
+	try:
+		print_format_doc = frappe.get_doc("Print Format", print_format_name)
+
+		if not print_format_doc.raw_printing or not print_format_doc.raw_commands:
+			return {"uses_selected_uom": False, "uses_company_info": False, "uses_company_address": False}
+
+		raw_commands = print_format_doc.raw_commands or ""
+
+		# Check for selected_uom variable usage
+		uses_selected_uom = (
+			"selected_uom" in raw_commands
+			or "{{ selected_uom }}" in raw_commands
+			or "{{selected_uom}}" in raw_commands
+		)
+
+		# Check for company_info variable usage
+		uses_company_info = (
+			"company_info" in raw_commands
+			or "{{ company_info }}" in raw_commands
+			or "{{company_info}}" in raw_commands
+			or "company_name" in raw_commands
+			or "{{ company_name }}" in raw_commands
+			or "{{company_name}}" in raw_commands
+			or "company_email" in raw_commands
+			or "{{ company_email }}" in raw_commands
+			or "{{company_email}}" in raw_commands
+			or "customer_care_number" in raw_commands
+			or "{{ customer_care_number }}" in raw_commands
+			or "{{customer_care_number}}" in raw_commands
+			or "company_website" in raw_commands
+			or "{{ company_website }}" in raw_commands
+			or "{{company_website}}" in raw_commands
+		)
+
+		return {"uses_selected_uom": uses_selected_uom, "uses_company_info": uses_company_info}
+	except Exception as e:
+		frappe.logger().error(f"Error analyzing print format {print_format_name}: {e!s}")
+		return {"uses_selected_uom": False, "uses_company_info": False}
+
 
 @frappe.whitelist()
 def get_item_print_formats():
-    """Get available print formats for Item doctype"""
-    try:
-        print_formats = frappe.get_all(
-            "Print Format",
-            filters={
-                "doc_type": "Item",
-                "disabled": 0,
-                "docstatus": ["<", 2]
-            },
-            fields=["name", "print_format_type", "raw_printing"],
-            order_by="name"
-        )
-        
-        # Only return actual print formats (no Standard option)
-        formats = []
-        for pf in print_formats:
-            format_info = {
-                "name": pf.name,
-                "print_format_type": pf.print_format_type or "Standard",
-                "raw_printing": pf.raw_printing or 0
-            }
-            
-            # Analyze variables used in print format if it's raw printing
-            if pf.raw_printing:
-                variables = analyze_print_format_variables(pf.name)
-                format_info.update(variables)
-            
-            formats.append(format_info)
-        
-        return {
-            "status": "success",
-            "formats": formats
-        }
-    except Exception as e:
-        frappe.logger().error(f"Error getting print formats: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e),
-            "formats": []
-        }
+	"""Get available print formats for Item doctype"""
+	try:
+		print_formats = frappe.get_all(
+			"Print Format",
+			filters={"doc_type": "Item", "disabled": 0, "docstatus": ["<", 2]},
+			fields=["name", "print_format_type", "raw_printing"],
+			order_by="name",
+		)
+
+		# Only return actual print formats (no Standard option)
+		formats = []
+		for pf in print_formats:
+			format_info = {
+				"name": pf.name,
+				"print_format_type": pf.print_format_type or "Standard",
+				"raw_printing": pf.raw_printing or 0,
+			}
+
+			# Analyze variables used in print format if it's raw printing
+			if pf.raw_printing:
+				variables = analyze_print_format_variables(pf.name)
+				format_info.update(variables)
+
+			formats.append(format_info)
+
+		return {"status": "success", "formats": formats}
+	except Exception as e:
+		frappe.logger().error(f"Error getting print formats: {e!s}")
+		return {"status": "error", "message": str(e), "formats": []}
+
 
 @frappe.whitelist()
 def get_companies():
-    """Get all companies for selection"""
-    try:
-        # Use get_list to respect permissions - returns list of dicts
-        # Note: Company doctype doesn't have a 'disabled' field
-        companies = frappe.get_list(
-            "Company",
-            fields=["name", "company_name"],
-            order_by="name",
-            ignore_permissions=False
-        )
-        
-        # If no companies found, try with get_all (might have permission issues)
-        if not companies:
-            companies = frappe.get_all(
-                "Company",
-                fields=["name", "company_name"],
-                order_by="name"
-            )
-        
-        # Format companies list - ensure all fields are present
-        company_list = []
-        for company in companies:
-            company_name = company.get("company_name") or company.get("name") or ""
-            company_code = company.get("name") or ""
-            if company_code:  # Only add if we have a name
-                company_list.append({
-                    "name": company_code,
-                    "company_name": company_name
-                })
-        
-        frappe.logger().info(f"Found {len(company_list)} companies: {[c['name'] for c in company_list]}")
-        
-        # Return directly as list (Frappe will wrap it in message)
-        return company_list
-    except Exception as e:
-        frappe.logger().error(f"Error getting companies: {str(e)}")
-        import traceback
-        frappe.logger().error(traceback.format_exc())
-        frappe.throw(f"Error getting companies: {str(e)}")
+	"""Get all companies for selection"""
+	try:
+		# Use get_list to respect permissions - returns list of dicts
+		# Note: Company doctype doesn't have a 'disabled' field
+		companies = frappe.get_list(
+			"Company", fields=["name", "company_name"], order_by="name", ignore_permissions=False
+		)
+
+		# If no companies found, try with get_all (might have permission issues)
+		if not companies:
+			companies = frappe.get_all("Company", fields=["name", "company_name"], order_by="name")
+
+		# Format companies list - ensure all fields are present
+		company_list = []
+		for company in companies:
+			company_name = company.get("company_name") or company.get("name") or ""
+			company_code = company.get("name") or ""
+			if company_code:  # Only add if we have a name
+				company_list.append({"name": company_code, "company_name": company_name})
+
+		frappe.logger().info(f"Found {len(company_list)} companies: {[c['name'] for c in company_list]}")
+
+		# Return directly as list (Frappe will wrap it in message)
+		return company_list
+	except Exception as e:
+		frappe.logger().error(f"Error getting companies: {e!s}")
+		import traceback
+
+		frappe.logger().error(traceback.format_exc())
+		frappe.throw(f"Error getting companies: {e!s}")
+
 
 @frappe.whitelist()
-def generate_label_zpl(item_code, quantity=1, selected_barcode=None, selected_uom=None, gross_weight=None, company_info=None, print_format=None, selected_company=None):
-    """Generate ZPL code for item labels"""
-    try:
-        # Convert quantity to integer
-        quantity = int(quantity) if quantity else 1
-        
-        # Get item details
-        item = frappe.get_doc("Item", item_code)
-        
-        # Get barcodes
-        barcodes = frappe.get_all("Item Barcode",
-            filters={"parent": item_code},
-            fields=["barcode", "barcode_type", "uom"],
-            order_by="idx"
-        )
-        
-        # Get UOM conversions
-        uom_conversions = []
-        if item.uoms:
-            for uom_entry in item.uoms:
-                uom_conversions.append({
-                    "uom": uom_entry.uom,
-                    "conversion_factor": uom_entry.conversion_factor
-                })
-        
-        # Find selected barcode or default to stock UOM barcode
-        selected_barcode_data = None
-        if selected_barcode and selected_barcode.strip():  # Only if barcode is selected and not empty
-            selected_barcode_data = next((b for b in barcodes if b.barcode == selected_barcode), None)
-        elif barcodes and not selected_barcode:  # If no barcode selected but barcodes exist, default to stock UOM
-            # Default to stock UOM barcode if available
-            stock_uom_barcode = next((b for b in barcodes if b.uom == item.stock_uom), None)
-            if stock_uom_barcode:
-                selected_barcode_data = stock_uom_barcode
-            else:
-                selected_barcode_data = barcodes[0]  # First barcode if no stock UOM match
-        
-        # Get company info if not provided
-        if not company_info:
-            company_info = get_company_info_for_labels(company=selected_company)
-        elif isinstance(company_info, str):
-            company_info = json.loads(company_info)
-        
-        # Use selected UOM or default to stock UOM
-        display_uom = selected_uom if selected_uom else item.stock_uom
-        
-        # Calculate multiplier/conversion factor for selected UOM
-        multiplier = 1.0  # Default multiplier is 1 for stock UOM
-        if display_uom != item.stock_uom:
-            # Find conversion factor for selected UOM
-            selected_uom_conversion = next(
-                (conv for conv in uom_conversions if conv.get('uom') == display_uom),
-                None
-            )
-            if selected_uom_conversion:
-                multiplier = selected_uom_conversion.get('conversion_factor', 1.0)
-        
-        # Calculate net weight (weight_per_unit * multiplier)
-        net_weight = (item.weight_per_unit or 0) * multiplier
-        
-        # Generate ZPL code - print format is required
-        if print_format:
-            try:
-                # Get print format document
-                print_format_doc = frappe.get_doc("Print Format", print_format)
-                
-                # Check if it's a raw printing format
-                if print_format_doc.raw_printing and print_format_doc.raw_commands:
-                    # Render raw commands directly as Jinja template
-                    from frappe.utils.jinja import get_jenv
-                    
-                    # Prepare context for Jinja template
-                    context = {
-                        "doc": item,
-                        "item": item,
-        "item_code": item.name,
-                        "item_name": item.item_name,
-                        "stock_uom": item.stock_uom,
-                        "selected_uom": display_uom,
-                        "multiplier": multiplier,
-                        "weight_per_unit": item.weight_per_unit or 0,
-                        "net_weight": net_weight,  # Net weight with multiplier applied if selected UOM is used
-                        "weight_uom": item.weight_uom or "",
-                        "gross_weight": gross_weight,
-                        "selected_barcode": selected_barcode_data.barcode if selected_barcode_data else None,
-                        "barcode": selected_barcode_data.barcode if selected_barcode_data else None,
-                        "quantity": quantity,
-                        "company_info": company_info,
-                        "company_name": company_info.get('company_name', ''),
-                        "company_address": company_info.get('address', ''),
-                        "company_email": company_info.get('email', ''),
-                        "customer_care_number": company_info.get('customer_care_number', ''),
-                        "company_website": company_info.get('website', ''),
-                    }
-                    
-                    # Render the raw commands template
-                    jenv = get_jenv()
-                    template = jenv.from_string(print_format_doc.raw_commands)
-                    single_label_zpl = template.render(context)
-                    
-                    # Repeat the label code for the specified quantity
-                    # Ensure quantity is an integer and at least 1
-                    quantity = max(1, int(quantity)) if quantity else 1
-                    
-                    # Multiply the ZPL string by quantity to repeat the label
-                    zpl_code = single_label_zpl * quantity
-                    
-                    frappe.logger().info(f"Generated ZPL: quantity={quantity}, single_label_length={len(single_label_zpl)}, total_zpl_length={len(zpl_code)}")
-                    
-                    frappe.logger().info(f"Successfully rendered ZPL from print format: {print_format}")
-                else:
-                    # Not a raw printing format - throw error as print format is required
-                    frappe.throw(f"Print format '{print_format}' is not configured for raw printing. Please enable 'Raw Printing' and add ZPL commands.")
-            except Exception as e:
-                frappe.logger().error(f"Error using print format {print_format}: {str(e)}")
-                import traceback
-                frappe.logger().error(traceback.format_exc())
-                frappe.throw(f"Error generating ZPL from print format '{print_format}': {str(e)}")
-        else:
-            # Print format is required
-            frappe.throw("Print format is required. Please select a print format.")
-        
-        return {
-            "status": "success",
-            "zpl_code": zpl_code,
-            "item_data": {
-        "item_code": item.name,
-                "item_name": item.item_name,
-                "stock_uom": item.stock_uom,
-                "weight": item.weight_per_unit or 0,
-                "weight_uom": item.weight_uom or "",
-                "barcodes": barcodes,
-                "selected_barcode": selected_barcode_data,
-                "selected_uom": display_uom
-            }
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error generating label ZPL: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+def generate_label_zpl(
+	item_code,
+	quantity=1,
+	selected_barcode=None,
+	selected_uom=None,
+	gross_weight=None,
+	company_info=None,
+	print_format=None,
+	selected_company=None,
+):
+	"""Generate ZPL code for item labels"""
+	try:
+		# Convert quantity to integer
+		quantity = int(quantity) if quantity else 1
 
-def generate_zpl_label(item, barcode_data, uom_conversions, quantity, selected_uom=None, gross_weight=None, company_info=None):
-    """Generate ZPL code for a single label matching the label design"""
-    # Ensure quantity is an integer
-    quantity = int(quantity) if quantity else 1
-    
-    # Default values
-    company_info = company_info or {}
-    company_name = company_info.get('company_name', 'Not Available')
-    company_address = company_info.get('address', 'Not Available')
-    company_email = company_info.get('email', 'Not Available')
-    customer_care = company_info.get('customer_care_number', 'Not Available')
-    company_website = company_info.get('website', 'Not Available')
-    
-    # Net weight text
-    net_weight_text = "Optional"
-    if item.weight_per_unit and item.weight_per_unit > 0:
-        net_weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
-    
-    # Gross weight text
-    gross_weight_text = "Optional"
-    if gross_weight:
-        gross_weight_text = f"{gross_weight} {item.weight_uom or 'Gram'}"
-    
-    # Item name
-    item_name = item.item_name or item.name
-    
-    # UOM display
-    display_uom = selected_uom if selected_uom else item.stock_uom
-    
-    # Pack details
-    pack_details = f"Packed in {display_uom}"
-    
-    # Format address for display (remove HTML tags if present)
-    address_display = re.sub('<[^<]+?>', '', company_address) if company_address else 'Not Available'
-    # Clean up address - take first few lines
-    address_lines = [line.strip() for line in address_display.split('\n') if line.strip()][:3]
-    address_display = '\n'.join(address_lines) if address_lines else 'Not Available'
-    
-    # Generate ZPL code based on whether barcode is available
-    if barcode_data:
-        # Format with barcode - matching the label design from image
-        zpl_code = f"""^XA
+		# Get item details
+		item = frappe.get_doc("Item", item_code)
+
+		# Get barcodes
+		barcodes = frappe.get_all(
+			"Item Barcode",
+			filters={"parent": item_code},
+			fields=["barcode", "barcode_type", "uom"],
+			order_by="idx",
+		)
+
+		# Get UOM conversions
+		uom_conversions = []
+		if item.uoms:
+			for uom_entry in item.uoms:
+				uom_conversions.append(
+					{"uom": uom_entry.uom, "conversion_factor": uom_entry.conversion_factor}
+				)
+
+		# Find selected barcode or default to stock UOM barcode
+		selected_barcode_data = None
+		if selected_barcode and selected_barcode.strip():  # Only if barcode is selected and not empty
+			selected_barcode_data = next((b for b in barcodes if b.barcode == selected_barcode), None)
+		elif (
+			barcodes and not selected_barcode
+		):  # If no barcode selected but barcodes exist, default to stock UOM
+			# Default to stock UOM barcode if available
+			stock_uom_barcode = next((b for b in barcodes if b.uom == item.stock_uom), None)
+			if stock_uom_barcode:
+				selected_barcode_data = stock_uom_barcode
+			else:
+				selected_barcode_data = barcodes[0]  # First barcode if no stock UOM match
+
+		# Get company info if not provided
+		if not company_info:
+			company_info = get_company_info_for_labels(company=selected_company)
+		elif isinstance(company_info, str):
+			company_info = json.loads(company_info)
+
+		# Use selected UOM or default to stock UOM
+		display_uom = selected_uom if selected_uom else item.stock_uom
+
+		# Calculate multiplier/conversion factor for selected UOM
+		multiplier = 1.0  # Default multiplier is 1 for stock UOM
+		if display_uom != item.stock_uom:
+			# Find conversion factor for selected UOM
+			selected_uom_conversion = next(
+				(conv for conv in uom_conversions if conv.get("uom") == display_uom), None
+			)
+			if selected_uom_conversion:
+				multiplier = selected_uom_conversion.get("conversion_factor", 1.0)
+
+		# Calculate net weight (weight_per_unit * multiplier)
+		net_weight = (item.weight_per_unit or 0) * multiplier
+
+		# Generate ZPL code - print format is required
+		if print_format:
+			try:
+				# Get print format document
+				print_format_doc = frappe.get_doc("Print Format", print_format)
+
+				# Check if it's a raw printing format
+				if print_format_doc.raw_printing and print_format_doc.raw_commands:
+					# Render raw commands directly as Jinja template
+					from frappe.utils.jinja import get_jenv
+
+					# Prepare context for Jinja template
+					context = {
+						"doc": item,
+						"item": item,
+						"item_code": item.name,
+						"item_name": item.item_name,
+						"stock_uom": item.stock_uom,
+						"selected_uom": display_uom,
+						"multiplier": multiplier,
+						"weight_per_unit": item.weight_per_unit or 0,
+						"net_weight": net_weight,  # Net weight with multiplier applied if selected UOM is used
+						"weight_uom": item.weight_uom or "",
+						"gross_weight": gross_weight,
+						"selected_barcode": selected_barcode_data.barcode if selected_barcode_data else None,
+						"barcode": selected_barcode_data.barcode if selected_barcode_data else None,
+						"quantity": quantity,
+						"company_info": company_info,
+						"company_name": company_info.get("company_name", ""),
+						"company_address": company_info.get("address", ""),
+						"company_email": company_info.get("email", ""),
+						"customer_care_number": company_info.get("customer_care_number", ""),
+						"company_website": company_info.get("website", ""),
+					}
+
+					# Render the raw commands template
+					jenv = get_jenv()
+					template = jenv.from_string(print_format_doc.raw_commands)
+					single_label_zpl = template.render(context)
+
+					# Repeat the label code for the specified quantity
+					# Ensure quantity is an integer and at least 1
+					quantity = max(1, int(quantity)) if quantity else 1
+
+					# Multiply the ZPL string by quantity to repeat the label
+					zpl_code = single_label_zpl * quantity
+
+					frappe.logger().info(
+						f"Generated ZPL: quantity={quantity}, single_label_length={len(single_label_zpl)}, total_zpl_length={len(zpl_code)}"
+					)
+
+					frappe.logger().info(f"Successfully rendered ZPL from print format: {print_format}")
+				else:
+					# Not a raw printing format - throw error as print format is required
+					frappe.throw(
+						f"Print format '{print_format}' is not configured for raw printing. Please enable 'Raw Printing' and add ZPL commands."
+					)
+			except Exception as e:
+				frappe.logger().error(f"Error using print format {print_format}: {e!s}")
+				import traceback
+
+				frappe.logger().error(traceback.format_exc())
+				frappe.throw(f"Error generating ZPL from print format '{print_format}': {e!s}")
+		else:
+			# Print format is required
+			frappe.throw("Print format is required. Please select a print format.")
+
+		return {
+			"status": "success",
+			"zpl_code": zpl_code,
+			"item_data": {
+				"item_code": item.name,
+				"item_name": item.item_name,
+				"stock_uom": item.stock_uom,
+				"weight": item.weight_per_unit or 0,
+				"weight_uom": item.weight_uom or "",
+				"barcodes": barcodes,
+				"selected_barcode": selected_barcode_data,
+				"selected_uom": display_uom,
+			},
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error generating label ZPL: {e!s}")
+		return {"status": "error", "message": str(e)}
+
+
+def generate_zpl_label(
+	item, barcode_data, uom_conversions, quantity, selected_uom=None, gross_weight=None, company_info=None
+):
+	"""Generate ZPL code for a single label matching the label design"""
+	# Ensure quantity is an integer
+	quantity = int(quantity) if quantity else 1
+
+	# Default values
+	company_info = company_info or {}
+	company_name = company_info.get("company_name", "Not Available")
+	company_address = company_info.get("address", "Not Available")
+	company_email = company_info.get("email", "Not Available")
+	customer_care = company_info.get("customer_care_number", "Not Available")
+	company_website = company_info.get("website", "Not Available")
+
+	# Net weight text
+	net_weight_text = "Optional"
+	if item.weight_per_unit and item.weight_per_unit > 0:
+		net_weight_text = f"{item.weight_per_unit} {item.weight_uom or 'Gram'}"
+
+	# Gross weight text
+	gross_weight_text = "Optional"
+	if gross_weight:
+		gross_weight_text = f"{gross_weight} {item.weight_uom or 'Gram'}"
+
+	# Item name
+	item_name = item.item_name or item.name
+
+	# UOM display
+	display_uom = selected_uom if selected_uom else item.stock_uom
+
+	# Pack details
+	pack_details = f"Packed in {display_uom}"
+
+	# Format address for display (remove HTML tags if present)
+	address_display = re.sub("<[^<]+?>", "", company_address) if company_address else "Not Available"
+	# Clean up address - take first few lines
+	address_lines = [line.strip() for line in address_display.split("\n") if line.strip()][:3]
+	address_display = "\n".join(address_lines) if address_lines else "Not Available"
+
+	# Generate ZPL code based on whether barcode is available
+	if barcode_data:
+		# Format with barcode - matching the label design from image
+		zpl_code = f"""^XA
 
 ^FX Top section with company name
 ^CF0,40
@@ -2307,9 +2365,9 @@ def generate_zpl_label(item, barcode_data, uom_conversions, quantity, selected_u
 ^FD{barcode_data.barcode}^FS
 
 ^XZ"""
-    else:
-        # Format without barcode
-        zpl_code = f"""^XA
+	else:
+		# Format without barcode
+		zpl_code = f"""^XA
 
 ^FX Top section with company name
 ^CF0,40
@@ -2345,294 +2403,294 @@ def generate_zpl_label(item, barcode_data, uom_conversions, quantity, selected_u
 ^FO50,610^FDWebsite: {company_website}^FS
 
 ^XZ"""
-    
-    # Repeat for quantity
-    return zpl_code * quantity 
+
+	# Repeat for quantity
+	return zpl_code * quantity
+
 
 @frappe.whitelist()
 def get_available_boms():
-    """Get available BOMs for Material Request"""
-    try:
-        boms = frappe.get_list("BOM",
-            filters={
-                "is_active": 1,
-                "is_default": 1
-            },
-            fields=["name", "item", "item_name"],
-            order_by="item_name",
-            limit_page_length=0,
-        )
-        
-        return boms
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting available BOMs: {str(e)}")
-        return []
+	"""Get available BOMs for Material Request"""
+	try:
+		boms = frappe.get_list(
+			"BOM",
+			filters={"is_active": 1, "is_default": 1},
+			fields=["name", "item", "item_name"],
+			order_by="item_name",
+			limit_page_length=0,
+		)
+
+		return boms
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting available BOMs: {e!s}")
+		return []
+
 
 @frappe.whitelist()
 def get_bom_items(bom_name, qty_to_produce=1):
-    """Get BOM items for Material Request."""
-    try:
-        if not frappe.has_permission("BOM", "read", bom_name):
-            frappe.throw(_("Not permitted to access BOM {0}").format(bom_name), frappe.PermissionError)
-        bom = frappe.get_doc("BOM", bom_name)
-        items = []
-        
-        for item in bom.items:
-            # Calculate required quantity based on BOM quantity and production quantity
-            required_qty = (item.qty / bom.quantity) * float(qty_to_produce)
-            
-            items.append({
-                "item_code": item.item_code,
-                "item_name": item.item_name,
-                "qty": required_qty,
-                "uom": item.uom,
-                "description": f"From BOM: {bom_name}"
-            })
-        
-        return items
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting BOM items: {str(e)}")
-        return []
+	"""Get BOM items for Material Request."""
+	try:
+		if not frappe.has_permission("BOM", "read", bom_name):
+			frappe.throw(_("Not permitted to access BOM {0}").format(bom_name), frappe.PermissionError)
+		bom = frappe.get_doc("BOM", bom_name)
+		items = []
+
+		for item in bom.items:
+			# Calculate required quantity based on BOM quantity and production quantity
+			required_qty = (item.qty / bom.quantity) * float(qty_to_produce)
+
+			items.append(
+				{
+					"item_code": item.item_code,
+					"item_name": item.item_name,
+					"qty": required_qty,
+					"uom": item.uom,
+					"description": f"From BOM: {bom_name}",
+				}
+			)
+
+		return items
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting BOM items: {e!s}")
+		return []
+
 
 @frappe.whitelist()
 def create_material_request(warehouse, delivery_date, items, session_name=None, pow_profile=None):
-    """Create Material Request from POW Dashboard"""
-    try:
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access, assert_warehouses_in_scope
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+	"""Create Material Request from POW Dashboard"""
+	try:
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import (
+				assert_warehouses_in_scope,
+				validate_pow_profile_access,
+			)
 
-        # Validate inputs
-        if not warehouse:
-            return {"status": "error", "message": "Warehouse is required"}
-        
-        if not items:
-            return {"status": "error", "message": "At least one item is required"}
-        
-        # Parse items if it's a string
-        if isinstance(items, str):
-            items = frappe.parse_json(items)
-        
-        # Get company
-        company = frappe.defaults.get_global_default('company')
-        if not company:
-            company = frappe.db.get_single_value('Global Defaults', 'default_company')
-        if not company:
-            company = frappe.get_all('Company', limit=1, pluck='name')[0] if frappe.get_all('Company') else None
-        
-        # Create Material Request
-        material_request = frappe.new_doc("Material Request")
-        material_request.material_request_type = "Purchase"
-        material_request.company = company
-        material_request.warehouse = warehouse
-        material_request.schedule_date = delivery_date
-        material_request.status = "Draft"
-        
-        # Add items
-        for item_data in items:
-            material_request.append("items", {
-                "item_code": item_data.get("item_code"),
-                "qty": item_data.get("qty", 0),
-                "uom": frappe.db.get_value("Item", item_data.get("item_code"), "stock_uom"),
-                "description": item_data.get("description", ""),
-                "warehouse": warehouse
-            })
-        
-        # Insert and submit
-        material_request.insert()
-        material_request.submit()
-        
-        return {
-            "status": "success",
-            "material_request": material_request.name,
-            "message": f"Material Request created successfully: {material_request.name}"
-        }
-        
-    except Exception as e:
-        frappe.logger().error(f"Error creating Material Request: {str(e)}")
-        return {
-            "status": "error",
-            "message": str(e)
-        } 
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			assert_warehouses_in_scope([warehouse], allowed, label="Warehouse")
+
+		# Validate inputs
+		if not warehouse:
+			return {"status": "error", "message": "Warehouse is required"}
+
+		if not items:
+			return {"status": "error", "message": "At least one item is required"}
+
+		# Parse items if it's a string
+		if isinstance(items, str):
+			items = frappe.parse_json(items)
+
+		# Get company
+		company = frappe.defaults.get_global_default("company")
+		if not company:
+			company = frappe.db.get_single_value("Global Defaults", "default_company")
+		if not company:
+			company = (
+				frappe.get_all("Company", limit=1, pluck="name")[0] if frappe.get_all("Company") else None
+			)
+
+		# Create Material Request
+		material_request = frappe.new_doc("Material Request")
+		material_request.material_request_type = "Purchase"
+		material_request.company = company
+		material_request.warehouse = warehouse
+		material_request.schedule_date = delivery_date
+		material_request.status = "Draft"
+
+		# Add items
+		for item_data in items:
+			material_request.append(
+				"items",
+				{
+					"item_code": item_data.get("item_code"),
+					"qty": item_data.get("qty", 0),
+					"uom": frappe.db.get_value("Item", item_data.get("item_code"), "stock_uom"),
+					"description": item_data.get("description", ""),
+					"warehouse": warehouse,
+				},
+			)
+
+		# Insert and submit
+		material_request.insert()
+		material_request.submit()
+
+		return {
+			"status": "success",
+			"material_request": material_request.name,
+			"message": f"Material Request created successfully: {material_request.name}",
+		}
+
+	except Exception as e:
+		frappe.logger().error(f"Error creating Material Request: {e!s}")
+		return {"status": "error", "message": str(e)}
+
 
 @frappe.whitelist()
 def debug_stock_entry_warehouses(stock_entry_name):
-    """Debug function to check warehouse information in a stock entry (System Manager only)."""
-    if "System Manager" not in frappe.get_roles():
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-    try:
-        stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
-        
-        debug_info = {
-            "stock_entry": stock_entry_name,
-            "stock_entry_type": stock_entry.stock_entry_type,
-            "from_warehouse": stock_entry.from_warehouse,
-            "to_warehouse": stock_entry.to_warehouse,
-            "add_to_transit": stock_entry.add_to_transit,
-            "custom_for_which_warehouse_to_transfer": getattr(stock_entry, 'custom_for_which_warehouse_to_transfer', 'Not set'),
-            "items": []
-        }
-        
-        for i, item in enumerate(stock_entry.items):
-            debug_info["items"].append({
-                "index": i,
-                "item_code": item.item_code,
-                "s_warehouse": item.s_warehouse,
-                "t_warehouse": item.t_warehouse,
-                "qty": item.qty,
-                "transferred_qty": item.transferred_qty
-            })
-        
-        return {
-            "status": "success",
-            "debug_info": debug_info
-        }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+	"""Debug function to check warehouse information in a stock entry (System Manager only)."""
+	if "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	try:
+		stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+
+		debug_info = {
+			"stock_entry": stock_entry_name,
+			"stock_entry_type": stock_entry.stock_entry_type,
+			"from_warehouse": stock_entry.from_warehouse,
+			"to_warehouse": stock_entry.to_warehouse,
+			"add_to_transit": stock_entry.add_to_transit,
+			"custom_for_which_warehouse_to_transfer": getattr(
+				stock_entry, "custom_for_which_warehouse_to_transfer", "Not set"
+			),
+			"items": [],
+		}
+
+		for i, item in enumerate(stock_entry.items):
+			debug_info["items"].append(
+				{
+					"index": i,
+					"item_code": item.item_code,
+					"s_warehouse": item.s_warehouse,
+					"t_warehouse": item.t_warehouse,
+					"qty": item.qty,
+					"transferred_qty": item.transferred_qty,
+				}
+			)
+
+		return {"status": "success", "debug_info": debug_info}
+
+	except Exception as e:
+		return {"status": "error", "message": str(e)}
 
 
 @frappe.whitelist()
 def get_pending_sent_transfers(source_warehouse=None, warehouses=None, pow_profile=None):
-    """Get pending sent transfers for one or more warehouses.
+	"""Get pending sent transfers for one or more warehouses.
 
-    Args:
-        source_warehouse: Single warehouse name (legacy).
-        warehouses: JSON list of warehouse names. Takes precedence over
-                    ``source_warehouse`` when both are provided.
-        pow_profile: POW Profile for warehouse scope validation.
-    """
-    try:
-        wh_list = None
-        if pow_profile:
-            from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
-            _p, allowed = validate_pow_profile_access(pow_profile)
-            wh_list = allowed
-        elif warehouses:
-            wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
-        if not wh_list and source_warehouse:
-            wh_list = [source_warehouse]
-        if not wh_list:
-            return []
+	Args:
+	    source_warehouse: Single warehouse name (legacy).
+	    warehouses: JSON list of warehouse names. Takes precedence over
+	                ``source_warehouse`` when both are provided.
+	    pow_profile: POW Profile for warehouse scope validation.
+	"""
+	try:
+		wh_list = None
+		if pow_profile:
+			from warehousesuite.utils.pow_warehouse_scope import validate_pow_profile_access
 
-        current_user = frappe.session.user
+			_p, allowed = validate_pow_profile_access(pow_profile)
+			wh_list = allowed
+		elif warehouses:
+			wh_list = frappe.parse_json(warehouses) if isinstance(warehouses, str) else warehouses
+		if not wh_list and source_warehouse:
+			wh_list = [source_warehouse]
+		if not wh_list:
+			return []
 
-        stock_entries = frappe.get_all(
-            "Stock Entry",
-            filters={
-                "add_to_transit": 1,
-                "docstatus": 1,
-                "from_warehouse": ["in", wh_list],
-            },
-            fields=[
-                "name",
-                "posting_date",
-                "to_warehouse",
-                "owner",
-                "remarks",
-                "custom_pow_session_id",
-                "custom_for_which_warehouse_to_transfer"
-            ],
-            order_by="posting_date desc"
-        )
-        
-        transfers = []
-        
-        # Process each stock entry
-        for entry in stock_entries:
-            # Get items for this stock entry
-            items = frappe.get_all(
-                "Stock Entry Detail",
-                filters={
-                    "parent": entry.name
-                },
-                fields=[
-                    "item_code",
-                    "item_name",
-                    "qty",
-                    "transferred_qty",
-                    "uom"
-                ]
-            )
-            
-            # Check if any items are not fully transferred
-            has_pending_items = False
-            pending_items = []
-            
-            for item in items:
-                transferred_qty = item.transferred_qty or 0
-                remaining_qty = item.qty - transferred_qty
-                
-                if remaining_qty > 0:
-                    has_pending_items = True
-                    pending_items.append({
-                        "item_code": item.item_code,
-                        "item_name": item.item_name,
-                        "qty": item.qty,
-                        "transferred_qty": transferred_qty,
-                        "remaining_qty": remaining_qty,
-                        "uom": item.uom
-                    })
-            
-            # Only include this transfer if it has pending items
-            if has_pending_items:
-                transfer = {
-                    "name": entry.name,
-                    "posting_date": entry.posting_date,
-                    "to_warehouse": entry.to_warehouse,
-                    "final_destination": entry.custom_for_which_warehouse_to_transfer,
-                    "owner": entry.owner,
-                    "remarks": entry.remarks,
-                    "pow_session_id": entry.custom_pow_session_id,
-                    "items": pending_items,
-                    "total_items": len(items),
-                    "pending_items": len(pending_items)
-                }
-                transfers.append(transfer)
-        
-        return transfers
-        
-    except Exception as e:
-        frappe.logger().error(f"Error getting pending sent transfers: {str(e)}")
-        import traceback
-        frappe.logger().error(f"Traceback: {traceback.format_exc()}")
-        return []
+		stock_entries = frappe.get_all(
+			"Stock Entry",
+			filters={
+				"add_to_transit": 1,
+				"docstatus": 1,
+				"from_warehouse": ["in", wh_list],
+			},
+			fields=[
+				"name",
+				"posting_date",
+				"to_warehouse",
+				"owner",
+				"remarks",
+				"custom_pow_session_id",
+				"custom_for_which_warehouse_to_transfer",
+			],
+			order_by="posting_date desc",
+		)
+
+		transfers = []
+
+		# Process each stock entry
+		for entry in stock_entries:
+			# Get items for this stock entry
+			items = frappe.get_all(
+				"Stock Entry Detail",
+				filters={"parent": entry.name},
+				fields=["item_code", "item_name", "qty", "transferred_qty", "uom"],
+			)
+
+			# Check if any items are not fully transferred
+			has_pending_items = False
+			pending_items = []
+
+			for item in items:
+				transferred_qty = item.transferred_qty or 0
+				remaining_qty = item.qty - transferred_qty
+
+				if remaining_qty > 0:
+					has_pending_items = True
+					pending_items.append(
+						{
+							"item_code": item.item_code,
+							"item_name": item.item_name,
+							"qty": item.qty,
+							"transferred_qty": transferred_qty,
+							"remaining_qty": remaining_qty,
+							"uom": item.uom,
+						}
+					)
+
+			# Only include this transfer if it has pending items
+			if has_pending_items:
+				transfer = {
+					"name": entry.name,
+					"posting_date": entry.posting_date,
+					"to_warehouse": entry.to_warehouse,
+					"final_destination": entry.custom_for_which_warehouse_to_transfer,
+					"owner": entry.owner,
+					"remarks": entry.remarks,
+					"pow_session_id": entry.custom_pow_session_id,
+					"items": pending_items,
+					"total_items": len(items),
+					"pending_items": len(pending_items),
+				}
+				transfers.append(transfer)
+
+		return transfers
+
+	except Exception as e:
+		frappe.logger().error(f"Error getting pending sent transfers: {e!s}")
+		import traceback
+
+		frappe.logger().error(f"Traceback: {traceback.format_exc()}")
+		return []
+
 
 @frappe.whitelist()
 def fix_stock_entry_warehouses(stock_entry_name):
-    """Fix stock entry warehouse information if missing (System Manager only)."""
-    if "System Manager" not in frappe.get_roles():
-        frappe.throw(_("Not permitted"), frappe.PermissionError)
-    try:
-        stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
-        
-        # Check if custom_for_which_warehouse_to_transfer is missing
-        if not getattr(stock_entry, 'custom_for_which_warehouse_to_transfer', None):
-            # Set it to the original source warehouse as fallback
-            stock_entry.custom_for_which_warehouse_to_transfer = stock_entry.from_warehouse
-            stock_entry.save()
-            
-            return {
-                "status": "success",
-                "message": f"Fixed missing destination warehouse for {stock_entry_name}. Set to: {stock_entry.from_warehouse}"
-            }
-        else:
-            return {
-                "status": "success",
-                "message": f"Stock entry {stock_entry_name} already has proper warehouse configuration"
-            }
-        
-    except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+	"""Fix stock entry warehouse information if missing (System Manager only)."""
+	if "System Manager" not in frappe.get_roles():
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	try:
+		stock_entry = frappe.get_doc("Stock Entry", stock_entry_name)
+
+		# Check if custom_for_which_warehouse_to_transfer is missing
+		if not getattr(stock_entry, "custom_for_which_warehouse_to_transfer", None):
+			# Set it to the original source warehouse as fallback
+			stock_entry.custom_for_which_warehouse_to_transfer = stock_entry.from_warehouse
+			stock_entry.save()
+
+			return {
+				"status": "success",
+				"message": f"Fixed missing destination warehouse for {stock_entry_name}. Set to: {stock_entry.from_warehouse}",
+			}
+		else:
+			return {
+				"status": "success",
+				"message": f"Stock entry {stock_entry_name} already has proper warehouse configuration",
+			}
+
+	except Exception as e:
+		return {"status": "error", "message": str(e)}
 
 
 @frappe.whitelist()
@@ -2657,11 +2715,18 @@ def get_warehouse_analytics(pow_profile=None):
 		assert_user_on_pow_profile,
 		get_pow_profile_source_warehouse_scope,
 	)
+
 	assert_user_on_pow_profile(pow_profile)
 	wh_list = get_pow_profile_source_warehouse_scope(pow_profile)
 	wh_list = [w.strip() for w in (wh_list or []) if w and w.strip()]
 	if not wh_list:
-		return {"transfer_stats": [], "stock_count_stats": [], "hourly_heatmap": [], "concern_rates": [], "daily_volumes": []}
+		return {
+			"transfer_stats": [],
+			"stock_count_stats": [],
+			"hourly_heatmap": [],
+			"concern_rates": [],
+			"daily_volumes": [],
+		}
 
 	ph = ", ".join(["%s"] * len(wh_list))
 	wh_clause_send = f" AND send.custom_for_which_warehouse_to_transfer IN ({ph})"
@@ -2669,7 +2734,8 @@ def get_warehouse_analytics(pow_profile=None):
 	wh_clause_sc = f" AND sc.warehouse IN ({ph})"
 
 	date_params = [d180, d30, d7, d180, d30, d7, d30, d30]
-	transfer_stats = frappe.db.sql(f"""
+	transfer_stats = frappe.db.sql(
+		f"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(*) AS total_transfers,
@@ -2692,9 +2758,13 @@ def get_warehouse_analytics(pow_profile=None):
 			{wh_clause_send}
 		GROUP BY send.custom_for_which_warehouse_to_transfer
 		ORDER BY count_30d DESC
-	""", date_params + wh_list, as_dict=True)
+	""",
+		date_params + wh_list,
+		as_dict=True,
+	)
 
-	pending_counts = frappe.db.sql(f"""
+	pending_counts = frappe.db.sql(
+		f"""
 		SELECT
 			se.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(DISTINCT se.name) AS pending_count
@@ -2707,13 +2777,17 @@ def get_warehouse_analytics(pow_profile=None):
 			AND se.custom_for_which_warehouse_to_transfer IS NOT NULL
 			{wh_clause_se}
 		GROUP BY se.custom_for_which_warehouse_to_transfer
-	""", wh_list or (), as_dict=True)
+	""",
+		wh_list or (),
+		as_dict=True,
+	)
 	pending_map = {r.warehouse: r.pending_count for r in pending_counts}
 
 	for row in transfer_stats:
 		row["pending_count"] = pending_map.get(row["warehouse"], 0)
 
-	stock_count_stats = frappe.db.sql(f"""
+	stock_count_stats = frappe.db.sql(
+		f"""
 		SELECT
 			sc.warehouse,
 			COUNT(DISTINCT sc.name) AS total_counts,
@@ -2728,15 +2802,21 @@ def get_warehouse_analytics(pow_profile=None):
 			{wh_clause_sc}
 		GROUP BY sc.warehouse
 		ORDER BY total_counts DESC
-	""", wh_list or (), as_dict=True)
+	""",
+		wh_list or (),
+		as_dict=True,
+	)
 
 	for row in stock_count_stats:
 		row["last_count_date"] = str(row["last_count_date"]) if row.get("last_count_date") else None
-		row["accuracy_pct"] = round(
-			(1 - (row["items_with_variance"] or 0) / row["total_items_counted"]) * 100, 1
-		) if row["total_items_counted"] else 0
+		row["accuracy_pct"] = (
+			round((1 - (row["items_with_variance"] or 0) / row["total_items_counted"]) * 100, 1)
+			if row["total_items_counted"]
+			else 0
+		)
 
-	hourly_heatmap = frappe.db.sql(f"""
+	hourly_heatmap = frappe.db.sql(
+		f"""
 		SELECT
 			HOUR(send.creation) AS hour,
 			COUNT(*) AS count
@@ -2748,9 +2828,13 @@ def get_warehouse_analytics(pow_profile=None):
 			{wh_clause_send}
 		GROUP BY HOUR(send.creation)
 		ORDER BY hour
-	""", [d30] + wh_list, as_dict=True)
+	""",
+		[d30, *wh_list],
+		as_dict=True,
+	)
 
-	concern_rates = frappe.db.sql(f"""
+	concern_rates = frappe.db.sql(
+		f"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(DISTINCT send.name) AS total_transfers,
@@ -2767,14 +2851,20 @@ def get_warehouse_analytics(pow_profile=None):
 			{wh_clause_send}
 		GROUP BY send.custom_for_which_warehouse_to_transfer
 		ORDER BY transfers_with_concerns DESC
-	""", [d30] + wh_list, as_dict=True)
+	""",
+		[d30, *wh_list],
+		as_dict=True,
+	)
 
 	for row in concern_rates:
-		row["concern_pct"] = round(
-			(row["transfers_with_concerns"] / row["total_transfers"]) * 100, 1
-		) if row["total_transfers"] else 0
+		row["concern_pct"] = (
+			round((row["transfers_with_concerns"] / row["total_transfers"]) * 100, 1)
+			if row["total_transfers"]
+			else 0
+		)
 
-	daily_volumes = frappe.db.sql(f"""
+	daily_volumes = frappe.db.sql(
+		f"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			DATE(send.creation) AS day,
@@ -2787,7 +2877,10 @@ def get_warehouse_analytics(pow_profile=None):
 			{wh_clause_send}
 		GROUP BY send.custom_for_which_warehouse_to_transfer, DATE(send.creation)
 		ORDER BY send.custom_for_which_warehouse_to_transfer, day
-	""", [d30] + wh_list, as_dict=True)
+	""",
+		[d30, *wh_list],
+		as_dict=True,
+	)
 
 	for row in daily_volumes:
 		row["day"] = str(row["day"])

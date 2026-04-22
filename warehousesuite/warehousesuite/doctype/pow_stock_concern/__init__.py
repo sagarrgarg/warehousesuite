@@ -1,1 +1,1 @@
-from .pow_stock_concern import POWStockConcern 
+from .pow_stock_concern import POWStockConcern

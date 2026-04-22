@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import now_datetime, flt, today, nowtime
+from frappe.utils import flt, now_datetime, nowtime, today
 
 
 class POWStockConcern(Document):
@@ -31,16 +31,18 @@ class POWStockConcern(Document):
 			if not managers:
 				managers = ["Administrator"]
 
-			frappe.get_doc({
-				"doctype": "ToDo",
-				"description": f"Stock Concern: {self.name} - {self.source_document}",
-				"reference_type": "POW Stock Concern",
-				"reference_name": self.name,
-				"assigned_by": frappe.session.user,
-				"assigned_to": managers[0],
-				"priority": "Medium",
-				"status": "Open",
-			}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "ToDo",
+					"description": f"Stock Concern: {self.name} - {self.source_document}",
+					"reference_type": "POW Stock Concern",
+					"reference_name": self.name,
+					"assigned_by": frappe.session.user,
+					"assigned_to": managers[0],
+					"priority": "Medium",
+					"status": "Open",
+				}
+			).insert(ignore_permissions=True)
 		except Exception as e:
 			frappe.log_error(f"Error creating assignment for POW Stock Concern {self.name}: {e}")
 
@@ -169,8 +171,15 @@ def update_concern_status(concern_name, new_status, resolver_notes=None):
 			"Open": ["Resolve Will Receive", "Resolve Reverted", "Resolve Partial"],
 		}
 
-		if concern.status not in valid_transitions or new_status not in valid_transitions.get(concern.status, []):
-			return {"status": "error", "message": _("Invalid status transition from '{0}' to '{1}'").format(concern.status, new_status)}
+		if concern.status not in valid_transitions or new_status not in valid_transitions.get(
+			concern.status, []
+		):
+			return {
+				"status": "error",
+				"message": _("Invalid status transition from '{0}' to '{1}'").format(
+					concern.status, new_status
+				),
+			}
 
 		update_fields = {
 			"status": new_status,
@@ -233,18 +242,20 @@ def get_source_entry_items(concern_name):
 	se = frappe.get_doc("Stock Entry", concern.source_document)
 	result = []
 	for item in se.items:
-		result.append({
-			"item_code": item.item_code,
-			"item_name": item.item_name,
-			"qty": item.qty,
-			"transfer_qty": item.transfer_qty,
-			"uom": item.uom,
-			"stock_uom": item.stock_uom,
-			"conversion_factor": item.conversion_factor,
-			"s_warehouse": item.s_warehouse,
-			"t_warehouse": item.t_warehouse,
-			"valuation_rate": item.valuation_rate or 0,
-		})
+		result.append(
+			{
+				"item_code": item.item_code,
+				"item_name": item.item_name,
+				"qty": item.qty,
+				"transfer_qty": item.transfer_qty,
+				"uom": item.uom,
+				"stock_uom": item.stock_uom,
+				"conversion_factor": item.conversion_factor,
+				"s_warehouse": item.s_warehouse,
+				"t_warehouse": item.t_warehouse,
+				"valuation_rate": item.valuation_rate or 0,
+			}
+		)
 
 	transit_wh = se.to_warehouse
 	source_wh = se.from_warehouse
@@ -345,23 +356,26 @@ def create_revert_transfer(concern_name, items, resolver_notes=None):
 		uom = item_data.get("uom") or original_row.uom
 		cf = flt(original_row.conversion_factor) or 1.0
 
-		se.append("items", {
-			"item_code": item_code,
-			"item_name": original_row.item_name,
-			"description": original_row.description,
-			"qty": revert_qty,
-			"transfer_qty": flt(revert_qty * cf),
-			"uom": uom,
-			"stock_uom": original_row.stock_uom,
-			"conversion_factor": cf,
-			"s_warehouse": transit_wh,
-			"t_warehouse": source_wh,
-			"basic_rate": flt(original_row.valuation_rate),
-			"valuation_rate": flt(original_row.valuation_rate),
-			"allow_zero_valuation_rate": 1 if not original_row.valuation_rate else 0,
-			"against_stock_entry": original_se.name,
-			"ste_detail": original_row.name,
-		})
+		se.append(
+			"items",
+			{
+				"item_code": item_code,
+				"item_name": original_row.item_name,
+				"description": original_row.description,
+				"qty": revert_qty,
+				"transfer_qty": flt(revert_qty * cf),
+				"uom": uom,
+				"stock_uom": original_row.stock_uom,
+				"conversion_factor": cf,
+				"s_warehouse": transit_wh,
+				"t_warehouse": source_wh,
+				"basic_rate": flt(original_row.valuation_rate),
+				"valuation_rate": flt(original_row.valuation_rate),
+				"allow_zero_valuation_rate": 1 if not original_row.valuation_rate else 0,
+				"against_stock_entry": original_se.name,
+				"ste_detail": original_row.name,
+			},
+		)
 
 	# Check if some items were not selected for revert (partial)
 	reverted_items = {i.get("item_code") for i in items if flt(i.get("qty", 0)) > 0}
@@ -405,7 +419,9 @@ def create_revert_transfer(concern_name, items, resolver_notes=None):
 
 
 @frappe.whitelist()
-def create_stock_concern_from_transfer(concern_data, source_document_type, source_document, pow_session_id=None):
+def create_stock_concern_from_transfer(
+	concern_data, source_document_type, source_document, pow_session_id=None
+):
 	try:
 		concern_data = frappe.parse_json(concern_data)
 
@@ -457,6 +473,7 @@ def get_concerns_for_profile(pow_profile=None, status=None):
 
 	if pow_profile:
 		from warehousesuite.utils.pow_warehouse_scope import assert_user_on_pow_profile
+
 		profile = assert_user_on_pow_profile(pow_profile)
 	else:
 		profiles = frappe.get_all("POW Profile User", filters={"user": current_user}, fields=["parent"])
@@ -470,9 +487,7 @@ def get_concerns_for_profile(pow_profile=None, status=None):
 
 	# Get allowed warehouses — direct match only
 	allowed_warehouses = [
-		(r.warehouse or "").strip()
-		for r in (profile.source_warehouse or [])
-		if (r.warehouse or "").strip()
+		(r.warehouse or "").strip() for r in (profile.source_warehouse or []) if (r.warehouse or "").strip()
 	]
 	if not allowed_warehouses:
 		return []
@@ -488,10 +503,20 @@ def get_concerns_for_profile(pow_profile=None, status=None):
 		"POW Stock Concern",
 		filters=filters,
 		fields=[
-			"name", "concern_type", "priority", "status",
-			"source_document_type", "source_document", "pow_session_id",
-			"concern_description", "receiver_notes", "resolver_notes",
-			"reported_by", "reported_date", "resolved_by", "resolved_date",
+			"name",
+			"concern_type",
+			"priority",
+			"status",
+			"source_document_type",
+			"source_document",
+			"pow_session_id",
+			"concern_description",
+			"receiver_notes",
+			"resolver_notes",
+			"reported_by",
+			"reported_date",
+			"resolved_by",
+			"resolved_date",
 			"company",
 		],
 		order_by="reported_date desc",
@@ -511,7 +536,9 @@ def get_concerns_for_profile(pow_profile=None, status=None):
 		)
 		if not se:
 			continue
-		concern_warehouses = {w for w in [se.from_warehouse, se.to_warehouse, se.custom_for_which_warehouse_to_transfer] if w}
+		concern_warehouses = {
+			w for w in [se.from_warehouse, se.to_warehouse, se.custom_for_which_warehouse_to_transfer] if w
+		}
 		if not (concern_warehouses & allowed_set):
 			continue
 

@@ -42,8 +42,8 @@ required_apps = ["erpnext"]
 # include js, css files in header of desk.html
 # app_include_css = "/assets/warehousesuite/css/warehousesuite.css"
 app_include_js = [
-    "/assets/warehousesuite/js/zebrabrowserprint.js?v=2",
-    "/assets/warehousesuite/js/print_labels.js?v=1"
+	"/assets/warehousesuite/js/zebrabrowserprint.js?v=2",
+	"/assets/warehousesuite/js/print_labels.js?v=1",
 ]
 
 # include js, css files in header of web template
@@ -158,17 +158,17 @@ after_install = "warehousesuite.install.after_install"
 # Hook on document methods and events
 
 doc_events = {
-    "Stock Entry": {
-        "validate": [
-            "warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer"
-        ],
-        "on_submit": [
-            "warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
-        ],
-        "before_cancel": [
-            "warehousesuite.warehousesuite.overrides.concern_link.clear_concern_link_before_cancel"
-        ],
-    }
+	"Stock Entry": {
+		"validate": [
+			"warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer"
+		],
+		"on_submit": [
+			"warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
+		],
+		"before_cancel": [
+			"warehousesuite.warehousesuite.overrides.concern_link.clear_concern_link_before_cancel"
+		],
+	}
 }
 
 # Scheduled Tasks
@@ -275,5 +275,5 @@ ignore_links_on_cancel = ["POW Stock Concern", "Stock Entry"]
 # --------
 
 fixtures = [
-    {"doctype": "Custom Field", "filters": [["module", "=", "WarehouseSuite"]]},
+	{"doctype": "Custom Field", "filters": [["module", "=", "WarehouseSuite"]]},
 ]
