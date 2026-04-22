@@ -91,6 +91,7 @@ def get_so_analytics(pow_profile):
 	company = profile.company
 	now = datetime.now()
 	d7 = now - timedelta(days=7)
+	d14 = now - timedelta(days=14)
 	d30 = now - timedelta(days=30)
 	d180 = now - timedelta(days=180)
 
@@ -101,7 +102,8 @@ def get_so_analytics(pow_profile):
 			period,
 			COUNT(*) as order_count,
 			ROUND(AVG(hrs_to_dn), 1) as avg_hrs_to_dn,
-			ROUND(AVG(hrs_to_si), 1) as avg_hrs_to_si
+			ROUND(AVG(hrs_to_si), 1) as avg_hrs_to_si,
+			ROUND(AVG(hrs_dn_to_si), 1) as avg_hrs_dn_to_si
 		FROM (
 			SELECT
 				so.name,
@@ -118,7 +120,13 @@ def get_so_analytics(pow_profile):
 				(SELECT TIMESTAMPDIFF(HOUR, so.creation, MIN(si.creation))
 				 FROM `tabSales Invoice Item` sii
 				 INNER JOIN `tabSales Invoice` si ON sii.parent = si.name AND si.docstatus = 1
-				 WHERE sii.sales_order = so.name) as hrs_to_si
+				 WHERE sii.sales_order = so.name) as hrs_to_si,
+				(SELECT TIMESTAMPDIFF(HOUR, MIN(dn2.creation), MIN(si2.creation))
+				 FROM `tabDelivery Note Item` dni2
+				 INNER JOIN `tabDelivery Note` dn2 ON dni2.parent = dn2.name AND dn2.docstatus = 1
+				 INNER JOIN `tabSales Invoice Item` sii2 ON sii2.sales_order = so.name
+				 INNER JOIN `tabSales Invoice` si2 ON sii2.parent = si2.name AND si2.docstatus = 1
+				 WHERE dni2.against_sales_order = so.name) as hrs_dn_to_si
 			FROM `tabSales Order` so
 			WHERE so.docstatus = 1
 				AND so.company = %s
@@ -142,8 +150,9 @@ def get_so_analytics(pow_profile):
 			AND so.company = %s
 			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
 			AND so.per_delivered >= 80 AND so.per_billed >= 80
+			AND TIMESTAMPDIFF(DAY, so.transaction_date, CURDATE()) >= 14
 			{NO_INTERNAL}
-		ORDER BY so.per_delivered DESC
+		ORDER BY TIMESTAMPDIFF(DAY, so.transaction_date, CURDATE()) DESC
 		LIMIT 50
 	""", [company], as_dict=True)
 
@@ -238,6 +247,49 @@ def get_so_analytics(pow_profile):
 	for row in nearly_complete:
 		row["transaction_date"] = str(row["transaction_date"]) if row.get("transaction_date") else None
 
+	unfulfillment = frappe.db.sql(f"""
+		SELECT
+			CASE
+				WHEN so.creation >= %s THEN '7d'
+				WHEN so.creation >= %s THEN '14d'
+				WHEN so.creation >= %s THEN '30d'
+				ELSE '6m'
+			END as period,
+			COUNT(*) as total_lines,
+			SUM(CASE WHEN soi.delivered_qty < soi.qty THEN 1 ELSE 0 END) as unfulfilled_lines,
+			ROUND(SUM(CASE WHEN soi.delivered_qty < soi.qty THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as unfulfilled_pct
+		FROM `tabSales Order Item` soi
+		INNER JOIN `tabSales Order` so ON soi.parent = so.name
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.creation >= %s
+			AND so.status NOT IN ('Cancelled')
+			{NO_INTERNAL}
+		GROUP BY period
+	""", [d7, d14, d30, company, d180], as_dict=True)
+
+	top_skus = frappe.db.sql(f"""
+		SELECT
+			soi.item_code,
+			soi.item_name,
+			SUM(soi.qty) as total_qty,
+			soi.stock_uom,
+			COUNT(DISTINCT so.name) as order_count,
+			SUM(CASE WHEN so.creation >= %s THEN soi.qty ELSE 0 END) as qty_7d,
+			SUM(CASE WHEN so.creation >= %s THEN soi.qty ELSE 0 END) as qty_14d,
+			SUM(CASE WHEN so.creation >= %s THEN soi.qty ELSE 0 END) as qty_30d
+		FROM `tabSales Order Item` soi
+		INNER JOIN `tabSales Order` so ON soi.parent = so.name
+		WHERE so.docstatus = 1
+			AND so.company = %s
+			AND so.creation >= %s
+			AND so.status NOT IN ('Cancelled')
+			{NO_INTERNAL}
+		GROUP BY soi.item_code, soi.item_name, soi.stock_uom
+		ORDER BY total_qty DESC
+		LIMIT 15
+	""", [d7, d14, d30, company, d180], as_dict=True)
+
 	return {
 		"turnaround": turnaround,
 		"nearly_complete": nearly_complete,
@@ -248,6 +300,8 @@ def get_so_analytics(pow_profile):
 		"amendments": amendments,
 		"top_cities": top_cities,
 		"top_customers": top_customers,
+		"unfulfillment": unfulfillment,
+		"top_skus": top_skus,
 	}
 
 
