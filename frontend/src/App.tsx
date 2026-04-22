@@ -5,7 +5,6 @@ import { Toaster } from 'sonner'
 import ErrorBoundary from './components/ErrorBoundary'
 import Dashboard from './pages/Dashboard'
 import Analytics from './pages/Analytics'
-import SOAnalytics from './pages/SOAnalytics'
 
 function App() {
 	const [isReady, setIsReady] = useState(false)
@@ -38,7 +37,6 @@ function App() {
 					<Routes>
 						<Route index element={<Dashboard />} />
 						<Route path="analytics" element={<Analytics />} />
-						<Route path="so-analytics" element={<SOAnalytics />} />
 						<Route path="*" element={<Navigate to="/" />} />
 					</Routes>
 				</BrowserRouter>

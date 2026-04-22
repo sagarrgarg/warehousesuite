@@ -198,9 +198,6 @@ export default function Analytics() {
 							{' '}&middot; Transfer acceptance &middot; Stock count accuracy
 						</p>
 					</div>
-					<button onClick={() => navigate('/so-analytics')} className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 rounded px-2 py-1 transition-colors cursor-pointer touch-manipulation">
-						SO Analytics
-					</button>
 					<BarChart3 className="w-5 h-5 text-violet-500" />
 				</div>
 			</header>

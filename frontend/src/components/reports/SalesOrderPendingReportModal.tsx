@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { useFrappePostCall } from 'frappe-react-sdk'
-import { ArrowLeft, Loader2, RefreshCw, Table2, Layers, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
+import { ArrowLeft, Loader2, RefreshCw, Table2, Layers, Search, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { SOPendingLineRow, SOPendingSummaryRow, SOPendingPaginated } from '@/types'
 import { SoReportCustomerPicker, SoReportItemPicker } from '@/components/reports/SoReportAsyncPickers'
 
-type TabId = 'lines' | 'summary'
+import SOAnalyticsTab from '@/components/reports/SOAnalyticsTab'
+
+type TabId = 'lines' | 'summary' | 'analytics'
 
 const EMPTY_FILTERS = { customer: '', sales_order: '', item_code: '' }
 
@@ -235,8 +237,18 @@ export default function SalesOrderPendingReportModal({
           <Table2 className="w-3.5 h-3.5" />
           Item totals
         </button>
+        <button type="button" className={tabBtn(tab === 'analytics')} onClick={() => setTabResetPage('analytics')}>
+          <BarChart3 className="w-3.5 h-3.5" />
+          Analytics
+        </button>
       </div>
 
+      {tab === 'analytics' ? (
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <SOAnalyticsTab powProfileName={powProfileName} />
+        </div>
+      ) : (
+      <>
       <form
         className="px-4 py-2 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700 shrink-0"
         onSubmit={e => {
@@ -439,6 +451,8 @@ export default function SalesOrderPendingReportModal({
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
