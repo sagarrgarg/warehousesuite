@@ -94,7 +94,9 @@ def get_so_analytics(pow_profile):
 	d30 = now - timedelta(days=30)
 	d180 = now - timedelta(days=180)
 
-	turnaround_sql = """
+	NO_INTERNAL = "AND so.is_internal_customer = 0 AND IFNULL(so.is_bns_internal_customer, 0) = 0"
+
+	turnaround_sql = f"""
 		SELECT
 			period,
 			COUNT(*) as order_count,
@@ -122,13 +124,14 @@ def get_so_analytics(pow_profile):
 				AND so.company = %s
 				AND so.creation >= %s
 				AND so.status NOT IN ('Cancelled')
+			{NO_INTERNAL}
 		) t
 		WHERE hrs_to_dn IS NOT NULL
 		GROUP BY period
 	"""
 	turnaround = frappe.db.sql(turnaround_sql, [d7, d30, company, d180], as_dict=True)
 
-	nearly_complete = frappe.db.sql("""
+	nearly_complete = frappe.db.sql(f"""
 		SELECT
 			so.name, so.customer_name, so.grand_total,
 			so.per_delivered, so.per_billed, so.status,
@@ -139,20 +142,22 @@ def get_so_analytics(pow_profile):
 			AND so.company = %s
 			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
 			AND so.per_delivered >= 80 AND so.per_billed >= 80
+			{NO_INTERNAL}
 		ORDER BY so.per_delivered DESC
 		LIMIT 50
 	""", [company], as_dict=True)
 
-	ignore_count = frappe.db.sql("""
+	ignore_count = frappe.db.sql(f"""
 		SELECT COUNT(*) as cnt
 		FROM `tabSales Order` so
 		WHERE so.docstatus = 1
 			AND so.company = %s
 			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
 			AND so.per_delivered >= 95
+			{NO_INTERNAL}
 	""", [company], as_dict=True)[0].cnt
 
-	pending_summary = frappe.db.sql("""
+	pending_summary = frappe.db.sql(f"""
 		SELECT
 			so.status,
 			COUNT(*) as cnt,
@@ -161,6 +166,7 @@ def get_so_analytics(pow_profile):
 		WHERE so.docstatus = 1
 			AND so.company = %s
 			AND so.status NOT IN ('Completed', 'Cancelled', 'Closed')
+			{NO_INTERNAL}
 		GROUP BY so.status
 		ORDER BY cnt DESC
 	""", [company], as_dict=True)
@@ -180,7 +186,7 @@ def get_so_analytics(pow_profile):
 		GROUP BY period
 	""", [d7, d30, d180], as_dict=True)
 
-	amendments = frappe.db.sql("""
+	amendments = frappe.db.sql(f"""
 		SELECT
 			CASE
 				WHEN so.creation >= %s THEN '7d'
@@ -193,10 +199,11 @@ def get_so_analytics(pow_profile):
 			AND so.company = %s
 			AND so.amended_from IS NOT NULL AND so.amended_from != ''
 			AND so.creation >= %s
+			{NO_INTERNAL}
 		GROUP BY period
 	""", [d7, d30, company, d180], as_dict=True)
 
-	top_cities = frappe.db.sql("""
+	top_cities = frappe.db.sql(f"""
 		SELECT addr.city, COUNT(*) as order_count,
 			ROUND(SUM(so.grand_total), 0) as total_value,
 			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
@@ -207,12 +214,13 @@ def get_so_analytics(pow_profile):
 			AND so.company = %s
 			AND so.creation >= %s
 			AND addr.city IS NOT NULL AND addr.city != ''
+			{NO_INTERNAL}
 		GROUP BY addr.city
 		ORDER BY order_count DESC
 		LIMIT 10
 	""", [d7, d30, company, d180], as_dict=True)
 
-	top_customers = frappe.db.sql("""
+	top_customers = frappe.db.sql(f"""
 		SELECT so.customer_name, COUNT(*) as order_count,
 			ROUND(SUM(so.grand_total), 0) as total_value,
 			COUNT(CASE WHEN so.creation >= %s THEN 1 END) as count_7d,
@@ -221,6 +229,7 @@ def get_so_analytics(pow_profile):
 		WHERE so.docstatus = 1
 			AND so.company = %s
 			AND so.creation >= %s
+			{NO_INTERNAL}
 		GROUP BY so.customer_name
 		ORDER BY order_count DESC
 		LIMIT 10
