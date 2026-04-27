@@ -25,7 +25,7 @@ import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
 import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, GripVertical, LayoutGrid, BarChart3 } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { API, formatPowFetchError } from '@/lib/api'
 import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
@@ -333,50 +333,53 @@ export default function Dashboard() {
 
   return (
     <div className="h-dvh bg-slate-100 dark:bg-slate-900 flex flex-col overflow-hidden">
-      {/* ── System Bar ─────────────────────────────────────── */}
+      {/* ── Header: brand + counts + controls ─────────────── */}
       <header className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 shrink-0 border-b border-slate-200/80 dark:border-slate-800">
-        <div className="flex items-center justify-between gap-2 px-3 py-1.5 pt-[max(0.375rem,env(safe-area-inset-top))]">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-base font-black text-slate-900 dark:text-white tracking-tight shrink-0">POW</span>
-            {selectedProfile && (
-              <span
-                className={`text-xs text-slate-600 dark:text-slate-300 truncate min-w-0 ${
-                  profiles.length > 1 ? 'hidden sm:inline' : ''
-                } max-w-[min(40vw,10rem)] sm:max-w-[14rem]`}
-                title={selectedProfile.name1 ?? selectedProfile.name}
-              >
-                {selectedProfile.name1 ?? selectedProfile.name}
-              </span>
-            )}
+        <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 pt-[max(0.25rem,env(safe-area-inset-top))]">
+          <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight shrink-0">POW</span>
+          {selectedProfile && (
+            <span
+              className={`text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate min-w-0 ${
+                profiles.length > 1 ? 'hidden sm:inline' : ''
+              } max-w-[8rem]`}
+              title={selectedProfile.name1 ?? selectedProfile.name}
+            >
+              {selectedProfile.name1 ?? selectedProfile.name}
+            </span>
+          )}
+
+          {/* Inline counts */}
+          <div className="flex items-center gap-2 sm:gap-3 ml-1 text-[10px] tabular-nums overflow-x-auto no-scrollbar">
+            <span className="flex items-center gap-0.5 shrink-0" title={`${filteredWorkOrders.length} work orders${shortfallWOCount ? ` (${shortfallWOCount} short)` : ''}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+              <span className="font-bold text-slate-900 dark:text-white">{filteredWorkOrders.length}</span>
+              {shortfallWOCount > 0 && <span className="text-red-500 font-bold hidden sm:inline">!</span>}
+            </span>
+            <span className="flex items-center gap-0.5 shrink-0" title={`${filteredMRs.length} transfer requests`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              <span className="font-bold text-slate-900 dark:text-white">{filteredMRs.length}</span>
+            </span>
+            <span className="flex items-center gap-0.5 shrink-0" title={`${pendingReceiveCount} incoming`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+              <span className="font-bold text-slate-900 dark:text-white">{pendingReceiveCount}</span>
+            </span>
+            <span className="flex items-center gap-0.5 shrink-0" title={`${sentBadge} sent`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <span className="font-bold text-slate-900 dark:text-white">{sentBadge}</span>
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="flex flex-col items-end leading-none sm:flex-row sm:items-center sm:gap-1.5 sm:leading-normal">
-              <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                {dateLabel}
-              </span>
-              <span className="text-[11px] sm:text-sm font-mono text-slate-700 dark:text-slate-200 tabular-nums">
-                {timeLabel}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate('/analytics')}
-              title="Warehouse Analytics"
-              className="w-8 h-8 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-violet-600 hover:bg-violet-100/80 dark:text-slate-400 dark:hover:text-violet-300 dark:hover:bg-violet-950/50 transition-colors cursor-pointer"
-            >
-              <BarChart3 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+          <div className="flex items-center gap-1 sm:gap-1.5 ml-auto shrink-0">
+            <span className="text-[10px] sm:text-xs font-mono text-slate-600 dark:text-slate-300 tabular-nums hidden sm:inline">
+              {timeLabel}
+            </span>
+            <button type="button" onClick={() => navigate('/analytics')} title="Analytics"
+              className="w-7 h-7 flex items-center justify-center rounded text-slate-500 hover:text-violet-600 hover:bg-violet-100/80 dark:text-slate-400 dark:hover:text-violet-300 dark:hover:bg-violet-950/50 cursor-pointer">
+              <BarChart3 className="w-3.5 h-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="w-8 h-8 sm:w-7 sm:h-7 shrink-0 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              {theme === 'dark'
-                ? <Sun className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                : <Moon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-              }
+            <button type="button" onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              className="w-7 h-7 flex items-center justify-center rounded text-slate-500 hover:text-slate-800 hover:bg-slate-200/80 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 cursor-pointer">
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
             <ProfileSwitcher profiles={profiles} selectedProfileName={selectedProfileName} onSelect={setSelectedProfileName} />
           </div>
@@ -386,150 +389,62 @@ export default function Dashboard() {
       {/* ── Notification banner ─ */}
       <NotificationBanner powProfileName={selectedProfileName} />
 
-      {/* ── Status summary (2×2 on narrow screens, row on sm+) ─ */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2.5 sm:px-3 py-2 sm:py-1 shrink-0 grid grid-cols-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center gap-x-3 gap-y-2 sm:gap-y-1 sm:gap-x-5 text-[10px] sm:text-xs">
-        <span className="flex items-center gap-1 min-w-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
-          <span className="text-slate-600 dark:text-slate-300 truncate">Work orders</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{filteredWorkOrders.length}{warehouseFilter && filteredWorkOrders.length !== workOrders.length ? <span className="text-slate-400 dark:text-slate-500 font-semibold">/{workOrders.length}</span> : null}</span>
-          {shortfallWOCount > 0 && (
-            <span className="hidden sm:inline text-[10px] text-red-600 dark:text-red-400 font-bold whitespace-nowrap">
-              ({shortfallWOCount} short)
-            </span>
-          )}
-        </span>
-        <span className="flex items-center gap-1 min-w-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-          <span className="text-slate-600 dark:text-slate-300 truncate">Requests</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0" title={itemFilterCode ? `${filteredMRs.length} visible (filter on)` : undefined}>
-            {filteredMRs.length}
-            {itemFilterCode && pendingMRs.length !== filteredMRs.length && (
-              <span className="text-slate-400 dark:text-slate-500 font-semibold">/{pendingMRs.length}</span>
-            )}
-          </span>
-        </span>
-        <span className="flex items-center gap-1 min-w-0 col-span-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-          <span className="text-slate-600 dark:text-slate-300 truncate">Incoming</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0" title={itemFilterCode ? `${pendingReceiveCount} visible (filter on)` : undefined}>
-            {pendingReceiveCount}
-            {itemFilterCode && pendingReceiveCount !== pendingReceiveTotal && (
-              <span className="text-slate-400 dark:text-slate-500 font-semibold">/{pendingReceiveTotal}</span>
-            )}
-          </span>
-        </span>
-        <span className="flex items-center gap-1 min-w-0 col-span-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
-          <span className="text-slate-600 dark:text-slate-300 truncate">Sent</span>
-          <span className="text-slate-900 dark:text-white font-bold tabular-nums ml-auto sm:ml-0">{sentBadge}</span>
-        </span>
-        {shortfallWOCount > 0 && (
-          <span className="col-span-2 sm:hidden flex items-center justify-center gap-1 text-[9px] text-red-600 dark:text-red-400 font-bold -mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-            {shortfallWOCount} work order{shortfallWOCount !== 1 ? 's' : ''} short on materials
-          </span>
-        )}
-      </div>
-
-      {/* Item filter: MRs + incoming */}
-      <div className="shrink-0 px-2.5 sm:px-3 py-1.5 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
+      {/* ── Filter bar (item + warehouse + desktop column presets) ─ */}
+      <div className="shrink-0 px-2 sm:px-3 py-1 bg-slate-50/90 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
         {filterItemsErrorText && (
-          <p className="text-[10px] text-red-600 dark:text-red-400 mb-1.5 font-medium px-0.5 whitespace-pre-wrap break-words" role="alert">
-            Item filter: {filterItemsErrorText}
+          <p className="text-[10px] text-red-600 dark:text-red-400 mb-1 font-medium px-0.5 whitespace-pre-wrap break-words" role="alert">
+            {filterItemsErrorText}
           </p>
         )}
-        <div className="flex items-center gap-2 rounded-md border border-slate-200/90 dark:border-slate-600 bg-white/80 dark:bg-slate-800/60 px-2 py-1 sm:py-1.5">
-          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0" title="Filter transfer requests and incoming by line item">
-            <Filter className="w-3 h-3 text-slate-500 dark:text-slate-400" />
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hidden sm:inline">Item</span>
-          </span>
-          <div className="flex-1 min-w-0 sm:max-w-md">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Filter className="w-3 h-3 text-slate-400 shrink-0" />
+          <div className="flex-1 min-w-0 sm:max-w-sm">
             <ItemSearchInput
               ref={itemFilterInputRef}
               items={filterItems}
               value={itemFilterCode ?? ''}
               onSelect={code => setItemFilterCode(code ? code : null)}
-              placeholder="Search or type anywhere to filter…"
+              placeholder="Filter by item…"
             />
           </div>
           {itemFilterCode && (
-            <button
-              type="button"
-              onClick={() => setItemFilterCode(null)}
-              className="flex items-center gap-0.5 shrink-0 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 cursor-pointer"
-            >
+            <button type="button" onClick={() => setItemFilterCode(null)}
+              className="shrink-0 text-[10px] font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 cursor-pointer">
               <X className="w-3 h-3" />
-              Clear
             </button>
           )}
-
-          {/* Warehouse filter */}
-          <span className="w-px h-4 bg-slate-200 dark:bg-slate-600 shrink-0 hidden sm:block" />
-          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0" title="Filter all panels by warehouse">
-            <Warehouse className="w-3 h-3" />
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hidden sm:inline">WH</span>
-          </span>
+          <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0" />
+          <Warehouse className="w-3 h-3 text-slate-400 shrink-0" />
           <select
-            className="min-w-0 max-w-[160px] sm:max-w-[220px] appearance-none bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none truncate cursor-pointer"
+            className="min-w-0 max-w-[120px] sm:max-w-[180px] appearance-none bg-transparent border-none text-[11px] text-slate-900 dark:text-slate-100 focus:outline-none truncate cursor-pointer"
             value={warehouseFilter ?? ''}
             onChange={e => setWarehouseFilter(e.target.value || null)}
           >
-            <option value="">All warehouses</option>
+            <option value="">All WH</option>
             {allWarehouseNames.map(wh => (
               <option key={wh} value={wh}>{wh.replace(/ - [A-Z0-9]+$/i, '')}</option>
             ))}
           </select>
           {warehouseFilter && (
-            <button
-              type="button"
-              onClick={() => setWarehouseFilter(null)}
-              className="flex items-center gap-0.5 shrink-0 text-[10px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 cursor-pointer"
-            >
+            <button type="button" onClick={() => setWarehouseFilter(null)}
+              className="shrink-0 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
               <X className="w-3 h-3" />
             </button>
           )}
-        </div>
-      </div>
 
-      {/* ── Desktop: resizable column widths (persisted) ─ */}
-      <div className="hidden lg:flex shrink-0 items-center gap-2 px-2.5 py-1 border-b border-slate-200 dark:border-slate-700 bg-slate-50/95 dark:bg-slate-900/85 text-[10px]">
-        <GripVertical className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden />
-        <span className="text-slate-600 dark:text-slate-300 font-semibold whitespace-nowrap">Columns</span>
-        <div className="flex flex-wrap items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setPreset('equal')}
-            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
-            title="Equal width for all three columns"
-          >
-            <LayoutGrid className="w-3 h-3" /> Equal
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('wo')}
-            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
-            title="Wider work orders column"
-          >
-            <Hammer className="w-3 h-3" /> WO
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('mr')}
-            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
-            title="Wider transfer requests column"
-          >
-            <ArrowLeftRight className="w-3 h-3" /> Req
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreset('incoming')}
-            className="inline-flex items-center gap-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-1.5 py-0.5 font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 cursor-pointer transition-colors"
-            title="Wider incoming column"
-          >
-            <ArrowDownToLine className="w-3 h-3" /> In
-          </button>
+          {/* Desktop column presets (inline) */}
+          <div className="hidden lg:flex items-center gap-1 ml-auto text-[10px]">
+            <span className="w-px h-3.5 bg-slate-200 dark:bg-slate-700 shrink-0 mr-0.5" />
+            {(['equal', 'wo', 'mr', 'incoming'] as const).map(p => (
+              <button key={p} type="button" onClick={() => setPreset(p)}
+                className="px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                title={`${p} column layout`}
+              >
+                {p === 'equal' ? '=' : p === 'wo' ? 'WO' : p === 'mr' ? 'Req' : 'In'}
+              </button>
+            ))}
+          </div>
         </div>
-        <span className="text-slate-400 dark:text-slate-500 ml-auto hidden xl:inline">Drag column dividers to resize</span>
       </div>
 
       {/* Mobile: stacked panels + tab visibility */}
