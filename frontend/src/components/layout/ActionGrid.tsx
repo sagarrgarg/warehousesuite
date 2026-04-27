@@ -1,6 +1,6 @@
 import {
   ClipboardCheck, Search,
-  PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle,
+  PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle, ShoppingCart,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -48,6 +48,15 @@ const ACTIONS: ActionDef[] = [
     color: 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500',
     textClass: 'text-slate-800 dark:text-white',
     reactView: false,
+  },
+  {
+    id: 'purchase-requests',
+    label: 'Purchase Req',
+    icon: <ShoppingCart className="w-4 h-4" />,
+    color: 'bg-teal-700 hover:bg-teal-800 dark:bg-teal-800 dark:hover:bg-teal-700',
+    textClass: 'text-white',
+    operationKey: 'purchase_request',
+    reactView: true,
   },
   {
     id: 'so-pending-report',

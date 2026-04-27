@@ -23,6 +23,7 @@
   "repack",
   "column_break_lnbl",
   "manufacturing",
+  "purchase_request",
   "sales_order_pending_report",
   "show_only_stock_items",
   "section_break_isnk",
@@ -98,6 +99,12 @@
    "label": "BOM based Manufacturing"
   },
   {
+   "default": "0",
+   "fieldname": "purchase_request",
+   "fieldtype": "Check",
+   "label": "Purchase Requests"
+  },
+  {
    "fieldname": "column_break_pcus",
    "fieldtype": "Column Break"
   },
@@ -155,7 +162,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-15 00:00:00.000000",
+ "modified": "2026-04-26 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Warehousesuite",
  "name": "POW Profile",

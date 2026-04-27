@@ -23,6 +23,7 @@ import DirectManufactureModal from '@/components/manufacturing/DirectManufacture
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
+import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, GripVertical, LayoutGrid, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -42,7 +43,7 @@ function useLiveClock() {
   return now
 }
 
-type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'so-pending-report' | 'stock-concerns' | null
+type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'purchase-requests' | 'so-pending-report' | 'stock-concerns' | null
 type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
@@ -287,7 +288,7 @@ export default function Dashboard() {
 
   const handleAction = (action: string) => {
     switch (action) {
-      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'so-pending-report': case 'stock-concerns':
+      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'purchase-requests': case 'so-pending-report': case 'stock-concerns':
         setActiveModal(action as ModalType)
         break
       case 'direct-manufacture':
@@ -702,6 +703,13 @@ export default function Dashboard() {
       )}
       {activeModal === 'item-inquiry' && warehouses && (
         <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} powProfileName={selectedProfileName} />
+      )}
+      {activeModal === 'purchase-requests' && selectedProfileName && (
+        <PurchaseRequestsModal
+          open
+          onClose={closeModal}
+          powProfileName={selectedProfileName}
+        />
       )}
       {activeModal === 'so-pending-report' && selectedProfileName && (
         <SalesOrderPendingReportModal

@@ -200,6 +200,7 @@ def get_pow_profile_operations(pow_profile):
 	return {
 		"material_transfer": bool(profile.material_transfer),
 		"manufacturing": bool(profile.manufacturing),
+		"purchase_request": bool(getattr(profile, "purchase_request", 0)),
 		"purchase_receipt": bool(profile.purchase_receipt),
 		"repack": bool(profile.repack),
 		"delivery_note": bool(profile.delivery_note),

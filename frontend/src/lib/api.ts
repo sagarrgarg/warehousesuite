@@ -2,6 +2,7 @@ const BASE = 'warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard'
 const MR_BASE = 'warehousesuite.api.pow_material_request'
 const WO_BASE = 'warehousesuite.api.pow_work_order'
 const SO_REP_BASE = 'warehousesuite.api.pow_so_pending_report'
+const PR_BASE = 'warehousesuite.api.pow_purchase_request'
 const CONCERN_BASE = 'warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern'
 const BATCH_BASE = 'warehousesuite.api.pow_batch_serial'
 
@@ -64,6 +65,13 @@ export const API = {
 	getSOPendingSummary: `${SO_REP_BASE}.get_pow_so_pending_summary`,
 	searchSOReportCustomers: `${SO_REP_BASE}.search_so_report_customers`,
 	searchSOReportItems: `${SO_REP_BASE}.search_so_report_items`,
+
+	// Purchase Requests
+	getPendingPurchaseMRs: `${PR_BASE}.get_pending_purchase_mrs`,
+	getConsolidatedPurchaseItems: `${PR_BASE}.get_consolidated_purchase_items_list`,
+	createPOFromMR: `${PR_BASE}.create_po_from_mr`,
+	createPOConsolidated: `${PR_BASE}.create_po_consolidated`,
+	searchPurchaseSuppliers: `${PR_BASE}.search_purchase_suppliers`,
 
 	// Stock Concerns
 	getConcernsForProfile: `${CONCERN_BASE}.get_concerns_for_profile`,

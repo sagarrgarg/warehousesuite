@@ -8,6 +8,7 @@ export interface POWProfile {
 	in_transit_warehouse: string
 	material_transfer: 0 | 1
 	manufacturing: 0 | 1
+	purchase_request: 0 | 1
 	purchase_receipt: 0 | 1
 	repack: 0 | 1
 	delivery_note: 0 | 1
@@ -22,6 +23,7 @@ export interface POWProfile {
 export interface ProfileOperations {
 	material_transfer: boolean
 	manufacturing: boolean
+	purchase_request?: boolean
 	purchase_receipt: boolean
 	repack: boolean
 	delivery_note: boolean
@@ -235,6 +237,61 @@ export interface RaiseMRItemPayload {
 	item_code: string
 	qty: number
 	uom: string
+}
+
+// ─── Purchase Request ──────────────────────────────────────
+
+export interface PurchaseMRLine {
+	name: string
+	item_code: string
+	item_name: string
+	qty: number
+	stock_qty: number
+	ordered_qty: number
+	remaining_qty: number
+	remaining_in_uom: number
+	uom: string
+	stock_uom: string
+	warehouse: string | null
+	conversion_factor: number
+	schedule_date: string | null
+	default_supplier: string | null
+}
+
+export interface PendingPurchaseMR {
+	name: string
+	title: string
+	transaction_date: string
+	schedule_date: string | null
+	status: string
+	per_ordered: number
+	owner: string
+	company: string
+	line_count: number
+	lines: PurchaseMRLine[]
+}
+
+export interface ConsolidatedPurchaseItemSource {
+	mr_name: string
+	mr_item_name: string
+	remaining_qty: number
+	remaining_in_uom: number
+	uom: string
+	conversion_factor: number
+	warehouse: string | null
+	schedule_date: string | null
+}
+
+export interface ConsolidatedPurchaseItem {
+	item_code: string
+	item_name: string
+	uom: string
+	stock_uom: string
+	default_supplier: string | null
+	total_remaining_qty: number
+	total_remaining_in_uom: number
+	mr_count: number
+	sources: ConsolidatedPurchaseItemSource[]
 }
 
 // ─── Work Order ────────────────────────────────────────────
