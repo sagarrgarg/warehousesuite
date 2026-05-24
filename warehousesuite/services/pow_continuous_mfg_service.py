@@ -29,7 +29,6 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, nowtime, today
 
-
 # ---------------------------------------------------------------------------
 # Consumption
 # ---------------------------------------------------------------------------
@@ -91,7 +90,7 @@ def consume_materials_for_wo(wo_name, items, batch_serial_data=None):
 	# Erpnext (stock_entry.py:817-820) requires fg_completed_qty > 0 on
 	# Material Consumption for Manufacture entries linked to a WO ("For
 	# Quantity (Manufactured Qty) is mandatory"). It is bookkeeping only —
-	# the cost rollup at finish-time aggregates valuation_rate × transfer_qty
+	# the cost rollup at finish-time aggregates valuation_rate * transfer_qty
 	# across all consumption entries, not this field. Default to remaining
 	# planned qty so operators don't have to think about it.
 	#
@@ -336,7 +335,7 @@ def finish_continuous_manufacture(wo_name, fg_qty, pow_fg_batch_no=None):
 	# FG valuation = BOM standard cost (SAP/McDonald's style standard costing).
 	# Computed once per WO from the BOM total_cost / quantity. This is stable
 	# per WO regardless of when consumption happens or how many finishes are
-	# declared. Variance (actual_consumed − Σ(fg_qty × bom_std_rate)) lands
+	# declared. Variance (actual_consumed - sum(fg_qty * bom_std_rate)) lands
 	# in Company.stock_adjustment_account and is cleared at WO close via the
 	# settle_wo_variance service into the Production Variance Account.
 	#

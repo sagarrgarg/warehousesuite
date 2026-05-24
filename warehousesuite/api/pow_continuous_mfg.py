@@ -160,10 +160,11 @@ def get_wo_variance_summary(wo_name):
 	if not wo:
 		frappe.throw(_("Work Order {0} not found").format(wo_name))
 
+	from frappe.utils import flt as _flt
+
 	from warehousesuite.services.pow_continuous_mfg_service import (
 		_stock_adj_residual_for_wo,
 	)
-	from frappe.utils import flt as _flt
 
 	stock_adjustment_account = frappe.db.get_value(
 		"Company", wo.company, "stock_adjustment_account"
