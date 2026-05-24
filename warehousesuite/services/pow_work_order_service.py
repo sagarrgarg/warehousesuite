@@ -11,6 +11,7 @@ Design rules:
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, nowtime, today
+from pypika import Order
 
 ALT_ORIGINAL_MARKER_PREFIX = "[POW_ALT_ORIGINAL:"
 ALT_ORIGINAL_MARKER_SUFFIX = "]"
@@ -56,23 +57,22 @@ def get_pending_work_orders(warehouses=None):
 	]
 
 	if warehouses:
-		wh_placeholder = ", ".join(["%s"] * len(warehouses))
-		# Need 3 copies of warehouses for the 3 IN clauses
-		params = list(warehouses) * 3
-		wos = frappe.db.sql(
-			"""
-            SELECT {fields}
-            FROM `tabWork Order`
-            WHERE docstatus = 1
-                AND status NOT IN ('Completed', 'Stopped', 'Closed', 'Cancelled')
-                AND (fg_warehouse IN ({wh})
-                     OR wip_warehouse IN ({wh})
-                     OR source_warehouse IN ({wh}))
-            ORDER BY creation ASC
-        """.format(fields=", ".join(fields), wh=wh_placeholder),
-			params,
-			as_dict=True,
+		wo_qb = frappe.qb.DocType("Work Order")
+		query = (
+			frappe.qb.from_(wo_qb)
+			.select(*[getattr(wo_qb, f) for f in fields])
+			.where(
+				(wo_qb.docstatus == 1)
+				& (wo_qb.status.notin(["Completed", "Stopped", "Closed", "Cancelled"]))
+				& (
+					wo_qb.fg_warehouse.isin(warehouses)
+					| wo_qb.wip_warehouse.isin(warehouses)
+					| wo_qb.source_warehouse.isin(warehouses)
+				)
+			)
+			.orderby(wo_qb.creation)
 		)
+		wos = query.run(as_dict=True)
 	else:
 		wos = frappe.get_all(
 			"Work Order",
@@ -209,27 +209,21 @@ def _query_bin_availability_for_item(item_code, allowed_warehouses=None, limit=1
 	if allowed_warehouses is not None and len(allowed_warehouses) == 0:
 		return []
 
-	params = [item_code]
-	wh_clause = ""
-	if allowed_warehouses:
-		ph = ", ".join(["%s"] * len(allowed_warehouses))
-		wh_clause = f" AND b.warehouse IN ({ph})"
-		params.extend(allowed_warehouses)
-
 	lim = max(1, min(cint(limit), 50))
-	return frappe.db.sql(
-		f"""
-        SELECT b.warehouse, w.warehouse_name, b.actual_qty
-        FROM `tabBin` b
-        LEFT JOIN `tabWarehouse` w ON w.name = b.warehouse
-        WHERE b.item_code = %s AND b.actual_qty > 0
-        {wh_clause}
-        ORDER BY b.actual_qty DESC
-        LIMIT {lim}
-        """,
-		tuple(params),
-		as_dict=True,
+	bin_qb = frappe.qb.DocType("Bin")
+	wh_qb = frappe.qb.DocType("Warehouse")
+	query = (
+		frappe.qb.from_(bin_qb)
+		.left_join(wh_qb)
+		.on(wh_qb.name == bin_qb.warehouse)
+		.select(bin_qb.warehouse, wh_qb.warehouse_name, bin_qb.actual_qty)
+		.where((bin_qb.item_code == item_code) & (bin_qb.actual_qty > 0))
+		.orderby(bin_qb.actual_qty, order=Order.desc)
+		.limit(lim)
 	)
+	if allowed_warehouses:
+		query = query.where(bin_qb.warehouse.isin(allowed_warehouses))
+	return query.run(as_dict=True)
 
 
 def get_bom_for_item(item_code, allowed_warehouses=None, bom_no=None):

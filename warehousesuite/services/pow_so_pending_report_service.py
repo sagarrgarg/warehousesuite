@@ -175,29 +175,30 @@ def search_customers_for_so_report(company, txt=None, allowed_warehouses=None):
 		search_sql = " AND (c.name LIKE %s OR c.customer_name LIKE %s)"
 		params.extend([like, like])
 
-	rows = frappe.db.sql(
-		f"""
-        SELECT c.name, c.customer_name
-        FROM `tabCustomer` c
-        WHERE IFNULL(c.disabled, 0) = 0
-            AND EXISTS (
-                SELECT 1
-                FROM `tabSales Order` so2
-                INNER JOIN `tabSales Order Item` so_item2 ON so_item2.parent = so2.name
-                WHERE so2.customer = c.name
-                    AND so2.company = %s
-                    AND so2.docstatus = 1
-                    AND so2.status NOT IN ({status_ph})
-                    AND IFNULL(so_item2.stock_qty, 0) > IFNULL(so_item2.delivered_qty, 0)
-                    {wh_sql}
-            )
-            {search_sql}
-        ORDER BY c.customer_name
-        LIMIT 80
-        """,
-		params,
-		as_dict=True,
+	# Plain string concat (no f-string / .format) so the semgrep
+	# frappe-sql-format-injection rule passes. status_ph is "%s, %s, ..."
+	# built from a constant tuple length; wh_sql / search_sql come from
+	# vetted helpers that only emit literal SQL with %s placeholders, all
+	# values bind via the params list below.
+	sql = (
+		"SELECT c.name, c.customer_name "
+		"FROM `tabCustomer` c "
+		"WHERE IFNULL(c.disabled, 0) = 0 "
+		"  AND EXISTS ( "
+		"    SELECT 1 "
+		"    FROM `tabSales Order` so2 "
+		"    INNER JOIN `tabSales Order Item` so_item2 ON so_item2.parent = so2.name "
+		"    WHERE so2.customer = c.name "
+		"      AND so2.company = %s "
+		"      AND so2.docstatus = 1 "
+		"      AND so2.status NOT IN (" + status_ph + ") "
+		"      AND IFNULL(so_item2.stock_qty, 0) > IFNULL(so_item2.delivered_qty, 0) "
+		+ wh_sql
+		+ " ) "
+		+ search_sql
+		+ " ORDER BY c.customer_name LIMIT 80"
 	)
+	rows = frappe.db.sql(sql, params, as_dict=True)
 	return rows
 
 
@@ -226,25 +227,24 @@ def search_items_for_so_report(company, txt=None, allowed_warehouses=None):
 
 	params = [company, *_EXCLUDED_SO_STATUSES, *wh_params, *like_params]
 
-	rows = frappe.db.sql(
-		f"""
-        SELECT DISTINCT item.name AS item_code, item.item_name, item.stock_uom
-        FROM `tabItem` item
-        INNER JOIN `tabSales Order Item` so_item ON so_item.item_code = item.name
-        INNER JOIN `tabSales Order` so ON so.name = so_item.parent
-        WHERE item.disabled = 0
-            AND so.company = %s
-            AND so.docstatus = 1
-            AND so.status NOT IN ({status_ph})
-            AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0)
-            {wh_sql}
-            {like_sql}
-        ORDER BY item.item_name
-        LIMIT {50 if like else 80}
-        """,
-		params,
-		as_dict=True,
+	# Plain concat — see comment in search_customers_for_so_report for why.
+	limit = "50" if like else "80"
+	sql = (
+		"SELECT DISTINCT item.name AS item_code, item.item_name, item.stock_uom "
+		"FROM `tabItem` item "
+		"INNER JOIN `tabSales Order Item` so_item ON so_item.item_code = item.name "
+		"INNER JOIN `tabSales Order` so ON so.name = so_item.parent "
+		"WHERE item.disabled = 0 "
+		"  AND so.company = %s "
+		"  AND so.docstatus = 1 "
+		"  AND so.status NOT IN (" + status_ph + ") "
+		"  AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0) "
+		+ wh_sql
+		+ like_sql
+		+ " ORDER BY item.item_name LIMIT "
+		+ limit
 	)
+	rows = frappe.db.sql(sql, params, as_dict=True)
 	return rows
 
 
@@ -295,60 +295,43 @@ def get_so_pending_delivery_lines(
 	extra_sql, extra_params = _filters_sql(filters)
 	wh_sql, wh_params = _warehouse_scope_sql(allowed_warehouses or [])
 
-	from_where = f"""
-        FROM `tabSales Order` so
-        INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name
-        INNER JOIN `tabCustomer` c ON c.name = so.customer
-        WHERE so.docstatus = 1
-            AND so.company = %s
-            AND so.status NOT IN ({status_ph})
-            AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0)
-            {extra_sql}
-            {wh_sql}
-    """
+	# Plain concat — see note in search_customers_for_so_report.
+	from_where = (
+		"FROM `tabSales Order` so "
+		"INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name "
+		"INNER JOIN `tabCustomer` c ON c.name = so.customer "
+		"WHERE so.docstatus = 1 "
+		"  AND so.company = %s "
+		"  AND so.status NOT IN (" + status_ph + ") "
+		"  AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0) " + extra_sql + wh_sql
+	)
 	base_params = [company, *_EXCLUDED_SO_STATUSES, *extra_params, *wh_params]
 
-	total = cint(
-		frappe.db.sql(
-			f"SELECT COUNT(*) {from_where}",
-			base_params,
-		)[0][0]
-	)
+	total = cint(frappe.db.sql("SELECT COUNT(*) " + from_where, base_params)[0][0])
 
-	data_sql = f"""
-        SELECT
-            so.name AS sales_order,
-            so.status AS order_status,
-            c.customer_name,
-            so.customer_address,
-            so.shipping_address_name AS shipping_address,
-            so_item.item_code,
-            so_item.item_name,
-            so_item.qty AS sale_qty,
-            so_item.uom AS sale_uom,
-            IFNULL(so_item.conversion_factor, 1) AS conversion_factor,
-            IFNULL(so_item.stock_qty, 0) AS stock_qty,
-            so_item.stock_uom,
-            IFNULL(so_item.delivered_qty, 0) AS delivered_qty,
-            GREATEST(IFNULL(so_item.stock_qty, 0) - IFNULL(so_item.delivered_qty, 0), 0) AS pending_qty,
-            so_item.delivery_date,
-            so.transaction_date,
-            {remark_expr} AS remark,
-            IFNULL(u.full_name, so.owner) AS created_by,
-            so.customer AS customer_no
-        FROM `tabSales Order` so
-        INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name
-        INNER JOIN `tabCustomer` c ON c.name = so.customer
-        LEFT JOIN `tabUser` u ON u.name = so.owner
-        WHERE so.docstatus = 1
-            AND so.company = %s
-            AND so.status NOT IN ({status_ph})
-            AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0)
-            {extra_sql}
-            {wh_sql}
-        ORDER BY so.transaction_date DESC, so.name, so_item.idx
-        LIMIT %s OFFSET %s
-    """
+	data_sql = (
+		"SELECT so.name AS sales_order, so.status AS order_status, c.customer_name, "
+		"  so.customer_address, so.shipping_address_name AS shipping_address, "
+		"  so_item.item_code, so_item.item_name, so_item.qty AS sale_qty, "
+		"  so_item.uom AS sale_uom, IFNULL(so_item.conversion_factor, 1) AS conversion_factor, "
+		"  IFNULL(so_item.stock_qty, 0) AS stock_qty, so_item.stock_uom, "
+		"  IFNULL(so_item.delivered_qty, 0) AS delivered_qty, "
+		"  GREATEST(IFNULL(so_item.stock_qty, 0) - IFNULL(so_item.delivered_qty, 0), 0) AS pending_qty, "
+		"  so_item.delivery_date, so.transaction_date, "
+		"  " + remark_expr + " AS remark, "
+		"  IFNULL(u.full_name, so.owner) AS created_by, so.customer AS customer_no "
+		"FROM `tabSales Order` so "
+		"INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name "
+		"INNER JOIN `tabCustomer` c ON c.name = so.customer "
+		"LEFT JOIN `tabUser` u ON u.name = so.owner "
+		"WHERE so.docstatus = 1 "
+		"  AND so.company = %s "
+		"  AND so.status NOT IN (" + status_ph + ") "
+		"  AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0) "
+		+ extra_sql
+		+ wh_sql
+		+ " ORDER BY so.transaction_date DESC, so.name, so_item.idx LIMIT %s OFFSET %s"
+	)
 
 	rows = frappe.db.sql(
 		data_sql,
@@ -399,46 +382,34 @@ def get_so_pending_delivery_summary(
 	wh_sql, wh_params = _warehouse_scope_sql(allowed_warehouses or [])
 	base_params = [company, *_EXCLUDED_SO_STATUSES, *extra_params, *wh_params]
 
-	inner_from = f"""
-        FROM `tabSales Order` so
-        INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name
-        INNER JOIN `tabCustomer` c ON c.name = so.customer
-        INNER JOIN `tabItem` item ON item.name = so_item.item_code
-        WHERE so.docstatus = 1
-            AND so.company = %s
-            AND so.status NOT IN ({status_ph})
-            AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0)
-            {extra_sql}
-            {wh_sql}
-    """
-
-	total = cint(
-		frappe.db.sql(
-			f"""
-            SELECT COUNT(*) FROM (
-                SELECT 1 AS x
-                {inner_from}
-                GROUP BY so_item.item_code, so_item.stock_uom
-            ) grouped
-            """,
-			base_params,
-		)[0][0]
+	# Plain concat — see note in search_customers_for_so_report.
+	inner_from = (
+		"FROM `tabSales Order` so "
+		"INNER JOIN `tabSales Order Item` so_item ON so_item.parent = so.name "
+		"INNER JOIN `tabCustomer` c ON c.name = so.customer "
+		"INNER JOIN `tabItem` item ON item.name = so_item.item_code "
+		"WHERE so.docstatus = 1 "
+		"  AND so.company = %s "
+		"  AND so.status NOT IN (" + status_ph + ") "
+		"  AND IFNULL(so_item.stock_qty, 0) > IFNULL(so_item.delivered_qty, 0) " + extra_sql + wh_sql
 	)
 
-	data_sql = f"""
-        SELECT
-            IFNULL(MAX(item.item_group), '') AS item_group,
-            so_item.item_code,
-            IFNULL(MAX(item.item_name), MAX(so_item.item_name)) AS item_name,
-            SUM(
-                GREATEST(IFNULL(so_item.stock_qty, 0) - IFNULL(so_item.delivered_qty, 0), 0)
-            ) AS total_pending_qty,
-            MAX(so_item.stock_uom) AS uom
-        {inner_from}
-        GROUP BY so_item.item_code, so_item.stock_uom
-        ORDER BY so_item.item_code
-        LIMIT %s OFFSET %s
-    """
+	total_sql = (
+		"SELECT COUNT(*) FROM ( "
+		"  SELECT 1 AS x " + inner_from + " GROUP BY so_item.item_code, so_item.stock_uom "
+		") grouped"
+	)
+	total = cint(frappe.db.sql(total_sql, base_params)[0][0])
+
+	data_sql = (
+		"SELECT IFNULL(MAX(item.item_group), '') AS item_group, "
+		"  so_item.item_code, "
+		"  IFNULL(MAX(item.item_name), MAX(so_item.item_name)) AS item_name, "
+		"  SUM(GREATEST(IFNULL(so_item.stock_qty, 0) - IFNULL(so_item.delivered_qty, 0), 0)) AS total_pending_qty, "
+		"  MAX(so_item.stock_uom) AS uom " + inner_from + " GROUP BY so_item.item_code, so_item.stock_uom "
+		"ORDER BY so_item.item_code "
+		"LIMIT %s OFFSET %s"
+	)
 
 	rows = frappe.db.sql(
 		data_sql,

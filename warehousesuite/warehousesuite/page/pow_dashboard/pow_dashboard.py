@@ -2772,14 +2772,12 @@ def get_warehouse_analytics(pow_profile=None):
 			"daily_volumes": [],
 		}
 
-	ph = ", ".join(["%s"] * len(wh_list))
-	wh_clause_send = f" AND send.custom_for_which_warehouse_to_transfer IN ({ph})"
-	wh_clause_se = f" AND se.custom_for_which_warehouse_to_transfer IN ({ph})"
-	wh_clause_sc = f" AND sc.warehouse IN ({ph})"
+	# Use `IN %s` with a tuple — pymysql expands the tuple inline at bind
+	# time, so the SQL strings stay literal (no f-string / .format on SQL).
+	wh_tuple = tuple(wh_list)
 
-	date_params = [d180, d30, d7, d180, d30, d7, d30, d30]
 	transfer_stats = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(*) AS total_transfers,
@@ -2799,16 +2797,16 @@ def get_warehouse_analytics(pow_profile=None):
 			AND send.docstatus = 1
 			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
 			AND send.custom_for_which_warehouse_to_transfer != ''
-			{wh_clause_send}
+			AND send.custom_for_which_warehouse_to_transfer IN %s
 		GROUP BY send.custom_for_which_warehouse_to_transfer
 		ORDER BY count_30d DESC
 	""",
-		date_params + wh_list,
+		(d180, d30, d7, d180, d30, d7, d30, d30, wh_tuple),
 		as_dict=True,
 	)
 
 	pending_counts = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			se.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(DISTINCT se.name) AS pending_count
@@ -2819,10 +2817,10 @@ def get_warehouse_analytics(pow_profile=None):
 			AND (sei.qty > IFNULL(sei.transferred_qty, 0))
 			AND (se.outgoing_stock_entry IS NULL OR se.outgoing_stock_entry = '')
 			AND se.custom_for_which_warehouse_to_transfer IS NOT NULL
-			{wh_clause_se}
+			AND se.custom_for_which_warehouse_to_transfer IN %s
 		GROUP BY se.custom_for_which_warehouse_to_transfer
 	""",
-		wh_list or (),
+		(wh_tuple,),
 		as_dict=True,
 	)
 	pending_map = {r.warehouse: r.pending_count for r in pending_counts}
@@ -2831,7 +2829,7 @@ def get_warehouse_analytics(pow_profile=None):
 		row["pending_count"] = pending_map.get(row["warehouse"], 0)
 
 	stock_count_stats = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			sc.warehouse,
 			COUNT(DISTINCT sc.name) AS total_counts,
@@ -2843,11 +2841,11 @@ def get_warehouse_analytics(pow_profile=None):
 		FROM `tabPOW Stock Count` sc
 		INNER JOIN `tabPOW Stock Count Item` sci ON sci.parent = sc.name
 		WHERE sc.docstatus = 1
-			{wh_clause_sc}
+			AND sc.warehouse IN %s
 		GROUP BY sc.warehouse
 		ORDER BY total_counts DESC
 	""",
-		wh_list or (),
+		(wh_tuple,),
 		as_dict=True,
 	)
 
@@ -2860,7 +2858,7 @@ def get_warehouse_analytics(pow_profile=None):
 		)
 
 	hourly_heatmap = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			HOUR(send.creation) AS hour,
 			COUNT(*) AS count
@@ -2869,16 +2867,16 @@ def get_warehouse_analytics(pow_profile=None):
 			AND send.docstatus = 1
 			AND send.creation >= %s
 			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
-			{wh_clause_send}
+			AND send.custom_for_which_warehouse_to_transfer IN %s
 		GROUP BY HOUR(send.creation)
 		ORDER BY hour
 	""",
-		[d30, *wh_list],
+		(d30, wh_tuple),
 		as_dict=True,
 	)
 
 	concern_rates = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			COUNT(DISTINCT send.name) AS total_transfers,
@@ -2892,11 +2890,11 @@ def get_warehouse_analytics(pow_profile=None):
 			AND send.docstatus = 1
 			AND send.creation >= %s
 			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
-			{wh_clause_send}
+			AND send.custom_for_which_warehouse_to_transfer IN %s
 		GROUP BY send.custom_for_which_warehouse_to_transfer
 		ORDER BY transfers_with_concerns DESC
 	""",
-		[d30, *wh_list],
+		(d30, wh_tuple),
 		as_dict=True,
 	)
 
@@ -2908,7 +2906,7 @@ def get_warehouse_analytics(pow_profile=None):
 		)
 
 	daily_volumes = frappe.db.sql(
-		f"""
+		"""
 		SELECT
 			send.custom_for_which_warehouse_to_transfer AS warehouse,
 			DATE(send.creation) AS day,
@@ -2918,11 +2916,11 @@ def get_warehouse_analytics(pow_profile=None):
 			AND send.docstatus = 1
 			AND send.creation >= %s
 			AND send.custom_for_which_warehouse_to_transfer IS NOT NULL
-			{wh_clause_send}
+			AND send.custom_for_which_warehouse_to_transfer IN %s
 		GROUP BY send.custom_for_which_warehouse_to_transfer, DATE(send.creation)
 		ORDER BY send.custom_for_which_warehouse_to_transfer, day
 	""",
-		[d30, *wh_list],
+		(d30, wh_tuple),
 		as_dict=True,
 	)
 
