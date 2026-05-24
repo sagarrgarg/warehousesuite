@@ -1,6 +1,7 @@
 import {
   ClipboardCheck, Search,
   PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle, ShoppingCart,
+  ArrowUpFromLine,
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -24,6 +25,15 @@ interface ActionDef {
 }
 
 const ACTIONS: ActionDef[] = [
+  {
+    id: 'transfer-send',
+    label: 'Send',
+    icon: <ArrowUpFromLine className="w-4 h-4" />,
+    color: 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-600',
+    textClass: 'text-white',
+    operationKey: 'material_transfer',
+    reactView: true,
+  },
   {
     id: 'stock-count',
     label: 'Count',

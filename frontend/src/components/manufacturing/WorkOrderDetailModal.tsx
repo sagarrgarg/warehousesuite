@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Hammer, ShoppingCart, AlertTriangle, RefreshCw, CheckCircle2, Repeat2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Hammer, ShoppingCart, AlertTriangle, RefreshCw, CheckCircle2, Repeat2, Soup } from 'lucide-react'
 import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import type { WODetail, WORequiredItem } from '@/types'
 
@@ -11,6 +11,10 @@ interface Props {
   onClose: () => void
   onManufacture: (wo: WODetail) => void
   onRequestMaterials: (wo: WODetail) => void
+  /** When true, replaces "Manufacture" with "Consume" + "Finish" footer buttons. */
+  continuousMode?: boolean
+  onConsume?: (wo: WODetail) => void
+  onFinish?: (wo: WODetail) => void
   powProfileName?: string | null
 }
 
@@ -41,9 +45,12 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
 function ItemRow({
   item,
   onSwapAlternative,
+  continuousMode = false,
 }: {
   item: WORequiredItem
   onSwapAlternative?: (item: WORequiredItem, altCode: string) => void
+  /** When true, show Consumed / Remaining-to-consume instead of Transferred / Remaining-to-transfer. */
+  continuousMode?: boolean
 }) {
   const [showAlts, setShowAlts] = useState(false)
   const stripeColor = STOCK_STATUS_COLORS[item.stock_status] ?? 'bg-slate-300 dark:bg-slate-500'
@@ -86,20 +93,37 @@ function ItemRow({
               <p className="text-slate-500">Required</p>
               <p className="font-bold tabular-nums text-slate-700 dark:text-slate-200">{item.required_qty} <span className="font-normal text-slate-500">{item.stock_uom}</span></p>
             </div>
+            {continuousMode ? (
+              <>
+                <div>
+                  <p className="text-slate-500">Consumed</p>
+                  <p className="font-bold tabular-nums text-slate-700 dark:text-slate-200">{item.consumed_qty}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Remaining</p>
+                  <p className={`font-bold tabular-nums ${item.remaining_consume_qty > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {item.remaining_consume_qty}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="text-slate-500">Transferred</p>
+                  <p className="font-bold tabular-nums text-slate-700 dark:text-slate-200">{item.transferred_qty}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Remaining</p>
+                  <p className={`font-bold tabular-nums ${item.remaining_transfer_qty > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {item.remaining_transfer_qty}
+                  </p>
+                </div>
+              </>
+            )}
             <div>
-              <p className="text-slate-500">Transferred</p>
-              <p className="font-bold tabular-nums text-slate-700 dark:text-slate-200">{item.transferred_qty}</p>
-            </div>
-            <div>
-              <p className="text-slate-500">Remaining</p>
-              <p className={`font-bold tabular-nums ${item.remaining_transfer_qty > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                {item.remaining_transfer_qty}
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500">Available</p>
+              <p className="text-slate-500">{continuousMode ? 'At WIP' : 'Available'}</p>
               <p className={`font-bold tabular-nums ${
-                item.available_qty >= item.remaining_transfer_qty ? 'text-emerald-600 dark:text-emerald-400' :
+                item.available_qty >= (continuousMode ? item.remaining_consume_qty : item.remaining_transfer_qty) ? 'text-emerald-600 dark:text-emerald-400' :
                 item.available_qty > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
               }`}>{item.available_qty}</p>
             </div>
@@ -158,6 +182,9 @@ export default function WorkOrderDetailModal({
   onClose,
   onManufacture,
   onRequestMaterials,
+  continuousMode = false,
+  onConsume,
+  onFinish,
   powProfileName,
 }: Props) {
   const [wo, setWo] = useState<WODetail | null>(null)
@@ -286,7 +313,7 @@ export default function WorkOrderDetailModal({
             <div className="grid grid-cols-4 gap-1 px-5 py-1 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky top-0">
               <span className="col-span-1">Item</span>
               <span className="text-right">Required</span>
-              <span className="text-right">Transferred</span>
+              <span className="text-right">{continuousMode ? 'Consumed' : 'Transferred'}</span>
               <span className="text-right">At WIP</span>
             </div>
 
@@ -300,6 +327,7 @@ export default function WorkOrderDetailModal({
                   <ItemRow
                     item={item}
                     onSwapAlternative={handleSwapAlternative}
+                    continuousMode={continuousMode}
                   />
                 </div>
               ))
@@ -316,9 +344,29 @@ export default function WorkOrderDetailModal({
       </div>
 
       {/* Footer actions */}
-      {wo && wo.status !== 'Completed' && wo.status !== 'Stopped' && (
+      {wo && wo.status !== 'Stopped' && (
         <div className="shrink-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex flex-wrap gap-2">
-          {canManufacture && (
+          {wo.status !== 'Completed' && continuousMode && (
+            <>
+              <button
+                onClick={() => onConsume?.(wo)}
+                className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 dark:bg-amber-700 text-white text-[11px] font-bold rounded px-3 py-2 transition-colors cursor-pointer touch-manipulation"
+              >
+                <Soup className="w-3.5 h-3.5" />
+                Consume
+              </button>
+              {canManufacture && (
+                <button
+                  onClick={() => onFinish?.(wo)}
+                  className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-500/90 dark:bg-emerald-800 text-white text-[11px] font-bold rounded px-3 py-2 transition-colors cursor-pointer touch-manipulation"
+                >
+                  <Hammer className="w-3.5 h-3.5" />
+                  Finish
+                </button>
+              )}
+            </>
+          )}
+          {wo.status !== 'Completed' && !continuousMode && canManufacture && (
             <button
               onClick={() => onManufacture(wo)}
               className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-500/90 dark:bg-emerald-800 text-white text-[11px] font-bold rounded px-3 py-2 transition-colors cursor-pointer"
@@ -327,7 +375,7 @@ export default function WorkOrderDetailModal({
               Manufacture
             </button>
           )}
-          {hasShortfall && (
+          {wo.status !== 'Completed' && hasShortfall && (
             <button
               onClick={() => onRequestMaterials(wo)}
               className="flex items-center gap-1.5 bg-amber-700 hover:bg-amber-600 active:bg-amber-500/90 dark:bg-amber-800 text-white text-[11px] font-bold rounded px-3 py-2 transition-colors cursor-pointer"

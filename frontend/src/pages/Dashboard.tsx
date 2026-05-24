@@ -23,6 +23,8 @@ import DirectManufactureModal from '@/components/manufacturing/DirectManufacture
 import WorkOrderDetailModal from '@/components/manufacturing/WorkOrderDetailModal'
 import WOManufactureModal from '@/components/manufacturing/WOManufactureModal'
 import WORequestMaterialsModal from '@/components/manufacturing/WORequestMaterialsModal'
+import ConsumeMaterialDialog from '@/components/manufacturing/ConsumeMaterialDialog'
+import FinishManufactureDialog from '@/components/manufacturing/FinishManufactureDialog'
 import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3 } from 'lucide-react'
@@ -167,11 +169,31 @@ export default function Dashboard() {
   const [showCreateWO, setShowCreateWO] = useState(false)
   const [showDirectMfg, setShowDirectMfg] = useState(false)
   const [activeWOName, setActiveWOName] = useState<string | null>(null)
-  const [woDetailAction, setWoDetailAction] = useState<'manufacture' | 'request' | null>(null)
+  const [woDetailAction, setWoDetailAction] = useState<'manufacture' | 'request' | 'consume' | 'finish' | null>(null)
   const [woForAction, setWoForAction] = useState<WODetail | null>(null)
 
   // Mobile tab (work orders first; manufacturing-only tab removed — use WO panel + action bar)
   const [mobileTab, setMobileTab] = useState<MobileTab>('work-orders')
+
+  // Direct-mode toggle: when WMSuite Settings.auto_set_transit = 0, transfers
+  // go A → B in one shot, so there is nothing to "receive". Hide the Incoming
+  // tab, header chip, and desktop column entirely.
+  const { data: wmSettingsData } = useFrappeGetCall<{ message: { auto_set_transit?: 0 | 1 } }>(
+    API.getWmsuiteSettings,
+    undefined,
+  )
+  const useTransit = (wmSettingsData?.message?.auto_set_transit ?? 1) === 1
+
+  // Material Request panel visibility (cascade resolved server-side in
+  // get_pow_profile_operations: global WMSuite kill switch AND per-profile
+  // flag). Default true when older API omits the field.
+  const showMRPanel = operations?.show_material_request_panel ?? true
+
+  // Auto-fallback mobile tab if user was on a tab that just got hidden.
+  useEffect(() => {
+    if (!useTransit && mobileTab === 'incoming') setMobileTab('work-orders')
+    if (!showMRPanel && mobileTab === 'requests') setMobileTab('work-orders')
+  }, [useTransit, showMRPanel, mobileTab])
 
   const blockGlobalItemTypeahead =
     Boolean(activeModal) ||
@@ -208,8 +230,17 @@ export default function Dashboard() {
   const desktopColumnsRef = useRef<HTMLElement | null>(null)
   const { dragging, startDrag, setPreset, columnWidths } = usePowColumnLayout(desktopColumnsRef)
 
+  // Renormalize column widths when any of the three columns is hidden, so
+  // the remaining ones expand to fill the freed space instead of leaving a
+  // gap. The gutter count = (visible columns - 1) × per-gutter px.
+  const visibleColumnSum =
+    columnWidths.w0 +
+    (showMRPanel ? columnWidths.w1 : 0) +
+    (useTransit ? columnWidths.w2 : 0)
+  const visibleColumnCount = 1 + (showMRPanel ? 1 : 0) + (useTransit ? 1 : 0)
+  const visibleGutterPx = (POW_COLUMN_GUTTER_TOTAL_PX / 2) * Math.max(0, visibleColumnCount - 1)
   const desktopColStyle = (fraction: number): CSSProperties => ({
-    width: `calc((100% - ${POW_COLUMN_GUTTER_TOTAL_PX}px) * ${fraction})`,
+    width: `calc((100% - ${visibleGutterPx}px) * ${visibleColumnSum > 0 ? fraction / visibleColumnSum : 1})`,
     flex: 'none',
     transition:
       dragging || reduceMotion ? undefined : 'width 320ms cubic-bezier(0.33, 1, 0.68, 1)',
@@ -311,24 +342,28 @@ export default function Dashboard() {
       activeBg: 'bg-purple-500/15',
       activeDot: 'bg-purple-400',
     },
-    {
-      id: 'requests',
-      label: 'Requests',
-      count: filteredMRs.length,
-      icon: <ArrowLeftRight className="w-4 h-4" />,
-      accent: 'text-blue-600 dark:text-blue-400',
-      activeBg: 'bg-blue-500/15',
-      activeDot: 'bg-blue-400',
-    },
-    {
-      id: 'incoming',
-      label: 'Incoming',
-      count: pendingReceiveCount,
-      icon: <ArrowDownToLine className="w-4 h-4" />,
-      accent: 'text-violet-600 dark:text-violet-400',
-      activeBg: 'bg-violet-500/15',
-      activeDot: 'bg-violet-400',
-    },
+    ...(showMRPanel
+      ? [{
+          id: 'requests' as MobileTab,
+          label: 'Requests',
+          count: filteredMRs.length,
+          icon: <ArrowLeftRight className="w-4 h-4" />,
+          accent: 'text-blue-600 dark:text-blue-400',
+          activeBg: 'bg-blue-500/15',
+          activeDot: 'bg-blue-400',
+        }]
+      : []),
+    ...(useTransit
+      ? [{
+          id: 'incoming' as MobileTab,
+          label: 'Incoming',
+          count: pendingReceiveCount,
+          icon: <ArrowDownToLine className="w-4 h-4" />,
+          accent: 'text-violet-600 dark:text-violet-400',
+          activeBg: 'bg-violet-500/15',
+          activeDot: 'bg-violet-400',
+        }]
+      : []),
   ]
 
   return (
@@ -355,14 +390,18 @@ export default function Dashboard() {
               <span className="font-bold text-slate-900 dark:text-white">{filteredWorkOrders.length}</span>
               {shortfallWOCount > 0 && <span className="text-red-500 font-bold hidden sm:inline">!</span>}
             </span>
-            <span className="flex items-center gap-0.5 shrink-0" title={`${filteredMRs.length} transfer requests`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-              <span className="font-bold text-slate-900 dark:text-white">{filteredMRs.length}</span>
-            </span>
-            <span className="flex items-center gap-0.5 shrink-0" title={`${pendingReceiveCount} incoming`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-              <span className="font-bold text-slate-900 dark:text-white">{pendingReceiveCount}</span>
-            </span>
+            {showMRPanel && (
+              <span className="flex items-center gap-0.5 shrink-0" title={`${filteredMRs.length} transfer requests`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                <span className="font-bold text-slate-900 dark:text-white">{filteredMRs.length}</span>
+              </span>
+            )}
+            {useTransit && (
+              <span className="flex items-center gap-0.5 shrink-0" title={`${pendingReceiveCount} incoming`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                <span className="font-bold text-slate-900 dark:text-white">{pendingReceiveCount}</span>
+              </span>
+            )}
             <span className="flex items-center gap-0.5 shrink-0" title={`${sentBadge} sent`}>
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
               <span className="font-bold text-slate-900 dark:text-white">{sentBadge}</span>
@@ -459,7 +498,7 @@ export default function Dashboard() {
             onDirectMake={() => setShowDirectMfg(true)}
           />
         </div>
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b border-slate-200 dark:border-slate-700 ${mobileTab === 'requests' ? 'flex' : 'hidden'}`}>
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden border-b border-slate-200 dark:border-slate-700 ${showMRPanel && mobileTab === 'requests' ? 'flex' : 'hidden'}`}>
           <PendingMaterialRequestsPanel
             requests={filteredMRs}
             isLoading={mrsLoading}
@@ -469,7 +508,7 @@ export default function Dashboard() {
             filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
           />
         </div>
-        <div className={`flex-1 flex-col min-h-0 overflow-hidden ${mobileTab === 'incoming' ? 'flex' : 'hidden'}`}>
+        <div className={`flex-1 flex-col min-h-0 overflow-hidden ${useTransit && mobileTab === 'incoming' ? 'flex' : 'hidden'}`}>
           <PendingReceivesPanel
             receives={filteredReceives}
             isLoading={receivesLoading}
@@ -501,56 +540,64 @@ export default function Dashboard() {
             onDirectMake={() => setShowDirectMfg(true)}
           />
         </div>
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize work orders and transfer requests column widths"
-          className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
-            dragging
-              ? 'bg-blue-500/50 scale-[1.05]'
-              : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
-          }`}
-          onMouseDown={startDrag(0)}
-        />
-        <div
-          style={desktopColStyle(columnWidths.w1)}
-          className="flex flex-col min-h-0 overflow-hidden min-w-[11rem] border-r border-slate-200 dark:border-slate-700"
-        >
-          <PendingMaterialRequestsPanel
-            requests={filteredMRs}
-            isLoading={mrsLoading}
-            fetchError={mrErrorText}
-            onFulfill={(mrName) => setFulfillMR(mrName)}
-            onRaise={() => setShowRaiseMR(true)}
-            filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
-          />
-        </div>
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize transfer requests and incoming column widths"
-          className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
-            dragging
-              ? 'bg-blue-500/50 scale-[1.05]'
-              : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
-          }`}
-          onMouseDown={startDrag(1)}
-        />
-        <div
-          style={desktopColStyle(columnWidths.w2)}
-          className="flex flex-col min-h-0 overflow-hidden min-w-[11rem]"
-        >
-          <PendingReceivesPanel
-            receives={filteredReceives}
-            isLoading={receivesLoading}
-            fetchError={receivesErrorText}
-            company={company}
-            onReceived={refreshAll}
-            filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
-            powProfileName={selectedProfileName}
-            onSend={() => setActiveModal('transfer-send')}
-          />
-        </div>
+        {showMRPanel && (
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize work orders and transfer requests column widths"
+              className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
+                dragging
+                  ? 'bg-blue-500/50 scale-[1.05]'
+                  : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
+              }`}
+              onMouseDown={startDrag(0)}
+            />
+            <div
+              style={desktopColStyle(columnWidths.w1)}
+              className="flex flex-col min-h-0 overflow-hidden min-w-[11rem] border-r border-slate-200 dark:border-slate-700"
+            >
+              <PendingMaterialRequestsPanel
+                requests={filteredMRs}
+                isLoading={mrsLoading}
+                fetchError={mrErrorText}
+                onFulfill={(mrName) => setFulfillMR(mrName)}
+                onRaise={() => setShowRaiseMR(true)}
+                filterEmptyHint={itemFilterCode ? 'No open transfer requests include this item.' : undefined}
+              />
+            </div>
+          </>
+        )}
+        {useTransit && (
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize transfer requests and incoming column widths"
+              className={`w-1.5 shrink-0 self-stretch max-h-full cursor-col-resize select-none touch-none flex flex-col items-center justify-center rounded-full my-2 mx-0.5 border-0 p-0 transition-[background-color,transform] duration-200 ${
+                dragging
+                  ? 'bg-blue-500/50 scale-[1.05]'
+                  : 'bg-slate-300/50 dark:bg-slate-600/40 hover:bg-blue-400/40 dark:hover:bg-blue-500/35 active:scale-[0.98]'
+              }`}
+              onMouseDown={startDrag(1)}
+            />
+            <div
+              style={desktopColStyle(columnWidths.w2)}
+              className="flex flex-col min-h-0 overflow-hidden min-w-[11rem]"
+            >
+              <PendingReceivesPanel
+                receives={filteredReceives}
+                isLoading={receivesLoading}
+                fetchError={receivesErrorText}
+                company={company}
+                onReceived={refreshAll}
+                filterEmptyHint={itemFilterCode ? 'No incoming transfers include this item.' : undefined}
+                powProfileName={selectedProfileName}
+                onSend={() => setActiveModal('transfer-send')}
+              />
+            </div>
+          </>
+        )}
       </section>
 
       {/* ── Bottom Nav Tabs (mobile) ────────────────────────── */}
@@ -665,11 +712,32 @@ export default function Dashboard() {
           onClose={closeWODetail}
           onManufacture={(wo) => { setWoForAction(wo); setWoDetailAction('manufacture') }}
           onRequestMaterials={(wo) => { setWoForAction(wo); setWoDetailAction('request') }}
+          continuousMode={!!operations?.continuous_manufacturing}
+          onConsume={(wo) => { setWoForAction(wo); setWoDetailAction('consume') }}
+          onFinish={(wo) => { setWoForAction(wo); setWoDetailAction('finish') }}
           powProfileName={selectedProfileName}
         />
       )}
       {woDetailAction === 'manufacture' && woForAction && (
         <WOManufactureModal
+          open
+          wo={woForAction}
+          onClose={closeWOAction}
+          onDone={handleWODone}
+          powProfileName={selectedProfileName}
+        />
+      )}
+      {woDetailAction === 'consume' && woForAction && (
+        <ConsumeMaterialDialog
+          open
+          wo={woForAction}
+          onClose={closeWOAction}
+          onDone={handleWODone}
+          powProfileName={selectedProfileName}
+        />
+      )}
+      {woDetailAction === 'finish' && woForAction && (
+        <FinishManufactureDialog
           open
           wo={woForAction}
           onClose={closeWOAction}

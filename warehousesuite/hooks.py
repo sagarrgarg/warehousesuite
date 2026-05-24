@@ -66,6 +66,7 @@ app_include_js = [
 doctype_js = {
 	"Item": "public/js/item.js",
 	"Stock Entry": "public/js/stock_entry.js",
+	"Work Order": "public/js/work_order.js",
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -161,15 +162,17 @@ after_install = "warehousesuite.install.after_install"
 doc_events = {
 	"Stock Entry": {
 		"validate": [
-			"warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer"
+			"warehousesuite.warehousesuite.overrides.auto_transit_validation.auto_set_transit_for_material_transfer",
+			"warehousesuite.warehousesuite.overrides.continuous_mfg_validation.validate_continuous_manufacturing",
 		],
 		"on_submit": [
-			"warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference"
+			"warehousesuite.warehousesuite.overrides.value_difference_validation.validate_value_difference",
+			"warehousesuite.services.pow_continuous_mfg_service.post_variance_for_closing_finish",
 		],
 		"before_cancel": [
 			"warehousesuite.warehousesuite.overrides.concern_link.clear_concern_link_before_cancel"
 		],
-	}
+	},
 }
 
 # Scheduled Tasks

@@ -8,6 +8,7 @@ export interface POWProfile {
 	in_transit_warehouse: string
 	material_transfer: 0 | 1
 	manufacturing: 0 | 1
+	continuous_manufacturing?: 0 | 1
 	purchase_request: 0 | 1
 	purchase_receipt: 0 | 1
 	repack: 0 | 1
@@ -23,6 +24,8 @@ export interface POWProfile {
 export interface ProfileOperations {
 	material_transfer: boolean
 	manufacturing: boolean
+	/** When omitted (older API), treated as false. Continuous flow switches the WO detail screen from batch Manufacture to Consume + Finish. */
+	continuous_manufacturing?: boolean
 	purchase_request?: boolean
 	purchase_receipt: boolean
 	repack: boolean
@@ -31,6 +34,34 @@ export interface ProfileOperations {
 	/** When omitted (older API), treated as false. */
 	sales_order_pending_report?: boolean
 	stock_concern?: boolean
+	/** Resolved server-side: WMSuite Settings global kill switch AND POW Profile flag. When omitted (older API), treated as true. */
+	show_material_request_panel?: boolean
+}
+
+export interface ContinuousSummaryItem {
+	item_code: string
+	item_name: string
+	stock_uom: string
+	consumed_qty: number
+	consumed_value: number
+	bom_expected_qty_for_planned_qty: number
+}
+
+export interface ContinuousSummary {
+	wo: {
+		name: string
+		production_item: string
+		item_name: string
+		qty: number
+		produced_qty: number
+		wip_warehouse: string
+		fg_warehouse: string
+		status: string
+		bom_no: string
+		company: string
+	}
+	consumption_entries: string[]
+	items: ContinuousSummaryItem[]
 }
 
 /** SO pending report — detail rows (Python service). */

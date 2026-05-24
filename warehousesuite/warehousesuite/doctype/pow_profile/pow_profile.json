@@ -23,8 +23,10 @@
   "repack",
   "column_break_lnbl",
   "manufacturing",
+  "continuous_manufacturing",
   "purchase_request",
   "sales_order_pending_report",
+  "show_material_request_panel",
   "show_only_stock_items",
   "section_break_isnk",
   "applicable_users"
@@ -100,6 +102,14 @@
   },
   {
    "default": "0",
+   "fieldname": "continuous_manufacturing",
+   "fieldtype": "Check",
+   "label": "Continuous Material Consumption Manufacturing",
+   "depends_on": "eval:doc.manufacturing",
+   "description": "Enable continuous-consumption flow for this profile: operators eat raw materials over time via Material Consumption entries, then declare FG at the end. FG valuation absorbs the actual consumption (including loss). Requires Manufacturing Settings → material_consumption + get_rm_cost_from_consumption_entry to be ON."
+  },
+  {
+   "default": "0",
    "fieldname": "purchase_request",
    "fieldtype": "Check",
    "label": "Purchase Requests"
@@ -147,6 +157,13 @@
    "fieldname": "stock_concern",
    "fieldtype": "Check",
    "label": "Stock Concern"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_material_request_panel",
+   "fieldtype": "Check",
+   "label": "Show Material Request Panel",
+   "description": "Show the Material Requests column on the POW dashboard for this profile. Global WMSuite Settings switch overrides this when OFF."
   },
   {
    "default": "1",

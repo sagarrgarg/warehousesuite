@@ -3,6 +3,7 @@ import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2, Loader2, Check, Package, ChevronDown, MapPin, AlertTriangle, ShoppingCart } from 'lucide-react'
 import { API, unwrap, formatPowFetchError } from '@/lib/api'
+import { safeUuid } from '@/lib/utils'
 import { useCompany } from '@/hooks/useBoot'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
 import type { ProfileWarehouses, DropdownItem, WODetail, WOShortfallItem } from '@/types'
@@ -45,7 +46,7 @@ interface Line {
 }
 
 function newLine(): Line {
-  return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', uom_options: [], uom_conversions: [], availability: [] }
+  return { id: safeUuid(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', uom_options: [], uom_conversions: [], availability: [] }
 }
 
 function getCf(line: Line): number {

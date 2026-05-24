@@ -3,7 +3,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import flt, format_datetime, now_datetime
+from frappe.utils import cint, flt, format_datetime, now_datetime
 
 from warehousesuite.warehousesuite.doctype.pow_stock_count.pow_stock_count import (
 	item_row_has_difference,
@@ -197,9 +197,33 @@ def get_pow_profile_operations(pow_profile):
 	"""Get allowed operations from POW profile"""
 	profile = frappe.get_doc("POW Profile", pow_profile)
 
+	# Cascade for material request panel visibility:
+	#   - Global WMSuite Settings switch acts as a kill switch (OFF hides for
+	#     all profiles). NULL/never-saved value is treated as 1 (visible) so
+	#     existing installs default to the old behavior.
+	#   - When global is ON, the per-profile flag wins.
+	#
+	# We read both values via ``db.get_value`` rather than ``getattr(profile)``
+	# because the doc cache can be stale right after a migration that added
+	# new fields: ``get_cached_doc`` returns the old schema's value (0 / None)
+	# until the cache is cleared, but the DB column already has the correct
+	# default. Reading via db.get_value bypasses that staleness window.
+	global_raw = (
+		frappe.db.get_single_value("WMSuite Settings", "show_material_request_panel", cache=False)
+		if frappe.db.exists("WMSuite Settings")
+		else None
+	)
+	global_show_mr = 1 if global_raw is None else cint(global_raw)
+	profile_raw = frappe.db.get_value(
+		"POW Profile", profile.name, "show_material_request_panel", cache=False
+	)
+	profile_show_mr = 1 if profile_raw is None else cint(profile_raw)
+	show_mr_panel = bool(global_show_mr and profile_show_mr)
+
 	return {
 		"material_transfer": bool(profile.material_transfer),
 		"manufacturing": bool(profile.manufacturing),
+		"continuous_manufacturing": bool(getattr(profile, "continuous_manufacturing", 0)),
 		"purchase_request": bool(getattr(profile, "purchase_request", 0)),
 		"purchase_receipt": bool(profile.purchase_receipt),
 		"repack": bool(profile.repack),
@@ -207,6 +231,7 @@ def get_pow_profile_operations(pow_profile):
 		"stock_count": bool(profile.stock_count),
 		"sales_order_pending_report": bool(getattr(profile, "sales_order_pending_report", 0)),
 		"stock_concern": bool(getattr(profile, "stock_concern", 0)),
+		"show_material_request_panel": show_mr_panel,
 	}
 
 
@@ -588,24 +613,47 @@ def create_transfer_stock_entry(
 			except Exception:
 				frappe.throw(_("Invalid batch/serial data format"))
 
-		# Basic input validation
-		if not source_warehouse or not target_warehouse or not in_transit_warehouse:
-			frappe.logger().warning(
-				f"Missing warehouse: source={source_warehouse}, target={target_warehouse}, transit={in_transit_warehouse}"
+		# WMSuite Settings: when auto_set_transit=0, transfers go A → B in one
+		# shot (no transit hop). Receive list naturally hides them because it
+		# filters on add_to_transit=1.
+		use_transit = bool(
+			cint(
+				frappe.db.get_single_value("WMSuite Settings", "auto_set_transit", cache=True)
+				or 0
 			)
-			frappe.throw(_("Source, Target and Transit warehouses are required"))
+		)
+
+		# Basic input validation
+		if not source_warehouse or not target_warehouse:
+			frappe.logger().warning(
+				f"Missing warehouse: source={source_warehouse}, target={target_warehouse}"
+			)
+			frappe.throw(_("Source and Target warehouses are required"))
+
+		if use_transit and not in_transit_warehouse:
+			frappe.logger().warning(
+				f"Missing transit warehouse (transit mode is ON): "
+				f"source={source_warehouse}, target={target_warehouse}"
+			)
+			frappe.throw(_("Transit warehouse is required when Auto Set Transit is enabled"))
 
 		if not items or not isinstance(items, list):
 			frappe.logger().warning(f"Invalid items format: {items}")
 			frappe.throw(_("Items list is required"))
+
+		# Effective destination warehouse for both Stock Entry header and per-row
+		# t_warehouse. In transit mode it's the transit hop; in direct mode it's
+		# the final target.
+		effective_to_warehouse = in_transit_warehouse if use_transit else target_warehouse
 
 		# Create stock entry
 		stock_entry = frappe.new_doc("Stock Entry")
 		stock_entry.stock_entry_type = "Material Transfer"
 		stock_entry.company = company
 		stock_entry.from_warehouse = source_warehouse
-		stock_entry.to_warehouse = in_transit_warehouse
-		stock_entry.add_to_transit = 1
+		stock_entry.to_warehouse = effective_to_warehouse
+		if use_transit:
+			stock_entry.add_to_transit = 1
 		stock_entry.posting_date = frappe.utils.today()
 		stock_entry.posting_time = frappe.utils.nowtime()
 
@@ -656,7 +704,7 @@ def create_transfer_stock_entry(
 							"stock_uom": item_doc.stock_uom,
 							"conversion_factor": conversion_factor,
 							"s_warehouse": source_warehouse,
-							"t_warehouse": in_transit_warehouse,
+							"t_warehouse": effective_to_warehouse,
 							"basic_rate": flt(valuation_rate),
 							"basic_amount": flt(valuation_rate * entry_qty),
 							"valuation_rate": valuation_rate,
@@ -683,7 +731,7 @@ def create_transfer_stock_entry(
 						"stock_uom": item_doc.stock_uom,
 						"conversion_factor": conversion_factor,
 						"s_warehouse": source_warehouse,
-						"t_warehouse": in_transit_warehouse,
+						"t_warehouse": effective_to_warehouse,
 						"basic_rate": flt(valuation_rate),
 						"basic_amount": flt(valuation_rate * qty),
 						"valuation_rate": valuation_rate,

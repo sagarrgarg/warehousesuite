@@ -5,6 +5,7 @@ const SO_REP_BASE = 'warehousesuite.api.pow_so_pending_report'
 const PR_BASE = 'warehousesuite.api.pow_purchase_request'
 const CONCERN_BASE = 'warehousesuite.warehousesuite.doctype.pow_stock_concern.pow_stock_concern'
 const BATCH_BASE = 'warehousesuite.api.pow_batch_serial'
+const CONT_BASE = 'warehousesuite.api.pow_continuous_mfg'
 
 export const API = {
 	getProfiles: `${BASE}.get_applicable_pow_profiles`,
@@ -58,6 +59,11 @@ export const API = {
 	getItemAlternatives: `${WO_BASE}.get_item_alternatives`,
 	getBomsForItem: `${WO_BASE}.get_boms_for_item`,
 	directManufacture: `${WO_BASE}.direct_manufacture_entry`,
+
+	// Continuous Manufacturing
+	continuousConsumeForWO: `${CONT_BASE}.consume_for_wo`,
+	continuousConsumptionSummary: `${CONT_BASE}.get_consumption_summary_for_wo`,
+	continuousFinishWO: `${CONT_BASE}.finish_wo_continuous`,
 
 	// Sales Order pending delivery (POW profile gated)
 	getSOAnalytics: `${SO_REP_BASE}.get_so_analytics`,

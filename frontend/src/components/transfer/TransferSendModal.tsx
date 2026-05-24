@@ -3,6 +3,7 @@ import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { ArrowLeft, Plus, Trash2, Truck, ChevronDown, ChevronUp, FileText, Calendar } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
+import { safeUuid } from '@/lib/utils'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
@@ -32,7 +33,7 @@ interface Line {
 }
 
 function newLine(): Line {
-	return { id: crypto.randomUUID(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [], uom_conversions: {}, has_batch_no: 0, has_serial_no: 0 }
+	return { id: safeUuid(), item_code: '', item_name: '', qty: 0, uom: '', stock_uom: '', available_qty: 0, uom_options: [], uom_conversions: {}, has_batch_no: 0, has_serial_no: 0 }
 }
 
 function lineStockQty(line: Line): number {
@@ -55,6 +56,16 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 
 	const inTransitName = warehouses.in_transit_warehouse?.warehouse_name ?? warehouses.in_transit_warehouse?.warehouse ?? ''
 	const inTransitWarehouse = warehouses.in_transit_warehouse?.warehouse ?? ''
+
+	// Direct-mode toggle: when WMSuite Settings.auto_set_transit = 0, transfers
+	// go A → B in one shot (no transit hop). Default to transit mode while the
+	// setting loads to preserve old behavior.
+	const { data: wmSettingsData } = useFrappeGetCall<{ message: { auto_set_transit?: 0 | 1 } }>(
+		API.getWmsuiteSettings,
+		undefined,
+	)
+	const useTransit = (wmSettingsData?.message?.auto_set_transit ?? 1) === 1
+	const targetWarehouseName = warehouses.target_warehouses.find(w => w.warehouse === targetWarehouse)?.warehouse_name || targetWarehouse
 
 	const { data: itemsData, mutate: refreshItems, isLoading: itemsLoading, error: itemsFetchError } = useFrappeGetCall<{ message: DropdownItem[] }>(
 		API.getItemsForDropdown,
@@ -127,7 +138,7 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 		const valid = lines.filter(l => l.item_code && l.qty > 0)
 		if (!valid.length) { toast.error('Add at least one item'); return }
 		if (!sourceWarehouse || !targetWarehouse) { toast.error('Select both warehouses'); return }
-		if (!inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
+		if (useTransit && !inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
 
 		setSubmitting(true)
 		try {
@@ -146,20 +157,22 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 				}
 			}
 			const hasBsData = Object.keys(bsData).length > 0
-			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse, items: JSON.stringify(transferItems), company, remarks, pow_profile: powProfileName ?? undefined, ...(hasBsData ? { batch_serial_data: JSON.stringify(bsData) } : {}) })
+			// in_transit_warehouse is sent always; backend ignores it when
+			// WMSuite Settings.auto_set_transit = 0 (single source of truth).
+			const res = await createTransfer({ source_warehouse: sourceWarehouse, target_warehouse: targetWarehouse, in_transit_warehouse: inTransitWarehouse || '', items: JSON.stringify(transferItems), company, remarks, pow_profile: powProfileName ?? undefined, ...(hasBsData ? { batch_serial_data: JSON.stringify(bsData) } : {}) })
 			const result = unwrap(res)
 			if (isError(result)) toast.error(result.message || 'Transfer failed')
 			else { toast.success(`Transfer created: ${result.stock_entry}`); onClose() }
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Transfer failed')) }
 		finally { setSubmitting(false); setShowOverstockConfirm(false); setOverstockItems([]) }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, company, remarks, powProfileName, batchSerialSelections])
+	}, [lines, sourceWarehouse, targetWarehouse, inTransitWarehouse, useTransit, company, remarks, powProfileName, batchSerialSelections])
 
 	const handleSubmit = () => {
 		const valid = lines.filter(l => l.item_code && l.qty > 0)
 		if (!valid.length) { toast.error('Add at least one item'); return }
 		if (!sourceWarehouse || !targetWarehouse) { toast.error('Select both warehouses'); return }
-		if (!inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
+		if (useTransit && !inTransitWarehouse) { toast.error('No transit warehouse in profile'); return }
 
 		const seen = new Set<string>()
 		for (const l of valid) { if (seen.has(l.item_code)) { toast.error(`Duplicate: ${l.item_code}`); return }; seen.add(l.item_code) }
@@ -193,8 +206,12 @@ export default function TransferSendModal({ open, onClose, warehouses, defaultWa
 					</button>
 					<div className="flex-1 min-w-0">
 						<h2 className="text-sm font-bold">Transfer Send</h2>
-						{inTransitName && (
-							<p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Via {inTransitName}</p>
+						{useTransit ? (
+							inTransitName && (
+								<p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Via {inTransitName}</p>
+							)
+						) : (
+							<p className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><Truck className="w-3 h-3" /> Direct → {targetWarehouseName || 'target'}</p>
 						)}
 					</div>
 				</div>
