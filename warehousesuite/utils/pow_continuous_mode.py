@@ -21,17 +21,13 @@ def is_continuous_mode(pow_profile=None):
 	    bool: True when continuous flow should be used.
 	"""
 	if pow_profile and frappe.db.exists("POW Profile", pow_profile):
-		profile_flag = frappe.db.get_value(
-			"POW Profile", pow_profile, "continuous_manufacturing", cache=True
-		)
+		profile_flag = frappe.db.get_value("POW Profile", pow_profile, "continuous_manufacturing", cache=True)
 		if profile_flag is not None:
 			return bool(cint(profile_flag))
 
 	return bool(
 		cint(
-			frappe.db.get_single_value(
-				"WMSuite Settings", "continuous_manufacturing_default", cache=True
-			)
+			frappe.db.get_single_value("WMSuite Settings", "continuous_manufacturing_default", cache=True)
 			or 0
 		)
 	)

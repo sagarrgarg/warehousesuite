@@ -50,9 +50,7 @@ def consume_for_wo(wo_name, items, pow_profile=None, batch_serial_data=None):
 	parsed_bs = None
 	if batch_serial_data:
 		parsed_bs = (
-			frappe.parse_json(batch_serial_data)
-			if isinstance(batch_serial_data, str)
-			else batch_serial_data
+			frappe.parse_json(batch_serial_data) if isinstance(batch_serial_data, str) else batch_serial_data
 		)
 
 	return consume_materials_for_wo(
@@ -166,9 +164,7 @@ def get_wo_variance_summary(wo_name):
 		_stock_adj_residual_for_wo,
 	)
 
-	stock_adjustment_account = frappe.db.get_value(
-		"Company", wo.company, "stock_adjustment_account"
-	)
+	stock_adjustment_account = frappe.db.get_value("Company", wo.company, "stock_adjustment_account")
 	variance_account = frappe.db.get_value(
 		"Company", wo.company, "wmsuite_production_variance_account"
 	) or frappe.db.get_value("Company", wo.company, "default_expense_account")
@@ -177,9 +173,7 @@ def get_wo_variance_summary(wo_name):
 	wo_doc = frappe.get_doc("Work Order", wo_name)
 	planned = _flt(wo.qty) or 1.0
 	scale = _flt(wo.produced_qty) / planned if planned else 0.0
-	bom_expected = {
-		ri.item_code: _flt(ri.required_qty) * scale for ri in wo_doc.required_items
-	}
+	bom_expected = {ri.item_code: _flt(ri.required_qty) * scale for ri in wo_doc.required_items}
 
 	consumption_se = frappe.get_all(
 		"Stock Entry",
@@ -231,13 +225,9 @@ def get_wo_variance_summary(wo_name):
 		actual = _flt(c.get("qty", 0))
 		wastage_qty = actual - bom_exp
 		wastage_pct = (wastage_qty / bom_exp * 100) if bom_exp > 0 else 0.0
-		item_name = (
-			frappe.db.get_value("Item", item_code, "item_name", cache=True) or item_code
-		)
+		item_name = frappe.db.get_value("Item", item_code, "item_name", cache=True) or item_code
 		stock_uom = (
-			c.get("stock_uom")
-			or frappe.db.get_value("Item", item_code, "stock_uom", cache=True)
-			or ""
+			c.get("stock_uom") or frappe.db.get_value("Item", item_code, "stock_uom", cache=True) or ""
 		)
 		per_item.append(
 			{
@@ -253,9 +243,7 @@ def get_wo_variance_summary(wo_name):
 		)
 
 	residual = (
-		_stock_adj_residual_for_wo(wo_name, stock_adjustment_account)
-		if stock_adjustment_account
-		else 0.0
+		_stock_adj_residual_for_wo(wo_name, stock_adjustment_account) if stock_adjustment_account else 0.0
 	)
 	if abs(residual) < 0.01:
 		side = "cleared"

@@ -214,9 +214,7 @@ def get_pow_profile_operations(pow_profile):
 		else None
 	)
 	global_show_mr = 1 if global_raw is None else cint(global_raw)
-	profile_raw = frappe.db.get_value(
-		"POW Profile", profile.name, "show_material_request_panel", cache=False
-	)
+	profile_raw = frappe.db.get_value("POW Profile", profile.name, "show_material_request_panel", cache=False)
 	profile_show_mr = 1 if profile_raw is None else cint(profile_raw)
 	show_mr_panel = bool(global_show_mr and profile_show_mr)
 
@@ -617,10 +615,7 @@ def create_transfer_stock_entry(
 		# shot (no transit hop). Receive list naturally hides them because it
 		# filters on add_to_transit=1.
 		use_transit = bool(
-			cint(
-				frappe.db.get_single_value("WMSuite Settings", "auto_set_transit", cache=True)
-				or 0
-			)
+			cint(frappe.db.get_single_value("WMSuite Settings", "auto_set_transit", cache=True) or 0)
 		)
 
 		# Basic input validation

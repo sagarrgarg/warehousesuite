@@ -233,14 +233,13 @@ def get_consumption_summary(wo_name):
 	items = []
 	for item_code in sorted(all_items):
 		c = consumed_map.get(item_code, {})
-		item_name = (
-			frappe.db.get_value("Item", item_code, "item_name", cache=True) or item_code
-		)
+		item_name = frappe.db.get_value("Item", item_code, "item_name", cache=True) or item_code
 		items.append(
 			{
 				"item_code": item_code,
 				"item_name": item_name,
-				"stock_uom": c.get("stock_uom") or frappe.db.get_value("Item", item_code, "stock_uom", cache=True),
+				"stock_uom": c.get("stock_uom")
+				or frappe.db.get_value("Item", item_code, "stock_uom", cache=True),
 				"consumed_qty": flt(c.get("consumed_qty") or 0),
 				"consumed_value": flt(c.get("consumed_value") or 0),
 				"bom_expected_qty_for_planned_qty": flt(bom_expected_for_planned.get(item_code) or 0),
@@ -304,9 +303,7 @@ def finish_continuous_manufacture(wo_name, fg_qty, pow_fg_batch_no=None):
 	remaining = flt(wo.qty) - flt(wo.produced_qty)
 	if fg_qty > remaining + 0.001:
 		frappe.throw(
-			_("FG qty {0} exceeds remaining {1} on Work Order {2}").format(
-				fg_qty, remaining, wo_name
-			)
+			_("FG qty {0} exceeds remaining {1} on Work Order {2}").format(fg_qty, remaining, wo_name)
 		)
 
 	if not wo.fg_warehouse:
@@ -324,9 +321,7 @@ def finish_continuous_manufacture(wo_name, fg_qty, pow_fg_batch_no=None):
 		},
 	):
 		frappe.throw(
-			_("Cannot finish Work Order {0}: no Material Consumption entries submitted yet.").format(
-				wo_name
-			),
+			_("Cannot finish Work Order {0}: no Material Consumption entries submitted yet.").format(wo_name),
 			title=_("Nothing Consumed"),
 		)
 
@@ -494,13 +489,9 @@ def post_variance_for_closing_finish(doc, method=None):
 		return  # not the closing finish yet
 
 	# Resolve accounts first — needed for the GL balance query.
-	stock_adj_account = frappe.db.get_value(
-		"Company", wo_state.company, "stock_adjustment_account"
-	)
+	stock_adj_account = frappe.db.get_value("Company", wo_state.company, "stock_adjustment_account")
 	if not stock_adj_account:
-		frappe.throw(
-			_("Company {0} has no Stock Adjustment Account configured.").format(wo_state.company)
-		)
+		frappe.throw(_("Company {0} has no Stock Adjustment Account configured.").format(wo_state.company))
 
 	variance_account = frappe.db.get_value(
 		"Company", wo_state.company, "wmsuite_production_variance_account"
@@ -529,8 +520,7 @@ def post_variance_for_closing_finish(doc, method=None):
 	#     → DR Stock Adj / CR Variance  (to clear CR residual)
 	cost_center = frappe.db.get_value("Company", wo_state.company, "cost_center")
 	remarks = _(
-		"Continuous-mfg variance absorbed at WO close. "
-		"WO {0}: Stock Adj residual ₹{1:.2f} cleared into {2}."
+		"Continuous-mfg variance absorbed at WO close. WO {0}: Stock Adj residual ₹{1:.2f} cleared into {2}."
 	).format(doc.work_order, residual, variance_account)
 
 	# Re-shape into our LOSS/GAIN names for the if/else below

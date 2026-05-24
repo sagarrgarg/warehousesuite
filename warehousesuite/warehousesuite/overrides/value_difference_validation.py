@@ -70,10 +70,7 @@ def _is_continuous_finish(doc):
 	"""
 	if not doc.work_order:
 		return False
-	has_raw = any(
-		r.s_warehouse and not r.is_finished_item and not r.is_scrap_item
-		for r in (doc.items or [])
-	)
+	has_raw = any(r.s_warehouse and not r.is_finished_item and not r.is_scrap_item for r in (doc.items or []))
 	if has_raw:
 		return False
 	return bool(

@@ -83,10 +83,9 @@ def _validate_consumption_entry(doc, wo):
 		# Rule 2: source must be WIP
 		if row.s_warehouse and row.s_warehouse != wo.wip_warehouse:
 			frappe.throw(
-				_(
-					"Row {0}: source warehouse must be the Work Order's WIP "
-					"warehouse ({1}), not {2}."
-				).format(row.idx, frappe.bold(wo.wip_warehouse), frappe.bold(row.s_warehouse)),
+				_("Row {0}: source warehouse must be the Work Order's WIP warehouse ({1}), not {2}.").format(
+					row.idx, frappe.bold(wo.wip_warehouse), frappe.bold(row.s_warehouse)
+				),
 				title=_("Wrong Source Warehouse"),
 			)
 
@@ -112,9 +111,7 @@ def _validate_continuous_finish(doc, wo):
 	# rows (all rows are FG / scrap). Batch-Manufacture entries (old flow) carry
 	# raw rows and are out of scope for these checks.
 	component_rows = [
-		r
-		for r in doc.items
-		if r.s_warehouse and not cint(r.is_finished_item) and not cint(r.is_scrap_item)
+		r for r in doc.items if r.s_warehouse and not cint(r.is_finished_item) and not cint(r.is_scrap_item)
 	]
 	if component_rows:
 		# Not a continuous-finish — this is a batch-style Manufacture, leave it
@@ -143,15 +140,13 @@ def _validate_continuous_finish(doc, wo):
 		)
 
 	# Rule 5: FG qty must not exceed remaining planned
-	fg_qty = flt(doc.fg_completed_qty) or sum(
-		flt(r.qty) for r in doc.items if cint(r.is_finished_item)
-	)
+	fg_qty = flt(doc.fg_completed_qty) or sum(flt(r.qty) for r in doc.items if cint(r.is_finished_item))
 	remaining = flt(wo.qty) - flt(wo.produced_qty)
 	if fg_qty > remaining + 0.001:
 		frappe.throw(
-			_(
-				"FG qty {0} exceeds remaining planned qty {1} on Work Order {2}."
-			).format(frappe.bold(fg_qty), frappe.bold(remaining), frappe.bold(wo.name)),
+			_("FG qty {0} exceeds remaining planned qty {1} on Work Order {2}.").format(
+				frappe.bold(fg_qty), frappe.bold(remaining), frappe.bold(wo.name)
+			),
 			title=_("Over-production"),
 		)
 

@@ -38,9 +38,7 @@ def setup_custom_fields():
 				"label": "Continuous Manufacturing Variance",
 				"fieldtype": "Section Break",
 				"insert_after": "amended_from",
-				"depends_on": (
-					"eval:doc.status === 'Completed' || doc.status === 'Closed'"
-				),
+				"depends_on": ("eval:doc.status === 'Completed' || doc.status === 'Closed'"),
 				"collapsible": 1,
 				"collapsible_depends_on": "eval:0",
 				"module": "Warehousesuite",
@@ -50,9 +48,7 @@ def setup_custom_fields():
 				"label": "Variance & Wastage Summary",
 				"fieldtype": "HTML",
 				"insert_after": "wmsuite_variance_summary_section",
-				"depends_on": (
-					"eval:doc.status === 'Completed' || doc.status === 'Closed'"
-				),
+				"depends_on": ("eval:doc.status === 'Completed' || doc.status === 'Closed'"),
 				"module": "Warehousesuite",
 			},
 		],
