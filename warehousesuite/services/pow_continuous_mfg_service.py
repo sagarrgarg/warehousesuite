@@ -580,20 +580,23 @@ def _stock_adj_residual_for_wo(wo_name, stock_adj_account):
 	if not se_names:
 		return 0.0
 
-	placeholders = ", ".join(["%s"] * len(se_names))
-	row = frappe.db.sql(
-		f"""
-		SELECT COALESCE(SUM(debit - credit), 0) AS bal
-		FROM `tabGL Entry`
-		WHERE account = %s
-		  AND voucher_type = 'Stock Entry'
-		  AND voucher_no IN ({placeholders})
-		  AND is_cancelled = 0
-		""",
-		[stock_adj_account, *se_names],
-		as_dict=True,
-	)
-	return flt(row[0].bal if row else 0, 2)
+	# Use frappe.qb (PyPika) instead of raw SQL: parameterized, semgrep-clean,
+	# and immune to identifier injection — only the value list (se_names) and
+	# the account string are interpolated, both via PyPika's parameter binding.
+	from frappe.query_builder.functions import Coalesce, Sum
+
+	gle = frappe.qb.DocType("GL Entry")
+	result = (
+		frappe.qb.from_(gle)
+		.select(Coalesce(Sum(gle.debit - gle.credit), 0).as_("bal"))
+		.where(
+			(gle.account == stock_adj_account)
+			& (gle.voucher_type == "Stock Entry")
+			& (gle.voucher_no.isin(se_names))
+			& (gle.is_cancelled == 0)
+		)
+	).run(as_dict=True)
+	return flt(result[0].bal if result else 0, 2)
 
 
 def _get_bom_std_rate(bom_no):
