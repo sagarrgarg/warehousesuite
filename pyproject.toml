@@ -9,12 +9,19 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # frappe and erpnext are installed and managed by bench, not pip.
-    # Version compatibility (v15+v16) is declared via Frappe Cloud Marketplace UI.
+    # Version compatibility (v15+v16) is declared in [tool.bench.frappe-dependencies] below.
 ]
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
+
+# Frappe ecosystem version compatibility declared per
+# https://docs.frappe.io/cloud/custom-apps/app-versioning/versioning
+# Picked up by `bench` and Frappe Cloud Marketplace to gate installs.
+[tool.bench.frappe-dependencies]
+frappe = ">=15.0.0,<17.0.0"
+erpnext = ">=15.0.0,<17.0.0"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
