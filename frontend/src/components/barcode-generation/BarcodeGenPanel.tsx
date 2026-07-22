@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react'
-import { useFrappePostCall, useFrappeGetDocList } from 'frappe-react-sdk'
+import { useFrappePostCall, useFrappeGetCall, useFrappeGetDocList } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { Printer, RefreshCw, Box } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import QZPrintModal from '../print-labels/QZPrintModal'
-import { useDebounce } from 'use-debounce'
+import ItemSearchInput from '../shared/ItemSearchInput'
+import type { DropdownItem } from '@/types'
 
 export default function BarcodeGenPanel() {
-	const [itemCode, setItemCode] = useState('')
-	const [debouncedItemCode] = useDebounce(itemCode, 500)
+	const [itemCode, setItemCode] = useState<string | null>(null)
 	const [mode, setMode] = useState<'New Pre-Batch' | 'Existing Batch'>('New Pre-Batch')
 	const [batchNo, setBatchNo] = useState('')
 	const [existingBatch, setExistingBatch] = useState('')
@@ -22,10 +22,14 @@ export default function BarcodeGenPanel() {
 	const { call: generateBarcode } = useFrappePostCall(API.createBarcodeGeneration)
 
 	// Fetch items for dropdown/search
-	const { data: items = [] } = useFrappeGetDocList('Item', {
-		fields: ['name', 'item_name', 'has_batch_no'],
-		filters: debouncedItemCode ? [['name', 'like', `%${debouncedItemCode}%`]] : undefined,
-		limit: 10
+	const { data: filterItemsData } = useFrappeGetCall<{ message: DropdownItem[] }>(API.getItemsForDropdown, {})
+	const items = filterItemsData?.message ?? []
+
+	// Fetch existing batches for selected item
+	const { data: batches = [] } = useFrappeGetDocList('Batch', {
+		fields: ['name', 'expiry_date'],
+		filters: itemCode ? [['item', '=', itemCode]] : undefined,
+		limit: 100
 	})
 
 	const handleGenerate = async () => {
@@ -71,12 +75,11 @@ export default function BarcodeGenPanel() {
 			<div className="space-y-3">
 				<div>
 					<label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Item Code *</label>
-					<input 
-						type="text" 
-						value={itemCode} 
-						onChange={e => setItemCode(e.target.value)} 
+					<ItemSearchInput
+						items={items}
+						value={itemCode ?? ''}
+						onSelect={code => setItemCode(code ? code : null)}
 						placeholder="Search item..."
-						className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" 
 					/>
 				</div>
 
@@ -128,13 +131,16 @@ export default function BarcodeGenPanel() {
 				) : (
 					<div>
 						<label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Existing Batch *</label>
-						<input 
-							type="text" 
+						<select 
 							value={existingBatch} 
 							onChange={e => setExistingBatch(e.target.value)} 
-							placeholder="Select Batch..."
 							className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" 
-						/>
+						>
+							<option value="">Select Batch...</option>
+							{batches.map((b: any) => (
+								<option key={b.name} value={b.name}>{b.name}</option>
+							))}
+						</select>
 					</div>
 				)}
 

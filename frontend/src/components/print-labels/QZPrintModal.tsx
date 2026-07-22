@@ -64,7 +64,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 
 	// Auto-select first template and printer if available
 	useEffect(() => {
-		if (templates.length > 0 && !selectedTemplate) setSelectedTemplate(templates[0])
+		if (templates.length > 0 && !selectedTemplate) {
+			const t = templates[0]
+			const tId = t.name || t.template_name || (typeof t === 'string' ? t : '')
+			if (tId) setSelectedTemplate(tId)
+		}
 	}, [templates, selectedTemplate])
 	
 	useEffect(() => {
@@ -162,9 +166,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 								<div className="text-xs text-red-500 p-2">No templates found for {doctype}</div>
 							) : (
 								<select className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-slate-400" value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)}>
-									{templates.map((t: string) => (
-										<option key={t} value={t}>{t}</option>
-									))}
+									{templates.map((t: any) => {
+										const tId = t.name || t.template_name || (typeof t === 'string' ? t : JSON.stringify(t))
+										const tLabel = t.template_name || t.name || (typeof t === 'string' ? t : 'Unknown')
+										return <option key={tId} value={tId}>{tLabel}</option>
+									})}
 								</select>
 							)}
 						</div>
