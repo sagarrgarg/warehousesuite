@@ -320,7 +320,7 @@ export default function Dashboard() {
 
   const handleAction = (action: string) => {
     switch (action) {
-      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'purchase-requests': case 'so-pending-report': case 'stock-concerns':
+      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'purchase-requests': case 'so-pending-report': case 'stock-concerns': case 'barcode-gen':
         setActiveModal(action as ModalType)
         break
       case 'direct-manufacture':
