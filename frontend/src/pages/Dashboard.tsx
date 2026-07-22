@@ -27,6 +27,7 @@ import ConsumeMaterialDialog from '@/components/manufacturing/ConsumeMaterialDia
 import FinishManufactureDialog from '@/components/manufacturing/FinishManufactureDialog'
 import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
+import BarcodeGenModal from '@/components/barcode-generation/BarcodeGenModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { API, formatPowFetchError } from '@/lib/api'
@@ -45,7 +46,7 @@ function useLiveClock() {
   return now
 }
 
-type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'purchase-requests' | 'so-pending-report' | 'stock-concerns' | null
+type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'purchase-requests' | 'so-pending-report' | 'stock-concerns' | 'barcode-gen' | null
 type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
@@ -687,6 +688,10 @@ export default function Dashboard() {
           powProfileName={selectedProfileName}
         />
       )}
+      <BarcodeGenModal 
+        open={activeModal === 'barcode-gen'} 
+        onClose={closeModal} 
+      />
 
       {/* ── Work Order Modals ──────────────────────────────── */}
       {showCreateWO && warehouses && selectedProfileName && (

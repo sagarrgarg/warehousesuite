@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Clock, User } from 'lucide-react'
+import { ArrowLeft, ArrowRight, AlertTriangle, X, FileText, Clock, User, Printer } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import BatchSerialInput from '@/components/shared/BatchSerialInput'
+import QZPrintModal from '@/components/print-labels/QZPrintModal'
 import type { TransferReceiveGroup, ConcernData, BatchSerialSelection } from '@/types'
 
 const DEFAULT_CONCERN: ConcernData = { concern_type: 'Quantity Mismatch', concern_description: '', priority: 'Medium', receiver_notes: '' }
@@ -36,6 +37,7 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 	const [showReceiveConfirm, setShowReceiveConfirm] = useState(false)
 	const [pendingReceive, setPendingReceive] = useState<{ entry: string; items: TransferReceiveGroup['items'] } | null>(null)
 	const [batchSerialSelections, setBatchSerialSelections] = useState<Record<string, BatchSerialSelection[]>>({})
+	const [printDoc, setPrintDoc] = useState<string | null>(null)
 
 	const { data: transfersData, mutate, error: transfersFetchError } = useFrappeGetCall<{ message: TransferReceiveGroup[] }>(
 		API.getTransferReceiveData,
@@ -92,7 +94,13 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 			})
 			const result = unwrap(res)
 			if (isError(result)) { toast.error(result.message) }
-			else { toast.success(`Received: ${result.stock_entry}`); mutate(); clearQtys(entry); setBatchSerialSelections({}) }
+			else { 
+				toast.success(`Received: ${result.stock_entry}`); 
+				mutate(); 
+				clearQtys(entry); 
+				setBatchSerialSelections({});
+				setPrintDoc(result.stock_entry); // Trigger print modal
+			}
 		} catch (err: unknown) { toast.error(formatPowFetchError(err, 'Receive failed')) }
 		finally { setSubmitting(null) }
 	}, [receiveQtys, batchSerialSelections, receiveTransfer, company, mutate])
@@ -297,6 +305,13 @@ export default function TransferReceiveModal({ open, onClose, defaultWarehouse }
 					</div>
 				</div>
 			)}
+
+			<QZPrintModal
+				open={!!printDoc}
+				onClose={() => setPrintDoc(null)}
+				doctype="Stock Entry"
+				docname={printDoc || ''}
+			/>
 		</div>
 	)
 }

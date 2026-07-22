@@ -91,6 +91,13 @@ export const API = {
 	getBatchSerialInfo: `${BATCH_BASE}.get_batch_serial_info`,
 	getBatches: `${BATCH_BASE}.get_batches`,
 	getSerialNos: `${BATCH_BASE}.get_serial_nos`,
+
+	// QZBridge Integration
+	getQzTemplates: 'qzbridge.api.get_templates_for_doctype',
+	getQzPrintData: 'qzbridge.api.get_print_data',
+	logQzPrint: 'qzbridge.api.log_print',
+	qzEnrichItemsWithBatches: 'qzbridge.api.enrich_items_with_batches',
+	createBarcodeGeneration: `${BASE}.create_pow_barcode_generation`,
 } as const
 
 /** Extract result from frappe-react-sdk response. Handles {message: {status, ...}} pattern. */

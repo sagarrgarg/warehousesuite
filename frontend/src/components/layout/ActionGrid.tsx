@@ -1,7 +1,7 @@
 import {
   ClipboardCheck, Search,
   PackagePlus, Truck, PackageOpen, ListChecks, Table2, AlertTriangle, ShoppingCart,
-  ArrowUpFromLine,
+  ArrowUpFromLine, Box
 } from 'lucide-react'
 import type { ProfileOperations } from '@/types'
 
@@ -49,6 +49,14 @@ const ACTIONS: ActionDef[] = [
     icon: <Search className="w-4 h-4" />,
     color: 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500',
     textClass: 'text-slate-800 dark:text-white',
+    reactView: true,
+  },
+  {
+    id: 'barcode-gen',
+    label: 'Gen Barcodes',
+    icon: <Box className="w-4 h-4" />,
+    color: 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600',
+    textClass: 'text-white',
     reactView: true,
   },
   {
