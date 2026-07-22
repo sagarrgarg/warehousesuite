@@ -90,7 +90,9 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 			
 			const result = unwrap(res)
 			if (isError(result)) { throw new Error(result.message) }
-			if (!result?.commands) { throw new Error('Failed to generate raw print commands') }
+			if (!result?.commands || result.commands.length === 0) { 
+				throw new Error('No raw commands generated. Please ensure your Label Template has Raw Code configured in ERPNext.') 
+			}
 
 			// Send to QZ
 			await sendToPrinter(selectedPrinter, result.commands)
