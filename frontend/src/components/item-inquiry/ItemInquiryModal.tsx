@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useFrappeGetCall } from 'frappe-react-sdk'
 import { ArrowLeft, Search, Barcode, Ruler, Warehouse, Tag, Users, Printer } from 'lucide-react'
 import { API, formatPowFetchError } from '@/lib/api'
-import PrintLabelsModal from '@/components/print-labels/PrintLabelsModal'
+import BarcodeGenModal from '@/components/barcode-generation/BarcodeGenModal'
+import QzStatusDot from '@/components/layout/QzStatusDot'
 
 interface ItemInquiryModalProps {
 	open: boolean
@@ -88,6 +89,7 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 					<h2 className="text-sm font-bold flex-1">Item Inquiry</h2>
+					<QzStatusDot />
 				</div>
 			</header>
 
@@ -283,7 +285,7 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 			</div>
 
 			{showPrintLabels && itemData && (
-				<PrintLabelsModal open onClose={() => setShowPrintLabels(false)} itemCode={itemData.item_code} itemData={itemData} />
+				<BarcodeGenModal open={showPrintLabels} onClose={() => setShowPrintLabels(false)} defaultItemCode={itemData.item_code} />
 			)}
 		</div>
 	)

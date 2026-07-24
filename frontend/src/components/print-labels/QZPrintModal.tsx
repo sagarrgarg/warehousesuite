@@ -5,6 +5,8 @@ import { ArrowLeft, Printer } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useQzTray } from '@/hooks/useQzTray'
 
+import QzStatusDot from '../layout/QzStatusDot'
+
 interface QZPrintModalProps {
 	open: boolean
 	onClose: () => void
@@ -138,6 +140,7 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 						<h2 className="text-sm font-bold">Print QZ Labels</h2>
 						<p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{doctype}: {docname}</p>
 					</div>
+					<QzStatusDot />
 				</div>
 			</header>
 

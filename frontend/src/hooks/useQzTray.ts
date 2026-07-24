@@ -10,10 +10,6 @@ export function useQzTray() {
 	const [printers, setPrinters] = useAtom(qzPrintersAtom)
 	const [loading, setLoading] = useAtom(qzLoadingAtom)
 	const [error, setError] = useAtom(qzErrorAtom)
-
-	const { call: getCert } = useFrappeGetCall('qzbridge.qz_auth.get_qz_certificate')
-	const { call: signMsg } = useFrappePostCall('qzbridge.qz_auth.sign_qz_message')
-
 	const loadDependencies = useCallback(async () => {
 		if ((window as any).qz) return
 
@@ -36,26 +32,36 @@ export function useQzTray() {
 		if (!qz) throw new Error('QZ is not loaded')
 
 		qz.security.setCertificatePromise((resolveCert: any, rejectCert: any) => {
-			getCert()
-				.then((res: any) => {
-					if (res?.message) resolveCert(res.message)
-					else rejectCert()
+			fetch('/api/method/qzbridge.qz_auth.get_qz_certificate')
+				.then((res) => res.json())
+				.then((data) => {
+					if (data?.message) resolveCert(data.message)
+					else rejectCert('No certificate returned')
 				})
-				.catch(rejectCert)
+				.catch((err) => rejectCert(err))
 		})
 
 		qz.security.setSignatureAlgorithm('SHA512')
 		qz.security.setSignaturePromise((toSign: any) => {
 			return (resolveSig: any, rejectSig: any) => {
-				signMsg({ challenge: toSign })
-					.then((res: any) => {
-						if (res?.message) resolveSig(res.message)
-						else rejectSig()
+				const csrfToken = (window as any).csrf_token || (window as any).frappe?.csrf_token || ''
+				fetch('/api/method/qzbridge.qz_auth.sign_qz_message', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Frappe-CSRF-Token': csrfToken,
+					},
+					body: JSON.stringify({ challenge: toSign }),
+				})
+					.then((res) => res.json())
+					.then((data) => {
+						if (data?.message) resolveSig(data.message)
+						else rejectSig('No signature returned')
 					})
-					.catch(rejectSig)
+					.catch((err) => rejectSig(err))
 			}
 		})
-	}, [getCert, signMsg])
+	}, [])
 
 	const connect = useCallback(async () => {
 		if (connected || loading) return

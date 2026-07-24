@@ -4,11 +4,16 @@ import { toast } from 'sonner'
 import { Printer, RefreshCw, Box } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import QZPrintModal from '../print-labels/QZPrintModal'
+import QzStatusDot from '../layout/QzStatusDot'
 import ItemSearchInput from '../shared/ItemSearchInput'
 import type { DropdownItem } from '@/types'
 
-export default function BarcodeGenPanel() {
-	const [itemCode, setItemCode] = useState<string | null>(null)
+interface BarcodeGenPanelProps {
+	defaultItemCode?: string
+}
+
+export default function BarcodeGenPanel({ defaultItemCode }: BarcodeGenPanelProps = {}) {
+	const [itemCode, setItemCode] = useState<string | null>(defaultItemCode ?? null)
 	const [mode, setMode] = useState<'New Pre-Batch' | 'Existing Batch'>('New Pre-Batch')
 	const [batchNo, setBatchNo] = useState('')
 	const [existingBatch, setExistingBatch] = useState('')
@@ -70,6 +75,9 @@ export default function BarcodeGenPanel() {
 			<div className="flex items-center gap-2 pb-2 border-b border-slate-100">
 				<Box className="w-5 h-5 text-indigo-600" />
 				<h2 className="font-bold text-slate-800 text-sm">Generate Pre-Batches</h2>
+				<div className="ml-auto">
+					<QzStatusDot />
+				</div>
 			</div>
 
 			<div className="space-y-3">
