@@ -2935,8 +2935,11 @@ def get_warehouse_analytics(pow_profile=None):
 		"daily_volumes": daily_volumes,
 	}
 
+
 @frappe.whitelist()
-def create_pow_barcode_generation(item_code, mode, batch_no=None, existing_batch=None, manufacturing_date=None, expiry_date=None):
+def create_pow_barcode_generation(
+	item_code, mode, batch_no=None, existing_batch=None, manufacturing_date=None, expiry_date=None
+):
 	"""Create and submit a Barcode Generation Tool doc to generate pre-batches"""
 	doc = frappe.new_doc("Barcode Generation Tool")
 	doc.item_code = item_code
@@ -2951,4 +2954,3 @@ def create_pow_barcode_generation(item_code, mode, batch_no=None, existing_batch
 	doc.insert()
 	doc.submit()
 	return doc.name
-
