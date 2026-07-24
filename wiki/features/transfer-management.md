@@ -227,23 +227,26 @@ function handleDiscrepancy(expected, actual, itemCode) {
 ```python
 # Transfer receive stock entry creation
 def create_receive_stock_entry(transfer_data):
-    stock_entry = frappe.new_doc("Stock Entry")
-    stock_entry.stock_entry_type = "Material Transfer"
-    stock_entry.from_warehouse = transit_warehouse
-    stock_entry.to_warehouse = destination_warehouse
-    
-    for item in transfer_data['items']:
-        stock_entry.append("items", {
-            "item_code": item['item_code'],
-            "qty": item['received_qty'],
-            "uom": item['uom'],
-            "s_warehouse": transit_warehouse,
-            "t_warehouse": destination_warehouse
-        })
-    
-    stock_entry.insert()
-    stock_entry.submit()
-    return stock_entry.name
+	stock_entry = frappe.new_doc("Stock Entry")
+	stock_entry.stock_entry_type = "Material Transfer"
+	stock_entry.from_warehouse = transit_warehouse
+	stock_entry.to_warehouse = destination_warehouse
+
+	for item in transfer_data["items"]:
+		stock_entry.append(
+			"items",
+			{
+				"item_code": item["item_code"],
+				"qty": item["received_qty"],
+				"uom": item["uom"],
+				"s_warehouse": transit_warehouse,
+				"t_warehouse": destination_warehouse,
+			},
+		)
+
+	stock_entry.insert()
+	stock_entry.submit()
+	return stock_entry.name
 ```
 
 ## 🔄 Transit Warehouse Management
