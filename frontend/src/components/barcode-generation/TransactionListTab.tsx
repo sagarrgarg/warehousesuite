@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useFrappeGetDocList } from 'frappe-react-sdk'
-import { Search, Printer, RefreshCw, Calendar, ArrowRight, Package } from 'lucide-react'
+import { Search, Printer, RefreshCw, Calendar, ArrowRight, Package, X } from 'lucide-react'
 
 interface TransactionListTabProps {
   doctype: string
@@ -40,21 +40,28 @@ export default function TransactionListTab({ doctype, onPrintTransaction }: Tran
     fields,
     filters,
     orderBy: { field: 'creation', order: 'desc' },
-    limit: 50
+    limit: 100
   })
 
+  // Universal Quick Search across all document columns & values
   const filteredDocs = useMemo(() => {
     if (!docs) return []
     if (!searchTerm.trim()) return docs
 
     const query = searchTerm.toLowerCase().trim()
     return docs.filter((doc: any) => {
-      const nameMatch = doc.name?.toLowerCase().includes(query)
-      const purposeMatch = doc.purpose?.toLowerCase().includes(query)
-      const partnerMatch = (doc.supplier_name || doc.customer_name)?.toLowerCase().includes(query)
-      const whMatch = (doc.from_warehouse || doc.to_warehouse || doc.set_warehouse)?.toLowerCase().includes(query)
+      // Check document status text matching ('submitted', 'draft', 'cancelled')
+      const statusText = doc.docstatus === 1 ? 'submitted' : doc.docstatus === 0 ? 'draft' : 'cancelled'
+      if (statusText.includes(query)) return true
 
-      return nameMatch || purposeMatch || partnerMatch || whMatch
+      // Universal check across all column values of the document row
+      return Object.values(doc).some((val) => {
+        if (val == null) return false
+        if (typeof val === 'string' || typeof val === 'number') {
+          return String(val).toLowerCase().includes(query)
+        }
+        return false
+      })
     })
   }, [docs, searchTerm])
 
@@ -72,18 +79,32 @@ export default function TransactionListTab({ doctype, onPrintTransaction }: Tran
     <div className="flex flex-col h-full space-y-3">
       {/* Search & Filter Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[220px]">
           <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder={`Search ${doctype} ID, warehouse, customer/supplier...`}
+            placeholder={`Quick search across all columns (ID, Date, Purpose, Warehouse, Partner)...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-white"
+            className="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-white"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mr-1">
+            {filteredDocs.length} {filteredDocs.length === 1 ? 'doc' : 'docs'}
+          </span>
+
           <button
             type="button"
             onClick={() => setStatusFilter('submitted')}
@@ -129,7 +150,15 @@ export default function TransactionListTab({ doctype, onPrintTransaction }: Tran
             <div className="flex flex-col items-center justify-center h-48 gap-2 text-slate-400">
               <Package className="w-8 h-8 opacity-40" />
               <p className="text-xs font-medium">No {doctype} documents found.</p>
-              {searchTerm && <p className="text-[11px]">Try clearing your search filter.</p>}
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="text-xs text-indigo-600 hover:underline font-semibold mt-1"
+                >
+                  Clear search filter
+                </button>
+              )}
             </div>
           ) : (
             <table className="w-full text-left text-xs border-collapse">
