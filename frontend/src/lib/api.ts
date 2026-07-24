@@ -97,6 +97,7 @@ export const API = {
 	getQzPrintData: 'qzbridge.api.get_print_data',
 	logQzPrint: 'qzbridge.api.log_print',
 	qzEnrichItemsWithBatches: 'qzbridge.api.enrich_items_with_batches',
+	qzGenerateCartonData: 'qzbridge.api.generate_carton_data',
 	createBarcodeGeneration: `${BASE}.create_pow_barcode_generation`,
 } as const
 
