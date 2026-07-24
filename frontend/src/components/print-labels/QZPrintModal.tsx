@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useFrappeGetCall, useFrappePostCall, useFrappeGetDoc } from 'frappe-react-sdk'
 import { toast } from 'sonner'
 import { Printer, CheckSquare, Square, X } from 'lucide-react'
@@ -34,6 +34,9 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 	
 	const [itemRows, setItemRows] = useState<ItemRow[]>([])
 	const [previewIndex, setPreviewIndex] = useState<number>(0)
+	
+	// Ref to prevent infinite API call loops
+	const loadedKeyRef = useRef<string>('')
 
 	const { printers, connected, loading: qzLoading, error: qzError, connect, sendToPrinter } = useQzTray()
 
@@ -55,9 +58,16 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 	const { call: getPrintData } = useFrappePostCall(API.getQzPrintData)
 	const { call: logPrint } = useFrappePostCall(API.logQzPrint)
 
-	// 3. Prepare Items & Enrich with Batches
+	// 3. Prepare Items & Enrich with Batches (Guarded against re-triggering loops)
 	useEffect(() => {
-		if (!open) return
+		if (!open) {
+			loadedKeyRef.current = ''
+			setItemRows([])
+			return
+		}
+
+		const currentKey = `${doctype}:${docname}:${JSON.stringify(contextData?.items || [])}:${docData?.modified || ''}`
+		if (loadedKeyRef.current === currentKey) return
 
 		let rawItems: any[] = []
 		if (contextData?.items && Array.isArray(contextData.items) && contextData.items.length > 0) {
@@ -73,37 +83,40 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 			}]
 		}
 
-		if (rawItems.length > 0) {
-			enrichBatches({ items_json: JSON.stringify(rawItems) })
-				.then((res: any) => {
-					const itemsList = res?.message || rawItems
-					const rows: ItemRow[] = itemsList.map((it: any, idx: number) => ({
-						id: `${it.item_code}-${it.batch_no || 'nobatch'}-${idx}`,
-						selected: true,
-						item_code: it.item_code || '',
-						item_name: it.item_name || it.item_code || '',
-						batch_no: it.batch_no || it.batch || docData?.batch_no || '',
-						qty: parseFloat(it.qty || 1),
-						print_qty: parseFloat(it.qty || 1)
-					}))
-					setItemRows(rows)
-					setPreviewIndex(0)
-				})
-				.catch(() => {
-					const rows: ItemRow[] = rawItems.map((it: any, idx: number) => ({
-						id: `${it.item_code}-${it.batch_no || 'nobatch'}-${idx}`,
-						selected: true,
-						item_code: it.item_code || '',
-						item_name: it.item_name || it.item_code || '',
-						batch_no: it.batch_no || it.batch || docData?.batch_no || '',
-						qty: parseFloat(it.qty || 1),
-						print_qty: parseFloat(it.qty || 1)
-					}))
-					setItemRows(rows)
-					setPreviewIndex(0)
-				})
-		}
-	}, [open, docData, contextData, enrichBatches])
+		if (rawItems.length === 0) return
+
+		// Mark as loaded before async call to prevent duplicate triggers
+		loadedKeyRef.current = currentKey
+
+		enrichBatches({ items_json: JSON.stringify(rawItems) })
+			.then((res: any) => {
+				const itemsList = res?.message || rawItems
+				const rows: ItemRow[] = itemsList.map((it: any, idx: number) => ({
+					id: `${it.item_code}-${it.batch_no || 'nobatch'}-${idx}`,
+					selected: true,
+					item_code: it.item_code || '',
+					item_name: it.item_name || it.item_code || '',
+					batch_no: it.batch_no || it.batch || docData?.batch_no || '',
+					qty: parseFloat(it.qty || 1),
+					print_qty: parseFloat(it.qty || 1)
+				}))
+				setItemRows(rows)
+				setPreviewIndex(0)
+			})
+			.catch(() => {
+				const rows: ItemRow[] = rawItems.map((it: any, idx: number) => ({
+					id: `${it.item_code}-${it.batch_no || 'nobatch'}-${idx}`,
+					selected: true,
+					item_code: it.item_code || '',
+					item_name: it.item_name || it.item_code || '',
+					batch_no: it.batch_no || it.batch || docData?.batch_no || '',
+					qty: parseFloat(it.qty || 1),
+					print_qty: parseFloat(it.qty || 1)
+				}))
+				setItemRows(rows)
+				setPreviewIndex(0)
+			})
+	}, [open, docData, contextData, doctype, docname])
 
 	// 4. Auto-connect to QZ
 	useEffect(() => {
