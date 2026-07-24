@@ -27,6 +27,7 @@ interface CartonRow {
 	carton_no: number
 	total_cartons: number
 	carton_qty: number
+	qty?: number
 	print_qty: number
 }
 
@@ -194,11 +195,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 				item_code: activePreviewItem.item_code,
 				item_name: activePreviewItem.item_name,
 				batch_no: activePreviewItem.batch_no,
-				qty: activePreviewItem.qty,
+				qty: (activePreviewItem as CartonRow).carton_qty || (activePreviewItem as ItemRow).qty || 1,
 				print_qty: 1,
 				carton_no: (activePreviewItem as CartonRow).carton_no || 1,
 				total_cartons: (activePreviewItem as CartonRow).total_cartons || 1,
-				carton_qty: (activePreviewItem as CartonRow).carton_qty || activePreviewItem.qty
+				carton_qty: (activePreviewItem as CartonRow).carton_qty || (activePreviewItem as ItemRow).qty || 1
 			}]
 		}
 
@@ -360,7 +361,7 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 					item_code: it.item_code,
 					item_name: it.item_name,
 					batch_no: it.batch_no,
-					qty: (it as CartonRow).carton_qty || it.qty,
+					qty: (it as CartonRow).carton_qty || (it as ItemRow).qty || 1,
 					print_qty: it.print_qty,
 					carton_no: (it as CartonRow).carton_no || undefined,
 					total_cartons: (it as CartonRow).total_cartons || undefined,

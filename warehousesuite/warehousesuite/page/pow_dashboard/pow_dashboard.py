@@ -2947,7 +2947,7 @@ def create_pow_barcode_generation(item_code, mode, batch_no=None, existing_batch
 		doc.expiry_date = expiry_date
 	else:
 		doc.existing_batch = existing_batch
-	
+
 	doc.insert()
 	doc.submit()
 	return doc.name
