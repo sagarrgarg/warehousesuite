@@ -273,14 +273,13 @@ bench --site your-site-name console
 
 ```python
 import frappe
+
 user = "test@example.com"
 roles = frappe.get_roles(user)
 print(f"User roles: {roles}")
 
 # Check if user has access to POW Profile
-profiles = frappe.get_all("POW Profile User", 
-    filters={"user": user}, 
-    fields=["parent"])
+profiles = frappe.get_all("POW Profile User", filters={"user": user}, fields=["parent"])
 print(f"User profiles: {profiles}")
 ```
 
@@ -314,9 +313,7 @@ print(f"Target warehouses: {[w.warehouse for w in profile.target_warehouse]}")
 # Check stock availability
 item_code = "ITEM-001"
 warehouse = "WAREHOUSE-001"
-stock = frappe.db.get_value("Bin", 
-    {"item_code": item_code, "warehouse": warehouse}, 
-    "actual_qty")
+stock = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty")
 print(f"Stock for {item_code} in {warehouse}: {stock}")
 ```
 

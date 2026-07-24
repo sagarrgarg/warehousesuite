@@ -499,55 +499,54 @@ Applicable Users:
 # Debug profile configuration
 import frappe
 
+
 def debug_profile(profile_name):
-    profile = frappe.get_doc("POW Profile", profile_name)
-    
-    print(f"Profile: {profile.name}")
-    print(f"Company: {profile.company}")
-    print(f"Disabled: {profile.disabled}")
-    
-    print("Source Warehouses:")
-    for warehouse in profile.source_warehouse:
-        print(f"  - {warehouse.warehouse}")
-    
-    print("Target Warehouses:")
-    for warehouse in profile.target_warehouse:
-        print(f"  - {warehouse.warehouse}")
-    
-    print("Allowed Operations:")
-    print(f"  Material Transfer: {profile.material_transfer}")
-    print(f"  BOM Manufacturing: {profile.manufacturing}")
-    print(f"  Purchase Receipt: {profile.purchase_receipt}")
-    print(f"  Repack: {profile.repack}")
-    print(f"  Delivery Note: {profile.delivery_note}")
-    print(f"  Stock Count: {profile.stock_count}")
-    
-    print("Applicable Users:")
-    for user in profile.applicable_users:
-        print(f"  - {user.user}")
+	profile = frappe.get_doc("POW Profile", profile_name)
+
+	print(f"Profile: {profile.name}")
+	print(f"Company: {profile.company}")
+	print(f"Disabled: {profile.disabled}")
+
+	print("Source Warehouses:")
+	for warehouse in profile.source_warehouse:
+		print(f"  - {warehouse.warehouse}")
+
+	print("Target Warehouses:")
+	for warehouse in profile.target_warehouse:
+		print(f"  - {warehouse.warehouse}")
+
+	print("Allowed Operations:")
+	print(f"  Material Transfer: {profile.material_transfer}")
+	print(f"  BOM Manufacturing: {profile.manufacturing}")
+	print(f"  Purchase Receipt: {profile.purchase_receipt}")
+	print(f"  Repack: {profile.repack}")
+	print(f"  Delivery Note: {profile.delivery_note}")
+	print(f"  Stock Count: {profile.stock_count}")
+
+	print("Applicable Users:")
+	for user in profile.applicable_users:
+		print(f"  - {user.user}")
 ```
 
 #### User Access Debugging
 ```python
 # Debug user access
 def debug_user_access(user_email):
-    user_roles = frappe.get_roles(user_email)
-    print(f"User: {user_email}")
-    print(f"Roles: {user_roles}")
-    
-    # Check profile assignments
-    profiles = frappe.get_all("POW Profile User", 
-        filters={"user": user_email}, 
-        fields=["parent"])
-    
-    print("Assigned Profiles:")
-    for profile in profiles:
-        print(f"  - {profile.parent}")
-        
-        # Check profile details
-        profile_doc = frappe.get_doc("POW Profile", profile.parent)
-        print(f"    Disabled: {profile_doc.disabled}")
-        print(f"    Material Transfer: {profile_doc.material_transfer}")
+	user_roles = frappe.get_roles(user_email)
+	print(f"User: {user_email}")
+	print(f"Roles: {user_roles}")
+
+	# Check profile assignments
+	profiles = frappe.get_all("POW Profile User", filters={"user": user_email}, fields=["parent"])
+
+	print("Assigned Profiles:")
+	for profile in profiles:
+		print(f"  - {profile.parent}")
+
+		# Check profile details
+		profile_doc = frappe.get_doc("POW Profile", profile.parent)
+		print(f"    Disabled: {profile_doc.disabled}")
+		print(f"    Material Transfer: {profile_doc.material_transfer}")
 ```
 
 ## 📈 Best Practices

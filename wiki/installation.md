@@ -95,6 +95,7 @@ bench --site your-site-name console
 In the console:
 ```python
 import frappe
+
 frappe.get_doc("POW Profile")
 print("WarehouseSuite installed successfully!")
 ```
@@ -253,6 +254,7 @@ bench --site your-site-name console
 In console:
 ```python
 import frappe
+
 frappe.db.commit()
 ```
 
@@ -266,6 +268,7 @@ frappe.db.commit()
    
    ```python
    import frappe
+
    frappe.db.sql("SHOW PROCESSLIST")
    ```
 

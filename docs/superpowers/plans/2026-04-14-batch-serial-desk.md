@@ -69,107 +69,121 @@ from frappe.utils import flt, nowdate
 
 
 def get_item_batch_serial_info(item_code):
-    """Check if item has batch/serial tracking enabled.
-    Returns dict with has_batch_no, has_serial_no, batch_number_series, serial_no_series.
-    """
-    item = frappe.db.get_value(
-        "Item", item_code,
-        ["has_batch_no", "has_serial_no", "create_new_batch",
-         "batch_number_series", "serial_no_series"],
-        as_dict=True,
-    )
-    if not item:
-        return {"has_batch_no": 0, "has_serial_no": 0}
-    return item
+	"""Check if item has batch/serial tracking enabled.
+	Returns dict with has_batch_no, has_serial_no, batch_number_series, serial_no_series.
+	"""
+	item = frappe.db.get_value(
+		"Item",
+		item_code,
+		["has_batch_no", "has_serial_no", "create_new_batch", "batch_number_series", "serial_no_series"],
+		as_dict=True,
+	)
+	if not item:
+		return {"has_batch_no": 0, "has_serial_no": 0}
+	return item
 
 
 def get_available_batches(item_code, warehouse, posting_date=None):
-    """Get batches with available qty for an item in a warehouse.
-    Returns list of {batch_no, qty, expiry_date, manufacturing_date}.
-    """
-    from erpnext.stock.doctype.batch.batch import get_batch_qty
+	"""Get batches with available qty for an item in a warehouse.
+	Returns list of {batch_no, qty, expiry_date, manufacturing_date}.
+	"""
+	from erpnext.stock.doctype.batch.batch import get_batch_qty
 
-    if not posting_date:
-        posting_date = nowdate()
+	if not posting_date:
+		posting_date = nowdate()
 
-    batch_qty = get_batch_qty(item_code=item_code, warehouse=warehouse, posting_date=posting_date)
+	batch_qty = get_batch_qty(item_code=item_code, warehouse=warehouse, posting_date=posting_date)
 
-    result = []
-    for b in (batch_qty or []):
-        if flt(b.get("qty")) <= 0:
-            continue
-        batch_doc = frappe.db.get_value(
-            "Batch", b["batch_no"],
-            ["expiry_date", "manufacturing_date"],
-            as_dict=True,
-        ) or {}
-        result.append({
-            "batch_no": b["batch_no"],
-            "qty": b["qty"],
-            "expiry_date": str(batch_doc.get("expiry_date") or ""),
-            "manufacturing_date": str(batch_doc.get("manufacturing_date") or ""),
-        })
+	result = []
+	for b in batch_qty or []:
+		if flt(b.get("qty")) <= 0:
+			continue
+		batch_doc = (
+			frappe.db.get_value(
+				"Batch",
+				b["batch_no"],
+				["expiry_date", "manufacturing_date"],
+				as_dict=True,
+			)
+			or {}
+		)
+		result.append(
+			{
+				"batch_no": b["batch_no"],
+				"qty": b["qty"],
+				"expiry_date": str(batch_doc.get("expiry_date") or ""),
+				"manufacturing_date": str(batch_doc.get("manufacturing_date") or ""),
+			}
+		)
 
-    return sorted(result, key=lambda x: x.get("expiry_date") or "9999", reverse=False)
+	return sorted(result, key=lambda x: x.get("expiry_date") or "9999", reverse=False)
 
 
 def get_available_serial_nos(item_code, warehouse):
-    """Get active serial numbers for an item in a warehouse.
-    Returns list of {serial_no, batch_no, warranty_expiry_date}.
-    """
-    serials = frappe.get_all(
-        "Serial No",
-        filters={
-            "item_code": item_code,
-            "warehouse": warehouse,
-            "status": "Active",
-        },
-        fields=["name as serial_no", "batch_no", "warranty_expiry_date"],
-        order_by="creation asc",
-        limit=500,
-    )
-    return serials
+	"""Get active serial numbers for an item in a warehouse.
+	Returns list of {serial_no, batch_no, warranty_expiry_date}.
+	"""
+	serials = frappe.get_all(
+		"Serial No",
+		filters={
+			"item_code": item_code,
+			"warehouse": warehouse,
+			"status": "Active",
+		},
+		fields=["name as serial_no", "batch_no", "warranty_expiry_date"],
+		order_by="creation asc",
+		limit=500,
+	)
+	return serials
 
 
 def create_serial_and_batch_bundle(
-    item_code, warehouse, entries, type_of_transaction, company,
-    voucher_type=None, voucher_no=None,
+	item_code,
+	warehouse,
+	entries,
+	type_of_transaction,
+	company,
+	voucher_type=None,
+	voucher_no=None,
 ):
-    """Create a Serial and Batch Bundle document.
+	"""Create a Serial and Batch Bundle document.
 
-    Args:
-        item_code: Item code
-        warehouse: Warehouse name
-        entries: list of {batch_no, serial_no, qty}
-        type_of_transaction: "Inward" or "Outward"
-        company: Company name
+	Args:
+	    item_code: Item code
+	    warehouse: Warehouse name
+	    entries: list of {batch_no, serial_no, qty}
+	    type_of_transaction: "Inward" or "Outward"
+	    company: Company name
 
-    Returns:
-        SBB document name
-    """
-    if not entries:
-        return None
+	Returns:
+	    SBB document name
+	"""
+	if not entries:
+		return None
 
-    sbb = frappe.new_doc("Serial and Batch Bundle")
-    sbb.item_code = item_code
-    sbb.warehouse = warehouse
-    sbb.type_of_transaction = type_of_transaction
-    sbb.company = company
-    if voucher_type:
-        sbb.voucher_type = voucher_type
-    if voucher_no:
-        sbb.voucher_no = voucher_no
+	sbb = frappe.new_doc("Serial and Batch Bundle")
+	sbb.item_code = item_code
+	sbb.warehouse = warehouse
+	sbb.type_of_transaction = type_of_transaction
+	sbb.company = company
+	if voucher_type:
+		sbb.voucher_type = voucher_type
+	if voucher_no:
+		sbb.voucher_no = voucher_no
 
-    for entry in entries:
-        sbb.append("entries", {
-            "batch_no": entry.get("batch_no"),
-            "serial_no": entry.get("serial_no"),
-            "qty": flt(entry.get("qty", 1)),
-            "warehouse": warehouse,
-        })
+	for entry in entries:
+		sbb.append(
+			"entries",
+			{
+				"batch_no": entry.get("batch_no"),
+				"serial_no": entry.get("serial_no"),
+				"qty": flt(entry.get("qty", 1)),
+				"warehouse": warehouse,
+			},
+		)
 
-    sbb.save(ignore_permissions=True)
-    return sbb.name
+	sbb.save(ignore_permissions=True)
+	return sbb.name
 ```
 
 - [ ] **Step 2: Create API layer**
@@ -181,31 +195,31 @@ def create_serial_and_batch_bundle(
 import frappe
 from frappe import _
 from warehousesuite.services.pow_batch_serial_service import (
-    get_item_batch_serial_info,
-    get_available_batches,
-    get_available_serial_nos,
+	get_item_batch_serial_info,
+	get_available_batches,
+	get_available_serial_nos,
 )
 
 
 @frappe.whitelist()
 def get_batch_serial_info(item_code):
-    if not item_code:
-        frappe.throw(_("item_code is required"))
-    return get_item_batch_serial_info(item_code)
+	if not item_code:
+		frappe.throw(_("item_code is required"))
+	return get_item_batch_serial_info(item_code)
 
 
 @frappe.whitelist()
 def get_batches(item_code, warehouse, posting_date=None):
-    if not item_code or not warehouse:
-        frappe.throw(_("item_code and warehouse are required"))
-    return get_available_batches(item_code, warehouse, posting_date)
+	if not item_code or not warehouse:
+		frappe.throw(_("item_code and warehouse are required"))
+	return get_available_batches(item_code, warehouse, posting_date)
 
 
 @frappe.whitelist()
 def get_serial_nos(item_code, warehouse):
-    if not item_code or not warehouse:
-        frappe.throw(_("item_code and warehouse are required"))
-    return get_available_serial_nos(item_code, warehouse)
+	if not item_code or not warehouse:
+		frappe.throw(_("item_code and warehouse are required"))
+	return get_available_serial_nos(item_code, warehouse)
 ```
 
 - [ ] **Step 3: Add API endpoints to frontend**
@@ -437,61 +451,61 @@ from frappe import _
 
 
 def validate_pow_origin(doc, method):
-    """before_insert hook — block desk-created Stock Entries if restriction enabled."""
-    settings = _get_restriction_settings()
-    if not settings.get("enabled"):
-        return
+	"""before_insert hook — block desk-created Stock Entries if restriction enabled."""
+	settings = _get_restriction_settings()
+	if not settings.get("enabled"):
+		return
 
-    # POW-created entries have these markers
-    if getattr(doc, "custom_pow_session_id", None):
-        return
-    if getattr(doc, "pow_stock_concern", None):
-        return
+	# POW-created entries have these markers
+	if getattr(doc, "custom_pow_session_id", None):
+		return
+	if getattr(doc, "pow_stock_concern", None):
+		return
 
-    # Check if this entry type is restricted
-    restricted_types = settings.get("restricted_types", [])
-    if restricted_types and doc.stock_entry_type not in restricted_types:
-        return
+	# Check if this entry type is restricted
+	restricted_types = settings.get("restricted_types", [])
+	if restricted_types and doc.stock_entry_type not in restricted_types:
+		return
 
-    # Check override roles
-    override_roles = settings.get("override_roles", [])
-    if override_roles:
-        user_roles = frappe.get_roles(frappe.session.user)
-        if any(role in override_roles for role in user_roles):
-            return
+	# Check override roles
+	override_roles = settings.get("override_roles", [])
+	if override_roles:
+		user_roles = frappe.get_roles(frappe.session.user)
+		if any(role in override_roles for role in user_roles):
+			return
 
-    frappe.throw(
-        _("Stock Entries of type '{0}' can only be created via the POW Dashboard. "
-          "Open POW at /pow to create transfers.").format(doc.stock_entry_type),
-        title=_("POW Required"),
-    )
+	frappe.throw(
+		_(
+			"Stock Entries of type '{0}' can only be created via the POW Dashboard. "
+			"Open POW at /pow to create transfers."
+		).format(doc.stock_entry_type),
+		title=_("POW Required"),
+	)
 
 
 def _get_restriction_settings():
-    try:
-        settings = frappe.get_cached_doc("WMSuite Settings")
-        if not getattr(settings, "pow_restrict_desk_stock_entry", 0):
-            return {"enabled": False}
+	try:
+		settings = frappe.get_cached_doc("WMSuite Settings")
+		if not getattr(settings, "pow_restrict_desk_stock_entry", 0):
+			return {"enabled": False}
 
-        restricted_types = [
-            r.stock_entry_type
-            for r in (getattr(settings, "pow_restricted_entry_types", None) or [])
-            if r.stock_entry_type
-        ]
+		restricted_types = [
+			r.stock_entry_type
+			for r in (getattr(settings, "pow_restricted_entry_types", None) or [])
+			if r.stock_entry_type
+		]
 
-        override_roles = [
-            r.role
-            for r in (getattr(settings, "pow_restriction_override_roles", None) or [])
-            if r.role
-        ]
+		override_roles = [
+			r.role for r in (getattr(settings, "pow_restriction_override_roles", None) or []) if r.role
+		]
 
-        return {
-            "enabled": True,
-            "restricted_types": restricted_types,
-            "override_roles": override_roles,
-        }
-    except Exception:
-        return {"enabled": False}
+		return {
+			"enabled": True,
+			"restricted_types": restricted_types,
+			"override_roles": override_roles,
+		}
+	except Exception:
+		return {"enabled": False}
 ```
 
 - [ ] **Step 2: Add hook to hooks.py**

@@ -67,10 +67,10 @@ Stock Counting enables warehouse operators to:
 ```python
 # Session state management
 class CountingSession:
-    DRAFT = "Draft"           # Counting in progress
-    SUBMITTED = "Submitted"   # Count submitted for review
-    CONVERTED = "Converted"   # Converted to stock reconciliation
-    CANCELLED = "Cancelled"   # Count cancelled
+	DRAFT = "Draft"  # Counting in progress
+	SUBMITTED = "Submitted"  # Count submitted for review
+	CONVERTED = "Converted"  # Converted to stock reconciliation
+	CANCELLED = "Cancelled"  # Count cancelled
 ```
 
 ### Real-Time Validation
@@ -110,11 +110,11 @@ function validateCountedQuantity(itemCode, warehouse, countedQty) {
 ```python
 # Variance categorization
 VARIANCE_CATEGORIES = {
-    "NONE": "No variance",
-    "MINOR": "Variance < 5%",
-    "MODERATE": "Variance 5-10%",
-    "MAJOR": "Variance > 10%",
-    "CRITICAL": "Variance > 25%"
+	"NONE": "No variance",
+	"MINOR": "Variance < 5%",
+	"MODERATE": "Variance 5-10%",
+	"MAJOR": "Variance > 10%",
+	"CRITICAL": "Variance > 25%",
 }
 ```
 
@@ -202,23 +202,23 @@ function saveCountingDraft(warehouse, sessionId, itemsData) {
 ```python
 # Variance analysis
 def analyzeVariances(countedItems):
-    variances = {
-        'total_items': len(countedItems),
-        'items_with_variance': 0,
-        'significant_variances': 0,
-        'total_variance_value': 0,
-        'variance_categories': {}
-    }
-    
-    for item in countedItems:
-        if item.variance != 0:
-            variances['items_with_variance'] += 1
-            variances['total_variance_value'] += abs(item.variance_value)
-            
-            if abs(item.variance_percent) > 5:
-                variances['significant_variances'] += 1
-    
-    return variances
+	variances = {
+		"total_items": len(countedItems),
+		"items_with_variance": 0,
+		"significant_variances": 0,
+		"total_variance_value": 0,
+		"variance_categories": {},
+	}
+
+	for item in countedItems:
+		if item.variance != 0:
+			variances["items_with_variance"] += 1
+			variances["total_variance_value"] += abs(item.variance_value)
+
+			if abs(item.variance_percent) > 5:
+				variances["significant_variances"] += 1
+
+	return variances
 ```
 
 ### Discrepancy Handling
@@ -250,22 +250,25 @@ def analyzeVariances(countedItems):
 ```python
 # Convert count to stock reconciliation
 def convert_to_stock_reconciliation(stock_count):
-    reconciliation = frappe.new_doc("Stock Reconciliation")
-    reconciliation.company = stock_count.company
-    reconciliation.purpose = "Stock Reconciliation"
-    
-    for item in stock_count.items:
-        if item.difference != 0:  # Only items with variances
-            reconciliation.append("items", {
-                "item_code": item.item_code,
-                "warehouse": stock_count.warehouse,
-                "qty": item.counted_qty,
-                "valuation_rate": get_valuation_rate(item.item_code)
-            })
-    
-    reconciliation.insert()
-    reconciliation.submit()
-    return reconciliation.name
+	reconciliation = frappe.new_doc("Stock Reconciliation")
+	reconciliation.company = stock_count.company
+	reconciliation.purpose = "Stock Reconciliation"
+
+	for item in stock_count.items:
+		if item.difference != 0:  # Only items with variances
+			reconciliation.append(
+				"items",
+				{
+					"item_code": item.item_code,
+					"warehouse": stock_count.warehouse,
+					"qty": item.counted_qty,
+					"valuation_rate": get_valuation_rate(item.item_code),
+				},
+			)
+
+	reconciliation.insert()
+	reconciliation.submit()
+	return reconciliation.name
 ```
 
 ### Data Consistency

@@ -7,6 +7,7 @@ import { usePendingPowReceives } from '@/hooks/usePendingPowReceives'
 import { usePendingWorkOrders } from '@/hooks/usePendingWorkOrders'
 import { useCompany } from '@/hooks/useBoot'
 import ProfileSwitcher from '@/components/layout/ProfileSwitcher'
+import QzStatusDot from '@/components/layout/QzStatusDot'
 import ActionGrid from '@/components/layout/ActionGrid'
 import PendingMaterialRequestsPanel from '@/components/dashboard/PendingMaterialRequestsPanel'
 import PendingReceivesPanel from '@/components/dashboard/PendingReceivesPanel'
@@ -27,6 +28,7 @@ import ConsumeMaterialDialog from '@/components/manufacturing/ConsumeMaterialDia
 import FinishManufactureDialog from '@/components/manufacturing/FinishManufactureDialog'
 import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
+import BarcodeGenModal from '@/components/barcode-generation/BarcodeGenModal'
 import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { API, formatPowFetchError } from '@/lib/api'
@@ -45,7 +47,7 @@ function useLiveClock() {
   return now
 }
 
-type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'purchase-requests' | 'so-pending-report' | 'stock-concerns' | null
+type ModalType = 'transfer-send' | 'stock-count' | 'item-inquiry' | 'purchase-requests' | 'so-pending-report' | 'stock-concerns' | 'barcode-gen' | null
 type MobileTab = 'work-orders' | 'requests' | 'incoming'
 
 export default function Dashboard() {
@@ -319,7 +321,7 @@ export default function Dashboard() {
 
   const handleAction = (action: string) => {
     switch (action) {
-      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'purchase-requests': case 'so-pending-report': case 'stock-concerns':
+      case 'transfer-send': case 'stock-count': case 'item-inquiry': case 'purchase-requests': case 'so-pending-report': case 'stock-concerns': case 'barcode-gen':
         setActiveModal(action as ModalType)
         break
       case 'direct-manufacture':
@@ -412,6 +414,7 @@ export default function Dashboard() {
             <span className="text-[10px] sm:text-xs font-mono text-slate-600 dark:text-slate-300 tabular-nums hidden sm:inline">
               {timeLabel}
             </span>
+            <QzStatusDot />
             <button type="button" onClick={() => navigate('/analytics')} title="Analytics"
               className="w-7 h-7 flex items-center justify-center rounded text-slate-500 hover:text-violet-600 hover:bg-violet-100/80 dark:text-slate-400 dark:hover:text-violet-300 dark:hover:bg-violet-950/50 cursor-pointer">
               <BarChart3 className="w-3.5 h-3.5" />
@@ -687,6 +690,10 @@ export default function Dashboard() {
           powProfileName={selectedProfileName}
         />
       )}
+      <BarcodeGenModal 
+        open={activeModal === 'barcode-gen'} 
+        onClose={closeModal} 
+      />
 
       {/* ── Work Order Modals ──────────────────────────────── */}
       {showCreateWO && warehouses && selectedProfileName && (
