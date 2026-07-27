@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useFrappeGetCall, useFrappePostCall, useFrappeGetDoc } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { Printer, CheckSquare, Square, X, RefreshCw, Box } from 'lucide-react'
+import { Printer, CheckSquare, Square, X, RefreshCw, AlertTriangle, Box } from 'lucide-react'
 import { API, unwrap, isError, formatPowFetchError } from '@/lib/api'
 import { useQzTray } from '@/hooks/useQzTray'
 
 import QzStatusDot from '../layout/QzStatusDot'
-import BarcodeSVG from '../shared/BarcodeSVG'
 
 interface ItemRow {
 	id: string
@@ -14,21 +13,11 @@ interface ItemRow {
 	item_code: string
 	item_name: string
 	batch_no: string
-	qty: number
-	print_qty: number
-}
-
-interface CartonRow {
-	id: string
-	selected: boolean
-	item_code: string
-	item_name: string
-	batch_no: string
-	carton_no: number
-	total_cartons: number
-	carton_qty: number
-	qty?: number
-	print_qty: number
+	uom: string
+	trans_qty: number
+	mode: 'per_item' | 'per_carton'
+	copies: number
+	qty_per_carton: number | ''
 }
 
 interface QZPrintModalProps {
@@ -42,24 +31,20 @@ interface QZPrintModalProps {
 export default function QZPrintModal({ open, onClose, doctype, docname, contextData = {} }: QZPrintModalProps) {
 	const [selectedTemplate, setSelectedTemplate] = useState('')
 	const [selectedPrinter, setSelectedPrinter] = useState('')
-	const [labelTab, setLabelTab] = useState<'Standard' | 'Carton'>('Standard')
 	const [printing, setPrinting] = useState(false)
 	
-	// Standard Item Rows state
+	// Item Rows state
 	const [itemRows, setItemRows] = useState<ItemRow[]>([])
-	const [standardPreviewIndex, setStandardPreviewIndex] = useState<number>(0)
+	const [previewIndex, setPreviewIndex] = useState<number>(0)
 
-	// Carton Rows state
-	const [cartonRows, setCartonRows] = useState<CartonRow[]>([])
-	const [qtyPerCarton, setQtyPerCarton] = useState<number>(10)
-	const [generatingCartons, setGeneratingCartons] = useState(false)
-	const [cartonPreviewIndex, setCartonPreviewIndex] = useState<number>(0)
+	// Threshold modal state
+	const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false)
 
-	// Dynamic Template Preview state
+	// Preview state
 	const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
 	const [loadingPreview, setLoadingPreview] = useState<boolean>(false)
+	const [previewError, setPreviewError] = useState<string | null>(null)
 	
-	// Ref to prevent infinite API call loops
 	const loadedKeyRef = useRef<string>('')
 
 	const { printers, connected, loading: qzLoading, error: qzError, connect, sendToPrinter } = useQzTray()
@@ -79,7 +64,6 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 	)
 
 	const { call: enrichBatches } = useFrappePostCall(API.qzEnrichItemsWithBatches)
-	const { call: generateCartonsApi } = useFrappePostCall(API.qzGenerateCartonData)
 	const { call: getPrintData } = useFrappePostCall(API.getQzPrintData)
 	const { call: logPrint } = useFrappePostCall(API.logQzPrint)
 
@@ -88,8 +72,9 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 		if (!open) {
 			loadedKeyRef.current = ''
 			setItemRows([])
-			setCartonRows([])
 			setPreviewImageUrl(null)
+			setPreviewError(null)
+			setShowConfirmModal(false)
 			return
 		}
 
@@ -106,6 +91,7 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 				item_code: docData.item_code,
 				item_name: docData.item_name || docData.item_code,
 				batch_no: docData.batch_no || docData.name,
+				uom: docData.uom || docData.stock_uom || 'Pcs',
 				qty: docData.qty || 1
 			}]
 		}
@@ -123,11 +109,14 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 					item_code: it.item_code || '',
 					item_name: it.item_name || it.item_code || '',
 					batch_no: it.batch_no || it.batch || docData?.batch_no || '',
-					qty: parseFloat(it.qty || 1),
-					print_qty: parseFloat(it.qty || 1)
+					uom: it.uom || it.stock_uom || 'Pcs',
+					trans_qty: parseFloat(it.qty || it.received_qty || it.stock_qty || 1),
+					mode: 'per_item',
+					copies: 1, // ALWAYS DEFAULT TO 1 FOR SAFETY
+					qty_per_carton: ''
 				}))
 				setItemRows(rows)
-				setStandardPreviewIndex(0)
+				setPreviewIndex(0)
 			})
 			.catch(() => {
 				const rows: ItemRow[] = rawItems.map((it: any, idx: number) => ({
@@ -136,11 +125,14 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 					item_code: it.item_code || '',
 					item_name: it.item_name || it.item_code || '',
 					batch_no: it.batch_no || it.batch || docData?.batch_no || '',
-					qty: parseFloat(it.qty || 1),
-					print_qty: parseFloat(it.qty || 1)
+					uom: it.uom || it.stock_uom || 'Pcs',
+					trans_qty: parseFloat(it.qty || it.received_qty || it.stock_qty || 1),
+					mode: 'per_item',
+					copies: 1, // ALWAYS DEFAULT TO 1 FOR SAFETY
+					qty_per_carton: ''
 				}))
 				setItemRows(rows)
-				setStandardPreviewIndex(0)
+				setPreviewIndex(0)
 			})
 	}, [open, docData, contextData, doctype, docname])
 
@@ -151,55 +143,77 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 		}
 	}, [open, connected, qzLoading, connect])
 
-	// Auto-select first template & printer
-	useEffect(() => {
-		if (templates.length > 0 && !selectedTemplate) {
-			const t = templates[0]
-			const tId = t.name || t.template_name || (typeof t === 'string' ? t : '')
-			if (tId) setSelectedTemplate(tId)
-		}
-	}, [templates, selectedTemplate])
-
+	// 5. Select Defaults
 	useEffect(() => {
 		if (printers.length > 0 && !selectedPrinter) {
-			setSelectedPrinter(typeof printers[0] === 'string' ? printers[0] : printers[0].name)
+			const saved = localStorage.getItem('qz_default_printer')
+			if (saved && printers.includes(saved)) {
+				setSelectedPrinter(saved)
+			} else {
+				setSelectedPrinter(printers[0])
+			}
 		}
 	}, [printers, selectedPrinter])
 
-	// 5. Active Preview Item resolution
-	const activePreviewItem = useMemo(() => {
-		if (labelTab === 'Carton') {
-			if (cartonRows.length === 0) return null
-			return cartonRows[cartonPreviewIndex] || cartonRows[0]
+	useEffect(() => {
+		if (templates.length > 0 && !selectedTemplate) {
+			setSelectedTemplate(templates[0].name)
 		}
-		if (itemRows.length === 0) return null
-		return itemRows[standardPreviewIndex] || itemRows[0]
-	}, [labelTab, itemRows, cartonRows, standardPreviewIndex, cartonPreviewIndex])
+	}, [templates, selectedTemplate])
 
-	// 6. Dynamic Template Preview (Renders ZPL via Labelary API for selected template)
+	// 6. Live Totals & Error Calculation
+	const { grandTotalLabels, selectedItemCount, hasValidationError } = useMemo(() => {
+		let total = 0
+		let count = 0
+		let hasErr = false
+
+		itemRows.forEach(r => {
+			if (r.selected) {
+				count++
+				if (r.mode === 'per_item') {
+					if (!r.copies || r.copies <= 0) {
+						hasErr = true
+					} else {
+						total += r.copies
+					}
+				} else if (r.mode === 'per_carton') {
+					const cartonSize = typeof r.qty_per_carton === 'number' ? r.qty_per_carton : 0
+					if (cartonSize <= 0) {
+						hasErr = true
+					} else {
+						total += Math.ceil(r.trans_qty / cartonSize)
+					}
+				}
+			}
+		})
+
+		return { grandTotalLabels: total, selectedItemCount: count, hasValidationError: hasErr }
+	}, [itemRows])
+
+	// 7. Preview Render Effect
+	const activePreviewItem = itemRows[previewIndex] || itemRows[0]
+
 	useEffect(() => {
 		if (!open || !selectedTemplate || !activePreviewItem) {
 			setPreviewImageUrl(null)
+			setPreviewError(null)
 			return
 		}
 
 		let isCancelled = false
 		setLoadingPreview(true)
+		setPreviewError(null)
 
 		const previewItemCtx = {
 			_source_doctype: doctype,
 			_source_name: docname,
-			is_preview: true,
-			scale: 1.5,
 			items: [{
 				item_code: activePreviewItem.item_code,
 				item_name: activePreviewItem.item_name,
 				batch_no: activePreviewItem.batch_no,
-				qty: (activePreviewItem as CartonRow).carton_qty || (activePreviewItem as ItemRow).qty || 1,
-				print_qty: 1,
-				carton_no: (activePreviewItem as CartonRow).carton_no || 1,
-				total_cartons: (activePreviewItem as CartonRow).total_cartons || 1,
-				carton_qty: (activePreviewItem as CartonRow).carton_qty || (activePreviewItem as ItemRow).qty || 1
+				uom: activePreviewItem.uom,
+				qty: activePreviewItem.trans_qty,
+				print_qty: 1
 			}]
 		}
 
@@ -214,15 +228,23 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 
 				if (commands.length === 0) {
 					setPreviewImageUrl(null)
+					setPreviewError('No label commands generated')
 					setLoadingPreview(false)
 					return
 				}
 
-				const zpl = commands.join('\n')
-				if (zpl.includes('^XA')) {
-					// Render via Labelary Web API
+				const fullZpl = commands.join('\n')
+				if (fullZpl.includes('^XA')) {
+					// Extract ONLY first label block ^XA...^XZ to prevent 413 Payload Too Large
+					let previewZpl = fullZpl
+					const xaIdx = fullZpl.indexOf('^XA')
+					const xzIdx = fullZpl.indexOf('^XZ', xaIdx)
+					if (xaIdx !== -1 && xzIdx !== -1) {
+						previewZpl = fullZpl.substring(xaIdx, xzIdx + 3)
+					}
+
 					let pwDots = 800
-					const pwMatch = zpl.match(/\^PW(\d+)/)
+					const pwMatch = previewZpl.match(/\^PW(\d+)/)
 					if (pwMatch && pwMatch[1]) {
 						pwDots = parseInt(pwMatch[1], 10)
 					}
@@ -239,31 +261,38 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 							'Accept': 'image/png',
 							'Content-Type': 'application/x-www-form-urlencoded'
 						},
-						body: zpl
+						body: previewZpl
 					})
 						.then(r => r.ok ? r.blob() : null)
 						.then(blob => {
 							if (isCancelled) return
 							if (blob) {
 								setPreviewImageUrl(URL.createObjectURL(blob))
+								setPreviewError(null)
 							} else {
 								setPreviewImageUrl(null)
+								setPreviewError('Labelary preview unavailable')
 							}
 						})
-						.catch(() => {
-							if (!isCancelled) setPreviewImageUrl(null)
+						.catch(err => {
+							if (!isCancelled) {
+								setPreviewImageUrl(null)
+								setPreviewError(err.message || 'Preview load error')
+							}
 						})
 						.finally(() => {
 							if (!isCancelled) setLoadingPreview(false)
 						})
 				} else {
 					setPreviewImageUrl(null)
+					setPreviewError(null)
 					setLoadingPreview(false)
 				}
 			})
-			.catch(() => {
+			.catch(err => {
 				if (!isCancelled) {
 					setPreviewImageUrl(null)
+					setPreviewError(err.message || 'Failed to fetch print data')
 					setLoadingPreview(false)
 				}
 			})
@@ -273,100 +302,105 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 		}
 	}, [open, selectedTemplate, activePreviewItem, doctype, docname, getPrintData])
 
-	// 7. Generate Cartons handler
-	const handleGenerateCartons = async () => {
-		if (itemRows.length === 0) {
-			toast.error('No items available to generate cartons')
-			return
-		}
-		if (!qtyPerCarton || qtyPerCarton <= 0) {
-			toast.error('Enter a valid quantity per carton')
-			return
-		}
-
-		setGeneratingCartons(true)
-		try {
-			const res = await generateCartonsApi({
-				items_json: JSON.stringify(itemRows),
-				qty_per_carton: qtyPerCarton
-			})
-			const result = unwrap(res)
-			if (isError(result)) throw new Error(result.message)
-
-			const cartonData: any[] = result || []
-			const rows: CartonRow[] = cartonData.map((it: any, idx: number) => ({
-				id: `carton-${it.item_code}-${it.carton_no}-${idx}`,
-				selected: true,
-				item_code: it.item_code || '',
-				item_name: it.item_name || it.item_code || '',
-				batch_no: it.batch_no || '',
-				carton_no: it.carton_no || 1,
-				total_cartons: it.total_cartons || 1,
-				carton_qty: it.carton_qty || it.qty || 1,
-				print_qty: 1
-			}))
-
-			setCartonRows(rows)
-			setCartonPreviewIndex(0)
-			toast.success(`Generated ${rows.length} cartons`)
-		} catch (err: any) {
-			toast.error(formatPowFetchError(err, 'Failed to generate cartons'))
-		} finally {
-			setGeneratingCartons(false)
-		}
-	}
-
 	// Selection Helpers
-	const currentRows = labelTab === 'Carton' ? cartonRows : itemRows
-	const allSelected = useMemo(() => currentRows.length > 0 && currentRows.every(r => r.selected), [currentRows])
+	const allSelected = useMemo(() => itemRows.length > 0 && itemRows.every(r => r.selected), [itemRows])
 
 	const toggleSelectAll = () => {
 		const target = !allSelected
-		if (labelTab === 'Carton') {
-			setCartonRows(prev => prev.map(r => ({ ...r, selected: target })))
-		} else {
-			setItemRows(prev => prev.map(r => ({ ...r, selected: target })))
-		}
+		setItemRows(prev => prev.map(r => ({ ...r, selected: target })))
 	}
 
 	const toggleRow = (id: string) => {
-		if (labelTab === 'Carton') {
-			setCartonRows(prev => prev.map(r => r.id === id ? { ...r, selected: !r.selected } : r))
-		} else {
-			setItemRows(prev => prev.map(r => r.id === id ? { ...r, selected: !r.selected } : r))
-		}
+		setItemRows(prev => prev.map(r => r.id === id ? { ...r, selected: !r.selected } : r))
 	}
 
-	const updatePrintQty = (id: string, qty: number) => {
-		if (labelTab === 'Carton') {
-			setCartonRows(prev => prev.map(r => r.id === id ? { ...r, print_qty: Math.max(1, qty) } : r))
-		} else {
-			setItemRows(prev => prev.map(r => r.id === id ? { ...r, print_qty: Math.max(1, qty) } : r))
-		}
+	const updateRowMode = (id: string, mode: 'per_item' | 'per_carton') => {
+		setItemRows(prev => prev.map(r => r.id === id ? { ...r, mode } : r))
 	}
 
-	const handlePrint = async () => {
+	const updateCopies = (id: string, copies: number) => {
+		setItemRows(prev => prev.map(r => r.id === id ? { ...r, copies: Math.max(1, copies) } : r))
+	}
+
+	const updateQtyPerCarton = (id: string, val: string) => {
+		const num = val === '' ? '' : Math.max(0, parseFloat(val))
+		setItemRows(prev => prev.map(r => r.id === id ? { ...r, qty_per_carton: num } : r))
+	}
+
+	const handlePrintClick = () => {
 		if (!selectedPrinter) { toast.error('Select a printer'); return }
 		if (!selectedTemplate) { toast.error('Select a template'); return }
+		if (hasValidationError) { toast.error('Please fix validation errors in selected rows'); return }
+		if (previewError) { toast.error('Preview unavailable — resolve before printing'); return }
 
-		const selectedList = labelTab === 'Carton' ? cartonRows.filter(r => r.selected) : itemRows.filter(r => r.selected)
+		if (grandTotalLabels > 20) {
+			setShowConfirmModal(true)
+		} else {
+			executePrintJob()
+		}
+	}
+
+	const executePrintJob = async () => {
+		setShowConfirmModal(false)
+		const selectedList = itemRows.filter(r => r.selected)
 		if (selectedList.length === 0) { toast.error('Select at least one item to print'); return }
 
 		setPrinting(true)
 		try {
+			// Expand rows according to chosen mode
+			const expandedItems: any[] = []
+
+			selectedList.forEach(it => {
+				if (it.mode === 'per_item') {
+					expandedItems.push({
+						item_code: it.item_code,
+						item_name: it.item_name,
+						batch_no: it.batch_no,
+						uom: it.uom,
+						qty: it.trans_qty,
+						print_qty: it.copies
+					})
+				} else if (it.mode === 'per_carton') {
+					const perCarton = typeof it.qty_per_carton === 'number' ? it.qty_per_carton : 1
+					const fullCartons = Math.floor(it.trans_qty / perCarton)
+					const remainder = it.trans_qty % perCarton
+					const totalCartons = fullCartons + (remainder > 0 ? 1 : 0)
+
+					let currentCarton = 1
+					for (let i = 0; i < fullCartons; i++) {
+						expandedItems.push({
+							item_code: it.item_code,
+							item_name: it.item_name,
+							batch_no: it.batch_no,
+							uom: it.uom,
+							carton_no: currentCarton,
+							total_cartons: totalCartons,
+							carton_qty: perCarton,
+							qty: perCarton,
+							print_qty: 1
+						})
+						currentCarton++
+					}
+					if (remainder > 0) {
+						expandedItems.push({
+							item_code: it.item_code,
+							item_name: it.item_name,
+							batch_no: it.batch_no,
+							uom: it.uom,
+							carton_no: currentCarton,
+							total_cartons: totalCartons,
+							carton_qty: remainder,
+							qty: remainder,
+							print_qty: 1
+						})
+					}
+				}
+			})
+
 			const printCtx = {
 				_source_doctype: doctype,
 				_source_name: docname,
-				items: selectedList.map(it => ({
-					item_code: it.item_code,
-					item_name: it.item_name,
-					batch_no: it.batch_no,
-					qty: (it as CartonRow).carton_qty || (it as ItemRow).qty || 1,
-					print_qty: it.print_qty,
-					carton_no: (it as CartonRow).carton_no || undefined,
-					total_cartons: (it as CartonRow).total_cartons || undefined,
-					carton_qty: (it as CartonRow).carton_qty || undefined
-				}))
+				items: expandedItems
 			}
 
 			const res = await getPrintData({
@@ -377,13 +411,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 			const result = unwrap(res)
 			if (isError(result)) { throw new Error(result.message) }
 			if (!result?.commands || result.commands.length === 0) {
-				throw new Error('No raw commands generated. Please ensure your Label Template has Raw Code configured in ERPNext.')
+				throw new Error('No raw commands generated')
 			}
 
-			// Send to QZ Tray
 			await sendToPrinter(selectedPrinter, result.commands)
 
-			// Log Success
 			await logPrint({
 				template_name: selectedTemplate,
 				context_json: JSON.stringify(printCtx),
@@ -391,19 +423,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 				status: 'Success'
 			})
 
-			toast.success('Print Job Sent Successfully')
+			toast.success(`Printed ${grandTotalLabels} labels successfully`)
 			onClose()
 		} catch (err: any) {
 			console.error(err)
-			logPrint({
-				template_name: selectedTemplate,
-				context_json: JSON.stringify({ _source_doctype: doctype, _source_name: docname }),
-				printer: selectedPrinter || 'Unknown',
-				status: 'Failed',
-				error_log: String(err)
-			}).catch(() => {})
-
-			toast.error(formatPowFetchError(err, 'Print Failed'))
+			toast.error(formatPowFetchError(err, 'Print job failed'))
 		} finally {
 			setPrinting(false)
 		}
@@ -412,313 +436,275 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 	if (!open) return null
 
 	return (
-		<div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fade-in">
-			<div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-900 dark:text-white">
+		<div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fade-in text-slate-900 dark:text-white">
+			<div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
 				
 				{/* Modal Header */}
-				<header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shrink-0">
-					<div>
-						<h2 className="text-base font-bold">Print Label</h2>
-						<p className="text-xs text-slate-500 dark:text-slate-400">{doctype}: {docname}</p>
+				<header className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+					<div className="flex items-center gap-2">
+						<Box className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+						<div>
+							<h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+								Print Label
+								<span className="text-xs font-normal text-slate-500 dark:text-slate-400">({docname || 'New Document'})</span>
+							</h3>
+						</div>
 					</div>
 					<div className="flex items-center gap-3">
 						<QzStatusDot />
-						<button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
-							<X className="w-5 h-5" />
+						<button
+							onClick={onClose}
+							className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+						>
+							<X className="w-4 h-4" />
 						</button>
 					</div>
 				</header>
 
 				{/* Modal Body */}
 				<div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-					{qzError && (
-						<div className="bg-red-50 text-red-700 p-3 rounded text-xs border border-red-200">
-							<p className="font-bold">QZ Connection Error</p>
-							<p>{qzError}</p>
-							<button onClick={connect} className="mt-1 underline font-medium">Try Again</button>
-						</div>
-					)}
-
-					{/* Printer & Template Selectors */}
+					
+					{/* Top Controls Grid */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<div>
-							<label className="text-[11px] font-bold uppercase text-slate-500 mb-1 block">Select Printer *</label>
+							<label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 block">
+								Select Printer *
+							</label>
 							<select
-								className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
 								value={selectedPrinter}
-								onChange={e => setSelectedPrinter(e.target.value)}
-								disabled={!connected || printers.length === 0}
+								onChange={(e) => {
+									setSelectedPrinter(e.target.value)
+									localStorage.setItem('qz_default_printer', e.target.value)
+								}}
+								className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 							>
-								{!connected ? (
-									<option value="">Waiting for connection...</option>
-								) : printers.length === 0 ? (
-									<option value="">No printers found</option>
-								) : (
-									printers.map((p: any) => {
-										const pName = typeof p === 'string' ? p : p.name
-										return <option key={pName} value={pName}>{pName}</option>
-									})
-								)}
+								{printers.length === 0 && <option value="">No active printers found</option>}
+								{printers.map(p => (
+									<option key={p} value={p}>{p}</option>
+								))}
 							</select>
 						</div>
 
 						<div>
-							<label className="text-[11px] font-bold uppercase text-slate-500 mb-1 block">Label Template *</label>
-							{loadingTemplates ? (
-								<div className="text-xs text-slate-400 p-2">Loading templates...</div>
-							) : (
-								<select
-									className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-									value={selectedTemplate}
-									onChange={e => setSelectedTemplate(e.target.value)}
-								>
-									{templates.map((t: any) => {
-										const tId = t.name || t.template_name || (typeof t === 'string' ? t : '')
-										const tLabel = t.template_name || t.name || (typeof t === 'string' ? t : 'Unknown')
-										return <option key={tId} value={tId}>{tLabel}</option>
-									})}
-								</select>
-							)}
+							<label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1 block">
+								Label Template *
+							</label>
+							<select
+								value={selectedTemplate}
+								onChange={(e) => setSelectedTemplate(e.target.value)}
+								className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+							>
+								{templates.length === 0 && <option value="">No active templates for {doctype}</option>}
+								{templates.map(t => (
+									<option key={t.name} value={t.name}>{t.template_name}</option>
+								))}
+							</select>
 						</div>
 					</div>
 
-					{/* Label Type Sub-tabs */}
-					<div className="flex border-b border-slate-200 dark:border-slate-800">
-						<button
-							type="button"
-							onClick={() => setLabelTab('Standard')}
-							className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors ${
-								labelTab === 'Standard'
-									? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-									: 'border-transparent text-slate-500 hover:text-slate-800'
-							}`}
-						>
-							Standard Labels
-						</button>
-						<button
-							type="button"
-							onClick={() => setLabelTab('Carton')}
-							className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors ${
-								labelTab === 'Carton'
-									? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-									: 'border-transparent text-slate-500 hover:text-slate-800'
-							}`}
-						>
-							Carton Labels
-						</button>
-					</div>
+					{/* High-Density Unified Items Grid */}
+					<div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
+						<div className="max-h-64 overflow-y-auto">
+							<table className="w-full text-left text-xs">
+								<thead className="bg-slate-50 dark:bg-slate-800/80 sticky top-0 z-10 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+									<tr>
+										<th className="py-2 px-3 w-10 text-center">
+											<button type="button" onClick={toggleSelectAll} className="text-slate-500 hover:text-indigo-600">
+												{allSelected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4" />}
+											</button>
+										</th>
+										<th className="py-2 px-3 font-semibold">Item Code</th>
+										<th className="py-2 px-3 font-semibold">Item Name</th>
+										<th className="py-2 px-3 font-semibold">Batch No</th>
+										<th className="py-2 px-3 font-semibold text-center">UOM</th>
+										<th className="py-2 px-3 font-semibold text-right">Trans Qty</th>
+										<th className="py-2 px-3 font-semibold">Print As</th>
+										<th className="py-2 px-3 font-semibold">Print Details</th>
+										<th className="py-2 px-3 font-semibold">Resulting Labels</th>
+									</tr>
+								</thead>
+								<tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+									{itemRows.map((row, idx) => {
+										const isPerCarton = row.mode === 'per_carton'
+										const cartonVal = typeof row.qty_per_carton === 'number' ? row.qty_per_carton : 0
+										const cartonErr = isPerCarton && cartonVal <= 0
+										const cartonCount = cartonVal > 0 ? Math.ceil(row.trans_qty / cartonVal) : 0
 
-					{/* Standard / Carton Content View */}
-					{labelTab === 'Carton' ? (
-						<div className="space-y-3">
-							{/* Carton Generator Toolbar */}
-							<div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
-								<Box className="w-4 h-4 text-indigo-600 shrink-0" />
-								<div className="flex-1 flex items-center gap-2">
-									<label className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0">Qty per Carton:</label>
-									<input
-										type="number"
-										min="1"
-										value={qtyPerCarton}
-										onChange={e => setQtyPerCarton(parseInt(e.target.value) || 1)}
-										className="w-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2.5 py-1 text-xs text-right font-medium focus:ring-1 focus:ring-indigo-500"
-									/>
-								</div>
-								<button
-									type="button"
-									onClick={handleGenerateCartons}
-									disabled={generatingCartons || itemRows.length === 0}
-									className="px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all disabled:opacity-50 flex items-center gap-1.5"
-								>
-									{generatingCartons ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
-									<span>{generatingCartons ? 'Generating...' : 'Generate Cartons'}</span>
-								</button>
-							</div>
-
-							{/* Carton Table */}
-							<div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden max-h-44 overflow-y-auto">
-								<table className="w-full text-left text-xs border-collapse">
-									<thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 uppercase text-[10px] font-bold text-slate-600 dark:text-slate-300 sticky top-0">
-										<tr>
-											<th className="p-2.5 w-8 text-center">
-												<button type="button" onClick={toggleSelectAll} className="p-0.5">
-													{allSelected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-slate-400" />}
-												</button>
-											</th>
-											<th className="p-2.5">Item Code</th>
-											<th className="p-2.5">Batch No</th>
-											<th className="p-2.5">Box Info</th>
-											<th className="p-2.5 w-24 text-right">Copies</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-										{cartonRows.length === 0 ? (
-											<tr>
-												<td colSpan={5} className="text-center p-4 text-slate-400 text-xs">
-													Enter items per carton and click <b>Generate Cartons</b> above.
+										return (
+											<tr 
+												key={row.id} 
+												onClick={() => setPreviewIndex(idx)}
+												className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${previewIndex === idx ? 'bg-indigo-50/40 dark:bg-indigo-950/20' : ''}`}
+											>
+												<td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+													<button type="button" onClick={() => toggleRow(row.id)} className="text-slate-500">
+														{row.selected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4" />}
+													</button>
 												</td>
-											</tr>
-										) : (
-											cartonRows.map((row, idx) => {
-												const isPreviewed = cartonPreviewIndex === idx
-												return (
-													<tr
-														key={row.id}
-														onClick={() => setCartonPreviewIndex(idx)}
-														className={`cursor-pointer transition-colors ${
-															isPreviewed ? 'bg-indigo-50/70 dark:bg-indigo-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-														}`}
+												<td className="py-2 px-3 font-semibold text-slate-900 dark:text-white">{row.item_code}</td>
+												<td className="py-2 px-3 text-slate-600 dark:text-slate-400 truncate max-w-[160px]">{row.item_name}</td>
+												<td className="py-2 px-3">
+													<span className="inline-flex px-1.5 py-0.5 rounded text-[11px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+														{row.batch_no || '-'}
+													</span>
+												</td>
+												<td className="py-2 px-3 text-center text-slate-500">{row.uom}</td>
+												<td className="py-2 px-3 text-right font-semibold text-slate-700 dark:text-slate-300">{row.trans_qty}</td>
+												<td className="py-2 px-3" onClick={(e) => e.stopPropagation()}>
+													<select
+														value={row.mode}
+														onChange={(e) => updateRowMode(row.id, e.target.value as any)}
+														className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
 													>
-														<td className="p-2.5 text-center" onClick={(e) => { e.stopPropagation(); toggleRow(row.id) }}>
-															{row.selected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-slate-400" />}
-														</td>
-														<td className="p-2.5 font-semibold whitespace-nowrap">{row.item_code}</td>
-														<td className="p-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">{row.batch_no || '—'}</td>
-														<td className="p-2.5 font-medium whitespace-nowrap text-indigo-600 dark:text-indigo-400">
-															Box {row.carton_no}/{row.total_cartons} (Qty: {row.carton_qty})
-														</td>
-														<td className="p-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+														<option value="per_item">Per Item</option>
+														<option value="per_carton">Per Carton</option>
+													</select>
+												</td>
+												<td className="py-2 px-3" onClick={(e) => e.stopPropagation()}>
+													{row.mode === 'per_item' ? (
+														<div className="flex items-center gap-1.5">
+															<span className="text-[11px] text-slate-400">Copies:</span>
 															<input
 																type="number"
 																min="1"
-																value={row.print_qty}
-																onChange={(e) => updatePrintQty(row.id, parseInt(e.target.value) || 1)}
-																className="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-right font-medium focus:ring-1 focus:ring-indigo-500"
+																value={row.copies}
+																onChange={(e) => updateCopies(row.id, parseInt(e.target.value) || 1)}
+																className="w-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-0.5 text-xs font-semibold focus:ring-1 focus:ring-indigo-500 focus:outline-none"
 															/>
-														</td>
-													</tr>
-												)
-											})
-										)}
-									</tbody>
-								</table>
-							</div>
-						</div>
-					) : (
-						/* Standard Items Table */
-						<div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
-							<table className="w-full text-left text-xs border-collapse">
-								<thead className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 uppercase text-[10px] font-bold text-slate-600 dark:text-slate-300 sticky top-0">
-									<tr>
-										<th className="p-2.5 w-8 text-center">
-											<button type="button" onClick={toggleSelectAll} className="p-0.5">
-												{allSelected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-slate-400" />}
-											</button>
-										</th>
-										<th className="p-2.5">Item Code</th>
-										<th className="p-2.5">Item Name</th>
-										<th className="p-2.5">Batch No</th>
-										<th className="p-2.5 w-24 text-right">Qty to Print</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
-									{itemRows.length === 0 ? (
-										<tr>
-											<td colSpan={5} className="text-center p-4 text-slate-400 text-xs">
-												Loading document items & batches...
-											</td>
-										</tr>
-									) : (
-										itemRows.map((row, idx) => {
-											const isPreviewed = standardPreviewIndex === idx
-											return (
-												<tr
-													key={row.id}
-													onClick={() => setStandardPreviewIndex(idx)}
-													className={`cursor-pointer transition-colors ${
-														isPreviewed ? 'bg-indigo-50/70 dark:bg-indigo-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-													}`}
-												>
-													<td className="p-2.5 text-center" onClick={(e) => { e.stopPropagation(); toggleRow(row.id) }}>
-														{row.selected ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-slate-400" />}
-													</td>
-													<td className="p-2.5 font-semibold whitespace-nowrap">{row.item_code}</td>
-													<td className="p-2.5 whitespace-nowrap">{row.item_name}</td>
-													<td className="p-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">{row.batch_no || '—'}</td>
-													<td className="p-2.5 text-right" onClick={(e) => e.stopPropagation()}>
-														<input
-															type="number"
-															min="1"
-															value={row.print_qty}
-															onChange={(e) => updatePrintQty(row.id, parseInt(e.target.value) || 1)}
-															className="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-right font-medium focus:ring-1 focus:ring-indigo-500"
-														/>
-													</td>
-												</tr>
-											)
-										})
-									)}
+														</div>
+													) : (
+														<div className="flex items-center gap-1.5">
+															<span className="text-[11px] text-slate-400">Qty/Carton:</span>
+															<input
+																type="number"
+																min="1"
+																placeholder="Reqd"
+																value={row.qty_per_carton}
+																onChange={(e) => updateQtyPerCarton(row.id, e.target.value)}
+																className={`w-18 bg-white dark:bg-slate-800 border rounded px-2 py-0.5 text-xs font-semibold focus:ring-1 focus:outline-none ${cartonErr ? 'border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-950/30' : 'border-slate-200 dark:border-slate-700 focus:ring-indigo-500'}`}
+															/>
+														</div>
+													)}
+												</td>
+												<td className="py-2 px-3 font-semibold">
+													{!row.selected ? (
+														<span className="text-slate-400 italic">Row unchecked</span>
+													) : row.mode === 'per_item' ? (
+														<span className="text-emerald-600 dark:text-emerald-400">→ {row.copies} label{row.copies > 1 ? 's' : ''}</span>
+													) : cartonErr ? (
+														<span className="text-red-600 dark:text-red-400 font-bold">Qty per Carton is required</span>
+													) : (
+														<span className="text-indigo-600 dark:text-indigo-400 font-bold">→ {cartonCount} carton{cartonCount > 1 ? 's' : ''} (Box 1-{cartonCount})</span>
+													)}
+												</td>
+											</tr>
+										)
+									})}
 								</tbody>
 							</table>
 						</div>
-					)}
+					</div>
 
-					{/* DYNAMIC TEMPLATE PREVIEW BOX (Updates dynamically with selected Label Template & Labelary rendering) */}
-					{activePreviewItem && (
-						<div className="bg-white dark:bg-slate-900 border-2 border-slate-800 dark:border-slate-200 rounded-lg p-3 max-w-md mx-auto shadow-md relative min-h-[160px] flex items-center justify-center">
-							{loadingPreview ? (
-								<div className="flex flex-col items-center justify-center p-4 gap-2 text-slate-400 text-xs">
-									<RefreshCw className="w-5 h-5 animate-spin text-indigo-600" />
-									<span>Rendering preview for {selectedTemplate}...</span>
+					{/* Live Total Summary Counter Bar */}
+					<div className={`p-3 rounded-lg border text-sm font-bold flex items-center justify-between ${hasValidationError ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-300' : previewError ? 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300' : 'bg-indigo-50/70 border-indigo-200 text-indigo-900 dark:bg-indigo-950/40 dark:border-indigo-900/50 dark:text-indigo-200'}`}>
+						<div>
+							{hasValidationError ? (
+								<div className="flex items-center gap-2">
+									<AlertTriangle className="w-4 h-4 text-red-600" />
+									<span>⚠️ Please fix validation errors in selected row(s) before printing.</span>
 								</div>
-							) : previewImageUrl ? (
-								<div className="w-full flex items-center justify-center p-1">
-									<img
-										src={previewImageUrl}
-										alt="Label Template Preview"
-										className="max-w-full max-h-52 object-contain rounded border border-slate-200 dark:border-slate-700 shadow-sm"
-									/>
+							) : previewError ? (
+								<div className="flex items-center gap-2">
+									<AlertTriangle className="w-4 h-4 text-amber-600" />
+									<span>⚠️ {previewError} — resolve before printing.</span>
 								</div>
 							) : (
-								/* SVG Fallback if offline or non-ZPL */
-								<div className="text-center space-y-1 w-full">
-									<h3 className="text-lg font-extrabold text-slate-900 dark:text-white tracking-wide">
-										{activePreviewItem.item_name || activePreviewItem.item_code}
-									</h3>
-									<p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-										Code: <span className="font-mono">{activePreviewItem.item_code}</span>
-									</p>
-									
-									<div className="py-2 px-4 my-2">
-										<BarcodeSVG
-											value={activePreviewItem.batch_no || activePreviewItem.item_code}
-											height={50}
-											className="text-black dark:text-white"
-										/>
-									</div>
-
-									<p className="text-xs font-mono font-bold text-slate-900 dark:text-white tracking-wider">
-										{activePreviewItem.batch_no || activePreviewItem.item_code}
-									</p>
-								</div>
+								<span>Total: <span className="text-indigo-700 dark:text-indigo-400 text-base">{grandTotalLabels} label{grandTotalLabels !== 1 ? 's' : ''}</span> will be printed (across {selectedItemCount} item{selectedItemCount !== 1 ? 's' : ''})</span>
 							)}
 						</div>
-					)}
+						{grandTotalLabels > 20 && !hasValidationError && !previewError && (
+							<span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+								High Volume Job (&gt;20)
+							</span>
+						)}
+					</div>
+
+					{/* Live Labelary ZPL Preview Container */}
+					<div className="border border-slate-200 dark:border-slate-800 rounded-lg p-3 bg-slate-50/50 dark:bg-slate-900/30 min-h-[140px] flex items-center justify-center">
+						{loadingPreview ? (
+							<div className="flex items-center gap-2 text-xs text-slate-500">
+								<RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+								<span>Fetching live preview from Labelary...</span>
+							</div>
+						) : previewImageUrl ? (
+							<div className="flex flex-col items-center gap-1">
+								<img src={previewImageUrl} alt="ZPL Preview" className="max-h-40 max-w-full rounded border border-slate-200 shadow-sm" />
+								<span className="text-[10px] text-slate-400">Live ZPL Preview for Item: {activePreviewItem?.item_code}</span>
+							</div>
+						) : previewError ? (
+							<div className="text-xs text-red-500 font-semibold text-center py-2">
+								{previewError}
+							</div>
+						) : (
+							<div className="text-xs text-slate-400 text-center py-2">
+								Preview ready
+							</div>
+						)}
+					</div>
 
 				</div>
 
 				{/* Modal Footer */}
-				<footer className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shrink-0">
+				<footer className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end gap-2">
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+						className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
 					>
 						Cancel
 					</button>
 					<button
 						type="button"
-						onClick={handlePrint}
-						disabled={printing || !selectedTemplate || !selectedPrinter || !connected}
-						className="px-6 py-2.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+						onClick={handlePrintClick}
+						disabled={printing || hasValidationError || Boolean(previewError) || grandTotalLabels === 0}
+						className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-xs touch-manipulation"
 					>
-						<Printer className="w-4 h-4" />
-						<span>{printing ? 'Printing...' : 'Print'}</span>
+						{printing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+						<span>{printing ? 'Printing...' : `Print ${grandTotalLabels} Label${grandTotalLabels !== 1 ? 's' : ''}`}</span>
 					</button>
 				</footer>
-
 			</div>
+
+			{/* Safety Confirmation Modal for > 20 Labels */}
+			{showConfirmModal && (
+				<div className="fixed inset-0 z-[70] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+					<div className="bg-white dark:bg-slate-900 max-w-md w-full rounded-xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-scale-up">
+						<div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+							<AlertTriangle className="w-6 h-6 shrink-0" />
+							<h4 className="font-bold text-base text-slate-900 dark:text-white">Confirm High Volume Print Job</h4>
+						</div>
+						<p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+							You are about to send <b className="text-indigo-600 dark:text-indigo-400">{grandTotalLabels} labels</b> across <b>{selectedItemCount} items</b> to printer <b>{selectedPrinter}</b>. Are you sure you want to proceed?
+						</p>
+						<div className="flex items-center justify-end gap-2 pt-2">
+							<button
+								type="button"
+								onClick={() => setShowConfirmModal(false)}
+								className="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={executePrintJob}
+								className="px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs"
+							>
+								Yes, Print {grandTotalLabels} Labels
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
