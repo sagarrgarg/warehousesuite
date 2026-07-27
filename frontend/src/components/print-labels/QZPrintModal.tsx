@@ -147,10 +147,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 	useEffect(() => {
 		if (printers.length > 0 && !selectedPrinter) {
 			const saved = localStorage.getItem('qz_default_printer')
-			if (saved && printers.includes(saved)) {
+			const printerNames = printers.map(p => typeof p === 'string' ? p : p.name)
+			if (saved && printerNames.includes(saved)) {
 				setSelectedPrinter(saved)
 			} else {
-				setSelectedPrinter(printers[0])
+				setSelectedPrinter(printerNames[0])
 			}
 		}
 	}, [printers, selectedPrinter])
@@ -479,9 +480,10 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 								className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 							>
 								{printers.length === 0 && <option value="">No active printers found</option>}
-								{printers.map(p => (
-									<option key={p} value={p}>{p}</option>
-								))}
+								{printers.map(p => {
+									const name = typeof p === 'string' ? p : p.name
+									return <option key={name} value={name}>{name}</option>
+								})}
 							</select>
 						</div>
 
