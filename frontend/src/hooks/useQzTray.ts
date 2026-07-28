@@ -73,8 +73,14 @@ export function useQzTray() {
 			const qz = (window as any).qz
 			await qz.websocket.connect({ retries: 2, delay: 1 })
 			setConnected(true)
-			const list = await qz.printers.find()
-			setPrinters(list)
+			const rawList = await qz.printers.find()
+			const isVirtual = (name: string) => {
+				const n = (name || '').toLowerCase()
+				return n.includes('pdf') || n.includes('onenote') || n.includes('anydesk') || 
+					   n.includes('fax') || n.includes('redirected') || n.includes('xps')
+			}
+			const filtered = (rawList || []).filter((p: string) => !isVirtual(p))
+			setPrinters(filtered.length > 0 ? filtered : rawList)
 		} catch (err: any) {
 			console.error('QZ Tray Connection Error:', err)
 			setError(err.message || String(err))

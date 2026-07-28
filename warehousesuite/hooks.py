@@ -43,7 +43,7 @@ required_apps = ["erpnext"]
 # app_include_css = "/assets/warehousesuite/css/warehousesuite.css"
 app_include_js = [
 	"/assets/warehousesuite/js/zebrabrowserprint.js?v=2",
-	"/assets/warehousesuite/js/print_labels.js?v=1",
+	"/assets/warehousesuite/js/print_labels.js?v=20260727_2",
 	"/assets/warehousesuite/js/purchase_order_prefill.js?v=1",
 ]
 

@@ -214,22 +214,13 @@ if (!$('#print-labels-global-styles').length) {
 }
 
 // Main function to open print labels modal
-window.openPrintLabelsModal = async function(itemCode) {
-    try {
-        // Load Zebra Browser Print script if not already loaded (non-blocking)
-        loadZebraBrowserPrintScript().catch(error => {
-            console.warn('Zebra Browser Print script could not be loaded:', error);
-            // Don't block modal opening - user can still download ZPL
-        });
-        
-        // Get WMS settings
-        const settingsResponse = await frappe.call('warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_wmsuite_settings');
-        const wmsSettings = settingsResponse.message || {};
-        const maxLabelQuantity = wmsSettings.max_label_quantity || 100;
-        
-        // Get company info
-        const companyInfoResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_company_info_for_labels');
-        const companyInfo = companyInfoResponse.message || {};
+window.openPrintLabelsModal = function(itemCode) {
+    if (window.QZBridge && window.QZBridge.print_dialog) {
+        window.QZBridge.print_dialog('Item', itemCode, { item_code: itemCode });
+    } else {
+        frappe.msgprint(__('QZBridge print dialog is not loaded yet. Please refresh.'));
+    }
+};
         
         // Get print formats for Item doctype
         const printFormatsResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_print_formats');
