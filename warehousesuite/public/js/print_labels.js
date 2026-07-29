@@ -222,6 +222,7 @@ window.openPrintLabelsModal = function(itemCode) {
     }
 };
         
+/* --- OLD MODAL CODE (Commented out to fix await syntax error) ---
         // Get print formats for Item doctype
         const printFormatsResponse = await frappe.call('warehousesuite.warehousesuite.page.pow_dashboard.pow_dashboard.get_item_print_formats');
         const printFormats = printFormatsResponse.message?.formats || [];
@@ -1083,5 +1084,6 @@ function validatePrintForm(skipPrinterCheck = false) {
     
     return true;
 }
+*/
 
 
