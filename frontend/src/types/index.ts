@@ -16,6 +16,7 @@ export interface POWProfile {
 	stock_count: 0 | 1
 	sales_order_pending_report?: 0 | 1
 	show_only_stock_items: 0 | 1
+	qzbridge?: 0 | 1
 	source_warehouse: { name: string; warehouse: string }[]
 	target_warehouse: { name: string; warehouse: string }[]
 	applicable_users: { name: string; user: string }[]
@@ -34,6 +35,7 @@ export interface ProfileOperations {
 	/** When omitted (older API), treated as false. */
 	sales_order_pending_report?: boolean
 	stock_concern?: boolean
+	qzbridge?: boolean
 	/** Resolved server-side: WMSuite Settings global kill switch AND POW Profile flag. When omitted (older API), treated as true. */
 	show_material_request_panel?: boolean
 }

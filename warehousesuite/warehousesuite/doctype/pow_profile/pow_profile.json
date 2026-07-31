@@ -28,6 +28,7 @@
   "sales_order_pending_report",
   "show_material_request_panel",
   "show_only_stock_items",
+  "qzbridge",
   "section_break_isnk",
   "applicable_users"
  ],
@@ -170,6 +171,12 @@
    "fieldname": "show_only_stock_items",
    "fieldtype": "Check",
    "label": "Show Only Available Stock Items"
+  },
+  {
+   "default": "0",
+   "fieldname": "qzbridge",
+   "fieldtype": "Check",
+   "label": "QZBridge"
   },
   {
    "fieldname": "section_break_isnk",

@@ -57,6 +57,7 @@ const ACTIONS: ActionDef[] = [
     icon: <Box className="w-4 h-4" />,
     color: 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-600',
     textClass: 'text-white',
+    operationKey: 'qzbridge',
     reactView: true,
   },
   {

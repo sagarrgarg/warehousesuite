@@ -10,11 +10,12 @@ interface ItemInquiryModalProps {
 	onClose: () => void
 	allowedWarehouses: string[]
 	powProfileName?: string | null
+	hasQZBridge?: boolean
 }
 
 type Tab = 'stock' | 'barcodes' | 'uom' | 'attributes' | 'suppliers'
 
-export default function ItemInquiryModal({ open, onClose, allowedWarehouses, powProfileName }: ItemInquiryModalProps) {
+export default function ItemInquiryModal({ open, onClose, allowedWarehouses, powProfileName, hasQZBridge }: ItemInquiryModalProps) {
 	const [searchTerm, setSearchTerm] = useState('')
 	const [selectedItem, setSelectedItem] = useState<string | null>(null)
 	const [activeTab, setActiveTab] = useState<Tab>('stock')
@@ -178,9 +179,11 @@ export default function ItemInquiryModal({ open, onClose, allowedWarehouses, pow
 											</span>
 											<span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-px rounded font-bold">{itemData.stock_uom}</span>
 										</div>
-										<button onClick={() => setShowPrintLabels(true)} className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-[10px] font-bold rounded touch-manipulation">
-											<Printer className="w-3 h-3" /> Print Labels
-										</button>
+										{hasQZBridge && (
+											<button onClick={() => setShowPrintLabels(true)} className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-[10px] font-bold rounded touch-manipulation">
+												<Printer className="w-3 h-3" /> Print Labels
+											</button>
+										)}
 									</div>
 								</div>
 							</div>
