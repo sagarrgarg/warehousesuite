@@ -667,7 +667,7 @@ export default function Dashboard() {
         <StockCountModal open onClose={closeModal} warehouses={warehouses} powProfileName={selectedProfileName} />
       )}
       {activeModal === 'item-inquiry' && warehouses && (
-        <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} powProfileName={selectedProfileName} />
+        <ItemInquiryModal open onClose={closeModal} allowedWarehouses={warehouses.source_warehouses.map(w => w.warehouse)} powProfileName={selectedProfileName} hasQZBridge={!!operations?.qzbridge} />
       )}
       {activeModal === 'purchase-requests' && selectedProfileName && (
         <PurchaseRequestsModal
