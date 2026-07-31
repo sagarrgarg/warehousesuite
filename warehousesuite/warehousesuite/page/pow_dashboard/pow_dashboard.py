@@ -229,6 +229,7 @@ def get_pow_profile_operations(pow_profile):
 		"stock_count": bool(profile.stock_count),
 		"sales_order_pending_report": bool(getattr(profile, "sales_order_pending_report", 0)),
 		"stock_concern": bool(getattr(profile, "stock_concern", 0)),
+		"qzbridge": bool(getattr(profile, "qzbridge", 0)),
 		"show_material_request_panel": show_mr_panel,
 	}
 
