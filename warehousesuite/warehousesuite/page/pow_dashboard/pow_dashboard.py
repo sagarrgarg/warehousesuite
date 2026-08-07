@@ -2947,10 +2947,11 @@ def create_pow_barcode_generation(
 	doc.mode = mode
 	if mode == "New Pre-Batch":
 		doc.batch_no = batch_no
-		doc.manufacturing_date = manufacturing_date
-		doc.expiry_date = expiry_date
 	else:
 		doc.existing_batch = existing_batch
+
+	doc.manufacturing_date = manufacturing_date
+	doc.expiry_date = expiry_date
 
 	doc.insert()
 	doc.submit()
