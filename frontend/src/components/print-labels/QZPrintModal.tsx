@@ -18,6 +18,8 @@ interface ItemRow {
 	mode: 'per_item' | 'per_carton'
 	copies: number
 	qty_per_carton: number | ''
+	manufacturing_date?: string
+	expiry_date?: string
 }
 
 interface QZPrintModalProps {
@@ -90,9 +92,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 			rawItems = [{
 				item_code: docData.item_code,
 				item_name: docData.item_name || docData.item_code,
-				batch_no: docData.batch_no || docData.name,
+				batch_no: docData.batch_no || docData.existing_batch || docData.name,
 				uom: docData.uom || docData.stock_uom || 'Pcs',
-				qty: docData.qty || 1
+				qty: docData.qty || 1,
+				manufacturing_date: docData.manufacturing_date,
+				expiry_date: docData.expiry_date
 			}]
 		}
 
@@ -113,7 +117,9 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 					trans_qty: parseFloat(it.qty || it.received_qty || it.stock_qty || 1),
 					mode: 'per_item',
 					copies: 1, // ALWAYS DEFAULT TO 1 FOR SAFETY
-					qty_per_carton: ''
+					qty_per_carton: '',
+					manufacturing_date: it.manufacturing_date,
+					expiry_date: it.expiry_date
 				}))
 				setItemRows(rows)
 				setPreviewIndex(0)
@@ -129,7 +135,9 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 					trans_qty: parseFloat(it.qty || it.received_qty || it.stock_qty || 1),
 					mode: 'per_item',
 					copies: 1, // ALWAYS DEFAULT TO 1 FOR SAFETY
-					qty_per_carton: ''
+					qty_per_carton: '',
+					manufacturing_date: it.manufacturing_date,
+					expiry_date: it.expiry_date
 				}))
 				setItemRows(rows)
 				setPreviewIndex(0)
@@ -214,7 +222,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 				batch_no: activePreviewItem.batch_no,
 				uom: activePreviewItem.uom,
 				qty: activePreviewItem.trans_qty,
-				print_qty: 1
+				print_qty: 1,
+				manufacturing_date: activePreviewItem.manufacturing_date,
+				expiry_date: activePreviewItem.expiry_date,
+				mfg_date: activePreviewItem.manufacturing_date,
+				exp_date: activePreviewItem.expiry_date
 			}]
 		}
 
@@ -359,7 +371,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 						batch_no: it.batch_no,
 						uom: it.uom,
 						qty: it.trans_qty,
-						print_qty: it.copies
+						print_qty: it.copies,
+						manufacturing_date: it.manufacturing_date,
+						expiry_date: it.expiry_date,
+						mfg_date: it.manufacturing_date,
+						exp_date: it.expiry_date
 					})
 				} else if (it.mode === 'per_carton') {
 					const perCarton = typeof it.qty_per_carton === 'number' ? it.qty_per_carton : 1
@@ -378,7 +394,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 							total_cartons: totalCartons,
 							carton_qty: perCarton,
 							qty: perCarton,
-							print_qty: 1
+							print_qty: 1,
+							manufacturing_date: it.manufacturing_date,
+							expiry_date: it.expiry_date,
+							mfg_date: it.manufacturing_date,
+							exp_date: it.expiry_date
 						})
 						currentCarton++
 					}
@@ -392,7 +412,11 @@ export default function QZPrintModal({ open, onClose, doctype, docname, contextD
 							total_cartons: totalCartons,
 							carton_qty: remainder,
 							qty: remainder,
-							print_qty: 1
+							print_qty: 1,
+							manufacturing_date: it.manufacturing_date,
+							expiry_date: it.expiry_date,
+							mfg_date: it.manufacturing_date,
+							exp_date: it.expiry_date
 						})
 					}
 				}
