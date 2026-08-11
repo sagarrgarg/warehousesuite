@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useFrappeGetCall, useFrappePostCall } from 'frappe-react-sdk'
 import { toast } from 'sonner'
-import { ArrowLeft, Loader2, Check, Zap, AlertTriangle, Package, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Loader2, Check, Zap, AlertTriangle, Package, RefreshCw, Hash } from 'lucide-react'
 import { API, unwrap, formatPowFetchError } from '@/lib/api'
 import { useCompany } from '@/hooks/useBoot'
 import ItemSearchInput from '@/components/shared/ItemSearchInput'
@@ -49,6 +49,28 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
   const [success, setSuccess] = useState<string | null>(null)
   const [itemSubstitutions, setItemSubstitutions] = useState<Record<string, string>>({})
   const [itemQtyOverrides, setItemQtyOverrides] = useState<Record<string, string>>({})
+
+  // Expected Batch logic
+  const [expectedBatchNo, setExpectedBatchNo] = useState<string | null>(null)
+  const { call: fetchExpectedBatchNo } = useFrappePostCall(API.getExpectedBatchNo)
+
+  useEffect(() => {
+    if (!productionItem) {
+      setExpectedBatchNo(null)
+      return
+    }
+    
+    fetchExpectedBatchNo({ item_code: productionItem, doctype: 'Stock Entry', purpose: 'Manufacture' })
+      .then(res => {
+        const batchNo = unwrap(res)
+        if (batchNo && typeof batchNo === 'string') {
+          setExpectedBatchNo(batchNo)
+        } else {
+          setExpectedBatchNo(null)
+        }
+      })
+      .catch(() => setExpectedBatchNo(null))
+  }, [productionItem, fetchExpectedBatchNo])
 
   const [bom, setBom] = useState<BOMDetails | null>(null)
   const [bomLoading, setBomLoading] = useState(false)
@@ -278,6 +300,14 @@ export default function DirectManufactureModal({ open, onClose, warehouses, powP
                 <div className="mt-1.5 flex items-center justify-between">
                   <span className="text-xs text-slate-600 dark:text-slate-300 truncate">{productionItemName || productionItem}</span>
                   <button onClick={handleClearItem} className="text-[10px] text-red-600 hover:text-red-700 ml-2 cursor-pointer shrink-0">Clear</button>
+                </div>
+              )}
+              {expectedBatchNo && (
+                <div className="mt-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded">
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                    <Hash className="w-3 h-3" />
+                    Today's Batch Code: <span className="font-bold">{expectedBatchNo}</span>
+                  </p>
                 </div>
               )}
               {bomList.length > 1 && (
