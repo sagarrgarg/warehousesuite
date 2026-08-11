@@ -38,6 +38,7 @@ export const API = {
 	getWarehouseAnalytics: `${BASE}.get_warehouse_analytics`,
 	getWmsuiteSettings: 'warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_wmsuite_settings',
 	getActivePowNotifications: 'warehousesuite.warehousesuite.doctype.wmsuite_settings.wmsuite_settings.get_active_pow_notifications',
+	getExpectedBatchNo: 'business_needed_solutions.business_needed_solutions.overrides.batch_naming.get_expected_batch_no',
 
 	getPendingTransferMRs: `${MR_BASE}.get_pending_transfer_material_requests`,
 	getMRFulfillmentOptions: `${MR_BASE}.get_material_request_fulfillment_options`,
