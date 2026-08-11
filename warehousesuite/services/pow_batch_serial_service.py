@@ -24,11 +24,17 @@ def get_available_batches(item_code, warehouse, posting_date=None):
 	sorted by expiry_date ASC (FEFO).
 	"""
 	from erpnext.stock.doctype.batch.batch import get_batch_qty
+	from frappe.utils import nowtime
 
 	if not posting_date:
 		posting_date = nowdate()
 
-	batch_qty = get_batch_qty(item_code=item_code, warehouse=warehouse, posting_date=posting_date)
+	batch_qty = get_batch_qty(
+		item_code=item_code,
+		warehouse=warehouse,
+		posting_date=posting_date,
+		posting_time=nowtime(),
+	)
 
 	result = []
 	for b in batch_qty or []:
