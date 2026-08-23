@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "pow_enabled",
+  "show_in_so_tracker",
   "pow_criticality",
   "pow_display_seconds",
   "pow_message",
@@ -23,6 +24,14 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "label": "Enabled",
+   "columns": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "show_in_so_tracker",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Show in SO Tracker",
    "columns": 1
   },
   {

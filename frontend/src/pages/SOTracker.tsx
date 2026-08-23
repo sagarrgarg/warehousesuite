@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { API } from '@/lib/api'
 import { useTheme } from '@/hooks/useTheme'
 import { Sun, Moon } from 'lucide-react'
+import NotificationBanner from '@/components/layout/NotificationBanner'
 
 interface SalesOrderRow {
 	order_no: string
@@ -137,7 +138,7 @@ export default function SOTracker() {
 	}, [dashboardData.orders])
 
 	return (
-		<div className="h-dvh bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col overflow-hidden font-sans">
+		<div className="h-dvh bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex flex-col overflow-hidden font-sans">
 			{/* Compact Top Header */}
 			<header className="bg-white dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80 px-2.5 sm:px-3 py-1.5 flex items-center justify-between shrink-0 shadow-xs">
 				<div className="flex items-center gap-2 sm:gap-2.5">
@@ -211,64 +212,67 @@ export default function SOTracker() {
 				</div>
 			</header>
 
+			{/* Integrated Notification Slider from WMSuite Settings */}
+			<NotificationBanner forSOTracker={true} />
+
 			{/* Main High-Density Container */}
 			<div className="flex-1 p-2 sm:p-2.5 overflow-hidden flex flex-col gap-2 max-w-[1440px] w-full mx-auto relative">
-				{/* 4-Card KPI Grid with Gradients, Glows, Circular Badges, and Alert Dropdowns */}
+				{/* 4-Card KPI Grid with Richer/Darker Gradients, Glows, Circular Badges, and Alert Dropdowns */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 shrink-0 relative">
 					
-					{/* Card 1: Under Time (Emerald Gradient + Glow + Clock Badge) */}
+					{/* Card 1: Under Time (Deeper Emerald Gradient) */}
 					<div
 						onClick={() => { setActiveBucket(activeBucket === 'green' ? null : 'green'); setCurrentPage(1) }}
-						className={`relative overflow-hidden bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/40 dark:from-emerald-950/30 dark:via-slate-850 dark:to-emerald-950/20 border rounded-lg p-2 sm:p-2.5 shadow-2xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
-							activeBucket === 'green' ? 'border-emerald-500 ring-1.5 ring-emerald-500/30 shadow-emerald-500/10' : 'border-emerald-200/80 dark:border-emerald-900/40 hover:border-emerald-400'
+						className={`relative overflow-hidden bg-gradient-to-br from-emerald-100/90 via-emerald-50/70 to-emerald-100/50 dark:from-emerald-950/70 dark:via-slate-850 dark:to-emerald-950/40 border rounded-lg p-2 sm:p-2.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+							activeBucket === 'green' ? 'border-emerald-600 ring-2 ring-emerald-500/30 shadow-emerald-500/15' : 'border-emerald-300 dark:border-emerald-800 hover:border-emerald-500'
 						}`}
 					>
 						{/* Ambient Glow */}
-						<div className="pointer-events-none absolute -top-6 -right-6 w-18 h-18 rounded-full bg-emerald-400/15 dark:bg-emerald-400/10 blur-lg" />
+						<div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-emerald-500/20 dark:bg-emerald-400/15 blur-lg" />
 
 						<div className="flex justify-between items-center z-1">
 							<div className="flex items-center gap-1.5">
-								<div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-									<Clock className="w-2.8 h-2.8" />
+								<div className="w-5.5 h-5.5 rounded-full bg-emerald-200/90 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 flex items-center justify-center shrink-0 shadow-2xs">
+									<Clock className="w-3 h-3" />
 								</div>
-								<span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">UNDER TIME &lt; 3D</span>
+								<span className="text-[10px] font-extrabold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">UNDER TIME &lt; 3D</span>
 							</div>
-							<span className="bg-emerald-100/80 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold px-1.5 py-0.2 rounded border border-emerald-300/40 dark:border-emerald-700/40">
+							<span className="bg-emerald-200/90 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-[9px] font-bold px-1.5 py-0.2 rounded border border-emerald-400/50 dark:border-emerald-700">
 								↗ 8% vs lw
 							</span>
 						</div>
 
-						<div className="text-2xl font-black text-emerald-950 dark:text-emerald-100 my-1 tracking-tight leading-none z-1">
+						<div className="text-2xl font-black text-emerald-950 dark:text-white my-1 tracking-tight leading-none z-1">
 							{dashboardData.counts.green}
 						</div>
 
 						<div className="h-5 w-full flex items-end gap-[2px] mt-0.5 z-1">
 							{dashboardData.bars.green.map((h, i) => (
-								<div key={i} className="flex-1 bg-emerald-500/85 hover:bg-emerald-400 rounded-t-2xs transition-all" style={{ height: `${h}%` }} />
+								<div key={i} className="flex-1 bg-emerald-600 hover:bg-emerald-500 rounded-t-2xs transition-all" style={{ height: `${h}%` }} />
 							))}
 						</div>
 					</div>
 
-					{/* Card 2: Delay (Amber Gradient + Alert Badge + Persistent Alert Bell) */}
+					{/* Card 2: Delay (Deeper Amber Gradient + Alert Badge + Persistent Alert Bell) */}
 					<div
 						onClick={() => { setActiveBucket(activeBucket === 'yellow' ? null : 'yellow'); setCurrentPage(1) }}
-						className={`relative overflow-visible bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 dark:from-amber-950/30 dark:via-slate-850 dark:to-amber-950/20 border rounded-lg p-2 sm:p-2.5 shadow-2xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
-							activeBucket === 'yellow' ? 'border-amber-500 ring-1.5 ring-amber-500/30 shadow-amber-500/10' : 'border-amber-200/80 dark:border-amber-900/40 hover:border-amber-400'
+						className={`relative overflow-visible bg-gradient-to-br from-amber-100/90 via-amber-50/70 to-amber-100/50 dark:from-amber-950/70 dark:via-slate-850 dark:to-amber-950/40 border rounded-lg p-2 sm:p-2.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+							activeBucket === 'yellow' ? 'border-amber-600 ring-2 ring-amber-500/30 shadow-amber-500/15' : 'border-amber-300 dark:border-amber-800 hover:border-amber-500'
 						}`}
 					>
 						{/* Ambient Glow */}
-						<div className="pointer-events-none absolute -top-6 -right-6 w-18 h-18 rounded-full bg-amber-400/15 dark:bg-amber-400/10 blur-lg overflow-hidden" />
+						<div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-amber-500/20 dark:bg-amber-400/15 blur-lg overflow-hidden" />
 
 						<div className="flex justify-between items-center z-1">
 							<div className="flex items-center gap-1.5">
-								<div className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-									<AlertTriangle className="w-2.8 h-2.8" />
+								<div className="w-5.5 h-5.5 rounded-full bg-amber-200/90 dark:bg-amber-900/80 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
+									<AlertTriangle className="w-3 h-3" />
 								</div>
-								<span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider">DELAY 3-5 DAYS</span>
+								<span className="text-[10px] font-extrabold text-amber-900 dark:text-amber-200 uppercase tracking-wider">DELAY 3-5 DAYS</span>
 							</div>
 
 							<div className="flex items-center gap-1">
-								<span className="bg-amber-100/80 dark:bg-amber-900/80 text-amber-700 dark:text-amber-300 text-[9px] font-bold px-1.5 py-0.2 rounded border border-amber-300/40 dark:border-amber-700/40">
+								<span className="bg-amber-200/90 dark:bg-amber-900 text-amber-900 dark:text-amber-200 text-[9px] font-bold px-1.5 py-0.2 rounded border border-amber-400/50 dark:border-amber-700">
 									∿ 4% vs lw
 								</span>
 
@@ -280,7 +284,7 @@ export default function SOTracker() {
 											e.stopPropagation()
 											setOpenAlertPopover(openAlertPopover === 'yellow' ? null : 'yellow')
 										}}
-										className="relative p-1 rounded hover:bg-amber-200/60 dark:hover:bg-amber-800/60 text-amber-600 dark:text-amber-400 transition-colors"
+										className="relative p-1 rounded hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 transition-colors"
 										title={`${dashboardData.counts.yellow} delayed orders — Click to preview`}
 									>
 										<Bell className="w-3 h-3" />
@@ -290,13 +294,13 @@ export default function SOTracker() {
 							</div>
 						</div>
 
-						<div className="text-2xl font-black text-amber-950 dark:text-amber-100 my-1 tracking-tight leading-none z-1">
+						<div className="text-2xl font-black text-amber-950 dark:text-white my-1 tracking-tight leading-none z-1">
 							{dashboardData.counts.yellow}
 						</div>
 
 						<div className="h-5 w-full flex items-end gap-[2px] mt-0.5 z-1">
 							{dashboardData.bars.yellow.map((h, i) => (
-								<div key={i} className="flex-1 bg-amber-500/85 hover:bg-amber-400 rounded-t-2xs transition-all" style={{ height: `${h}%` }} />
+								<div key={i} className="flex-1 bg-amber-600 hover:bg-amber-500 rounded-t-2xs transition-all" style={{ height: `${h}%` }} />
 							))}
 						</div>
 
@@ -341,29 +345,29 @@ export default function SOTracker() {
 						)}
 					</div>
 
-					{/* Card 3: Too Delay (Urgent Red Gradient + Breathing Pulse Glow + Critical Badge + Alert Bell) */}
+					{/* Card 3: Too Delay (Urgent Deep Crimson Gradient + Fast 1.2s Pulse Glow + Critical Badge + Alert Bell) */}
 					<div
 						onClick={() => { setActiveBucket(activeBucket === 'red' ? null : 'red'); setCurrentPage(1) }}
-						className={`relative overflow-visible bg-gradient-to-br from-red-50 via-red-50/30 to-rose-100/40 dark:from-red-950/40 dark:via-slate-850 dark:to-red-950/30 border rounded-lg p-2 sm:p-2.5 shadow-2xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite] ${
+						className={`relative overflow-visible bg-gradient-to-br from-red-100/95 via-rose-50/80 to-red-100/60 dark:from-red-950/85 dark:via-slate-850 dark:to-red-950/50 border rounded-lg p-2 sm:p-2.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md animate-[pulse_1.2s_ease-in-out_infinite] ${
 							activeBucket === 'red'
-								? 'border-red-500 ring-2 ring-red-500/40 shadow-red-500/20'
-								: 'border-red-300 dark:border-red-800/60 shadow-[0_0_10px_rgba(239,68,68,0.15)] hover:border-red-500'
+								? 'border-red-600 ring-2 ring-red-500/50 shadow-red-500/30'
+								: 'border-red-400 dark:border-red-700 shadow-[0_0_12px_rgba(239,68,68,0.25)] hover:border-red-600'
 						}`}
 					>
 						{/* Ambient Red Glow */}
-						<div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-red-500/20 dark:bg-red-500/15 blur-lg overflow-hidden" />
+						<div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-red-500/25 dark:bg-red-500/20 blur-lg overflow-hidden" />
 
 						<div className="flex justify-between items-center z-1">
 							<div className="flex items-center gap-1.5">
-								<div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
-									<AlertOctagon className="w-2.8 h-2.8" />
+								<div className="w-5.5 h-5.5 rounded-full bg-red-200/90 dark:bg-red-900/80 text-red-700 dark:text-red-300 flex items-center justify-center shrink-0 shadow-2xs">
+									<AlertOctagon className="w-3 h-3" />
 								</div>
-								<span className="text-[10px] font-bold text-red-800 dark:text-red-300 uppercase tracking-wider">TOO DELAY &gt; 5D</span>
+								<span className="text-[10px] font-extrabold text-red-900 dark:text-red-200 uppercase tracking-wider">TOO DELAY &gt; 5D</span>
 							</div>
 
 							<div className="flex items-center gap-1">
 								<span className="bg-red-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded shadow-xs flex items-center gap-1">
-									<span className="w-1.2 h-1.2 rounded-full bg-white animate-ping" />
+									<span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
 									Critical
 								</span>
 
@@ -375,7 +379,7 @@ export default function SOTracker() {
 											e.stopPropagation()
 											setOpenAlertPopover(openAlertPopover === 'red' ? null : 'red')
 										}}
-										className="relative p-1 rounded hover:bg-red-200/60 dark:hover:bg-red-800/60 text-red-600 dark:text-red-400 transition-colors"
+										className="relative p-1 rounded hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 transition-colors"
 										title={`${dashboardData.counts.red} critical delayed orders — Click to preview`}
 									>
 										<Bell className="w-3 h-3 text-red-600 dark:text-red-400" />
@@ -389,7 +393,7 @@ export default function SOTracker() {
 							<span className="text-2xl font-black text-red-600 dark:text-red-400 tracking-tight leading-none">
 								{dashboardData.counts.red}
 							</span>
-							<span className="text-[10px] font-bold text-red-500">∿ 15% vs lw</span>
+							<span className="text-[10px] font-extrabold text-red-600 dark:text-red-400">∿ 15% vs lw</span>
 						</div>
 
 						<div className="h-5 w-full flex items-end gap-[2px] mt-0.5 z-1">
@@ -439,28 +443,28 @@ export default function SOTracker() {
 						)}
 					</div>
 
-					{/* Card 4: Fulfillment Split (Indigo/Blue Gradient + PieChart Badge) */}
+					{/* Card 4: Fulfillment Split (Deeper Indigo/Blue Gradient + PieChart Badge) */}
 					<div
 						onClick={() => { setActiveBucket(null); setCurrentPage(1) }}
-						className={`relative overflow-hidden bg-gradient-to-br from-indigo-50/70 via-white to-blue-50/40 dark:from-indigo-950/30 dark:via-slate-850 dark:to-blue-950/20 border rounded-lg p-2 sm:p-2.5 shadow-2xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
-							activeBucket === null ? 'border-indigo-500 ring-1.5 ring-indigo-500/30 shadow-indigo-500/10' : 'border-indigo-200/80 dark:border-indigo-900/40 hover:border-indigo-400'
+						className={`relative overflow-hidden bg-gradient-to-br from-indigo-100/90 via-blue-50/70 to-indigo-100/50 dark:from-indigo-950/70 dark:via-slate-850 dark:to-blue-950/40 border rounded-lg p-2 sm:p-2.5 shadow-xs flex flex-col justify-between cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${
+							activeBucket === null ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-indigo-500/15' : 'border-indigo-300 dark:border-indigo-800 hover:border-indigo-500'
 						}`}
 					>
 						{/* Ambient Glow */}
-						<div className="pointer-events-none absolute -top-6 -right-6 w-18 h-18 rounded-full bg-indigo-400/15 dark:bg-indigo-400/10 blur-lg" />
+						<div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-indigo-500/20 dark:bg-indigo-400/15 blur-lg" />
 
 						<div className="flex justify-between items-center z-1">
 							<div className="flex items-center gap-1.5">
-								<div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-									<PieChart className="w-2.8 h-2.8" />
+								<div className="w-5.5 h-5.5 rounded-full bg-indigo-200/90 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-300 flex items-center justify-center shrink-0 shadow-2xs">
+									<PieChart className="w-3 h-3" />
 								</div>
-								<span className="text-[10px] font-bold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider">FULFILLMENT SPLIT</span>
+								<span className="text-[10px] font-extrabold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">FULFILLMENT SPLIT</span>
 							</div>
 						</div>
 
 						<div className="flex items-center justify-center relative my-0.5 z-1">
 							<svg className="w-13 h-13 transform -rotate-90" viewBox="0 0 70 70">
-								<circle cx="35" cy="35" r={r} fill="none" stroke="currentColor" strokeWidth="6.5" className="text-slate-100 dark:text-slate-700" />
+								<circle cx="35" cy="35" r={r} fill="none" stroke="currentColor" strokeWidth="6.5" className="text-slate-200 dark:text-slate-700" />
 								<circle cx="35" cy="35" r={r} fill="none" stroke="#dc2626" strokeWidth="6.5" strokeDasharray={`${dRed} ${c}`} strokeDashoffset={offRed} />
 								<circle cx="35" cy="35" r={r} fill="none" stroke="#16a34a" strokeWidth="6.5" strokeDasharray={`${dGreen} ${c}`} strokeDashoffset={offGreen} />
 								<circle cx="35" cy="35" r={r} fill="none" stroke="#eab308" strokeWidth="6.5" strokeDasharray={`${dYellow} ${c}`} strokeDashoffset={offYellow} />
@@ -471,7 +475,7 @@ export default function SOTracker() {
 							</div>
 						</div>
 
-						<div className="flex justify-between items-center px-1 text-[10px] font-bold text-slate-600 dark:text-slate-400 z-1">
+						<div className="flex justify-between items-center px-1 text-[10px] font-bold text-slate-700 dark:text-slate-300 z-1">
 							<div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{pctGreen}%</div>
 							<div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />{pctYellow}%</div>
 							<div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />{pctRed}%</div>
