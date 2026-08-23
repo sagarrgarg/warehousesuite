@@ -4,7 +4,8 @@ import { AlertTriangle } from 'lucide-react'
 import { API } from '@/lib/api'
 
 interface Props {
-  powProfileName: string | null
+  powProfileName?: string | null
+  forSOTracker?: boolean
 }
 
 interface Notification {
@@ -44,11 +45,15 @@ const STYLES: Record<string, { bg: string; blinkBg: string; text: string; icon: 
   },
 }
 
-export default function NotificationBanner({ powProfileName }: Props) {
+export default function NotificationBanner({ powProfileName, forSOTracker }: Props) {
+  const queryParams = forSOTracker
+    ? { for_so_tracker: 1 }
+    : (powProfileName ? { pow_profile: powProfileName } : undefined)
+
   const { data } = useFrappeGetCall<{ message: Notification[] }>(
     API.getActivePowNotifications,
-    powProfileName ? { pow_profile: powProfileName } : undefined,
-    powProfileName ? undefined : null,
+    queryParams,
+    undefined,
     { revalidateOnFocus: true, refreshInterval: 60000 },
   )
   const notifications = data?.message ?? []

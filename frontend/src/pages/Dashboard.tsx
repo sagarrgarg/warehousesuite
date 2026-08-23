@@ -29,7 +29,7 @@ import FinishManufactureDialog from '@/components/manufacturing/FinishManufactur
 import PurchaseRequestsModal from '@/components/purchase-request/PurchaseRequestsModal'
 import SalesOrderPendingReportModal from '@/components/reports/SalesOrderPendingReportModal'
 import BarcodeGenModal from '@/components/barcode-generation/BarcodeGenModal'
-import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3 } from 'lucide-react'
+import { Warehouse, ArrowLeftRight, Hammer, ArrowDownToLine, Sun, Moon, Filter, X, BarChart3, Truck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { API, formatPowFetchError } from '@/lib/api'
 import ItemSearchInput, { type ItemSearchInputHandle } from '@/components/shared/ItemSearchInput'
@@ -415,6 +415,10 @@ export default function Dashboard() {
               {timeLabel}
             </span>
             <QzStatusDot />
+            <button type="button" onClick={() => navigate('/so-tracker')} title="SO Dispatch & Delivery Tracker"
+              className="w-7 h-7 flex items-center justify-center rounded text-slate-500 hover:text-blue-600 hover:bg-blue-100/80 dark:text-slate-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/50 cursor-pointer">
+              <Truck className="w-3.5 h-3.5" />
+            </button>
             <button type="button" onClick={() => navigate('/analytics')} title="Analytics"
               className="w-7 h-7 flex items-center justify-center rounded text-slate-500 hover:text-violet-600 hover:bg-violet-100/80 dark:text-slate-400 dark:hover:text-violet-300 dark:hover:bg-violet-950/50 cursor-pointer">
               <BarChart3 className="w-3.5 h-3.5" />

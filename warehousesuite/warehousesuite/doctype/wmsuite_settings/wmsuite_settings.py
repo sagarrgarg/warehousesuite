@@ -84,7 +84,7 @@ def get_wmsuite_settings():
 
 
 @frappe.whitelist()
-def get_active_pow_notifications(pow_profile=None):
+def get_active_pow_notifications(pow_profile=None, for_so_tracker=0):
 	"""Get active notifications for the POW dashboard.
 
 	Filters by:
@@ -114,6 +114,11 @@ def get_active_pow_notifications(pow_profile=None):
 
 		if not row.pow_message:
 			continue
+
+		# SO Tracker vs POW filter
+		if int(for_so_tracker or 0) == 1:
+			if not getattr(row, "show_in_so_tracker", 0):
+				continue
 
 		# Time filter
 		if row.pow_from_time and get_time(row.pow_from_time) > now:
