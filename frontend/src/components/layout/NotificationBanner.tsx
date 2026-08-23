@@ -45,7 +45,7 @@ const STYLES: Record<string, { bg: string; blinkBg: string; text: string; icon: 
   },
 }
 
-export default function NotificationBanner({ powProfileName }: Props) {
+export default function NotificationBanner({ powProfileName, forSOTracker }: Props) {
   const queryParams = forSOTracker
     ? { for_so_tracker: 1 }
     : (powProfileName ? { pow_profile: powProfileName } : undefined)
