@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2026-08-22 16:16:06.486388",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-08-22 16:16:06.486388",
+ "modified_by": "Administrator",
+ "module": "Report Center",
+ "name": "so-dispatch-dashboar",
+ "owner": "Administrator",
+ "page_name": "so-dispatch-dashboar",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Sales Order Dispatch & Delivery Tracker"
+}

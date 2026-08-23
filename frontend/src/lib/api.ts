@@ -66,6 +66,9 @@ export const API = {
 	continuousConsumptionSummary: `${CONT_BASE}.get_consumption_summary_for_wo`,
 	continuousFinishWO: `${CONT_BASE}.finish_wo_continuous`,
 
+	// Sales Order Dispatch Tracker
+	getSODispatchDashboardData: 'warehousesuite.api.so_dispatch_tracker.get_so_dispatch_dashboard_data',
+
 	// Sales Order pending delivery (POW profile gated)
 	getSOAnalytics: `${SO_REP_BASE}.get_so_analytics`,
 	getSOPendingLines: `${SO_REP_BASE}.get_pow_so_pending_lines`,
