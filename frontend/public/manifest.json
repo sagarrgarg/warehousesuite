@@ -1,0 +1,19 @@
+{
+  "name": "POW - Sales Order Dispatch Tracker",
+  "short_name": "SO Tracker",
+  "description": "Mobile-first Sales Order Dispatch Tracker for WarehouseSuite POW",
+  "start_url": "/pow/so-tracker",
+  "scope": "/pow/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/assets/warehousesuite/pow/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

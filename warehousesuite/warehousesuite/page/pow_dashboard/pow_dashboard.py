@@ -2611,7 +2611,7 @@ def debug_stock_entry_warehouses(stock_entry_name):
 
 @frappe.whitelist()
 def get_pending_sent_transfers(source_warehouse=None, warehouses=None, pow_profile=None):
-	"""Get pending sent transfers for one or more warehouses.
+	"""Get pending sent transfers for one or more warehouses (Optimized).
 
 	Args:
 	    source_warehouse: Single warehouse name (legacy).
@@ -2633,74 +2633,72 @@ def get_pending_sent_transfers(source_warehouse=None, warehouses=None, pow_profi
 		if not wh_list:
 			return []
 
-		stock_entries = frappe.get_all(
-			"Stock Entry",
-			filters={
-				"add_to_transit": 1,
-				"docstatus": 1,
-				"from_warehouse": ["in", wh_list],
-			},
-			fields=[
-				"name",
-				"posting_date",
-				"to_warehouse",
-				"owner",
-				"remarks",
-				"custom_pow_session_id",
-				"custom_for_which_warehouse_to_transfer",
-			],
-			order_by="posting_date desc",
+		wh_list = [w.strip() for w in wh_list if w and isinstance(w, str) and w.strip()]
+		if not wh_list:
+			return []
+
+		rows = frappe.db.sql(
+			"""
+			SELECT
+				se.name,
+				se.posting_date,
+				se.to_warehouse,
+				se.owner,
+				se.remarks,
+				se.custom_pow_session_id AS pow_session_id,
+				se.custom_for_which_warehouse_to_transfer AS final_destination,
+				sei.item_code,
+				sei.item_name,
+				sei.qty,
+				IFNULL(sei.transferred_qty, 0) AS transferred_qty,
+				(sei.qty - IFNULL(sei.transferred_qty, 0)) AS remaining_qty,
+				sei.uom
+			FROM `tabStock Entry` se
+			INNER JOIN `tabStock Entry Detail` sei ON se.name = sei.parent
+			WHERE se.docstatus = 1
+				AND se.add_to_transit = 1
+				AND se.from_warehouse IN %s
+				AND sei.qty > IFNULL(sei.transferred_qty, 0)
+			ORDER BY se.posting_date DESC, se.creation DESC
+			""",
+			(tuple(wh_list),),
+			as_dict=True,
 		)
 
-		transfers = []
+		if not rows:
+			return []
 
-		# Process each stock entry
-		for entry in stock_entries:
-			# Get items for this stock entry
-			items = frappe.get_all(
-				"Stock Entry Detail",
-				filters={"parent": entry.name},
-				fields=["item_code", "item_name", "qty", "transferred_qty", "uom"],
-			)
-
-			# Check if any items are not fully transferred
-			has_pending_items = False
-			pending_items = []
-
-			for item in items:
-				transferred_qty = item.transferred_qty or 0
-				remaining_qty = item.qty - transferred_qty
-
-				if remaining_qty > 0:
-					has_pending_items = True
-					pending_items.append(
-						{
-							"item_code": item.item_code,
-							"item_name": item.item_name,
-							"qty": item.qty,
-							"transferred_qty": transferred_qty,
-							"remaining_qty": remaining_qty,
-							"uom": item.uom,
-						}
-					)
-
-			# Only include this transfer if it has pending items
-			if has_pending_items:
-				transfer = {
-					"name": entry.name,
-					"posting_date": entry.posting_date,
-					"to_warehouse": entry.to_warehouse,
-					"final_destination": entry.custom_for_which_warehouse_to_transfer,
-					"owner": entry.owner,
-					"remarks": entry.remarks,
-					"pow_session_id": entry.custom_pow_session_id,
-					"items": pending_items,
-					"total_items": len(items),
-					"pending_items": len(pending_items),
+		transfers_map = {}
+		for r in rows:
+			se_name = r["name"]
+			if se_name not in transfers_map:
+				transfers_map[se_name] = {
+					"name": se_name,
+					"posting_date": r["posting_date"],
+					"to_warehouse": r["to_warehouse"],
+					"final_destination": r["final_destination"],
+					"owner": r["owner"],
+					"remarks": r["remarks"],
+					"pow_session_id": r["pow_session_id"],
+					"items": [],
+					"total_items": 0,
+					"pending_items": 0,
 				}
-				transfers.append(transfer)
 
-		return transfers
+			transfers_map[se_name]["items"].append(
+				{
+					"item_code": r["item_code"],
+					"item_name": r["item_name"],
+					"qty": r["qty"],
+					"transferred_qty": r["transferred_qty"],
+					"remaining_qty": r["remaining_qty"],
+					"uom": r["uom"],
+				}
+			)
+			transfers_map[se_name]["pending_items"] += 1
+			transfers_map[se_name]["total_items"] += 1
+
+		return list(transfers_map.values())
 
 	except Exception as e:
 		frappe.logger().error(f"Error getting pending sent transfers: {e!s}")

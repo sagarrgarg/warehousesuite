@@ -9,7 +9,10 @@ THRESHOLD_DELAY = 5
 def get_so_dispatch_dashboard_data(
 	customer=None, company=None, from_date=None, to_date=None, delay_status=None
 ):
-	frappe.has_permission("Sales Order", "read", throw=True)
+	if frappe.session.user == "Guest":
+		frappe.throw(frappe._("Please log in"), frappe.PermissionError)
+
+	can_read_so = bool(frappe.has_permission("Sales Order", "read"))
 
 	filters = {"per_delivered": ["<", 100], "docstatus": 1, "status": ["not in", ["Closed", "Cancelled"]]}
 
@@ -38,6 +41,7 @@ def get_so_dispatch_dashboard_data(
 			"grand_total",
 		],
 		order_by="transaction_date asc",
+		ignore_permissions=True,
 	)
 
 	today = nowdate()
@@ -94,4 +98,5 @@ def get_so_dispatch_dashboard_data(
 			"red": {"label": "15% vs lw", "dir": "up"},
 		},
 		"orders": all_orders,
+		"can_read_so": can_read_so,
 	}
