@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#1e293b"/>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="#0f172a" stroke="#3b82f6" stroke-width="8"/>
+  <g transform="translate(106, 116) scale(0.6)">
+    <!-- Truck Base -->
+    <path d="M40 280 L40 40 C40 18 58 0 80 0 L320 0 C342 0 360 18 360 40 L360 100 L440 100 C462 100 480 118 480 140 L480 240 L440 280 L40 280 Z" fill="#2563eb"/>
+    <path d="M360 120 L440 120 L440 200 L360 200 Z" fill="#93c5fd"/>
+    <!-- Wheels -->
+    <circle cx="120" cy="320" r="60" fill="#0284c7" stroke="#ffffff" stroke-width="16"/>
+    <circle cx="120" cy="320" r="24" fill="#ffffff"/>
+    <circle cx="380" cy="320" r="60" fill="#0284c7" stroke="#ffffff" stroke-width="16"/>
+    <circle cx="380" cy="320" r="24" fill="#ffffff"/>
+  </g>
+</svg>
